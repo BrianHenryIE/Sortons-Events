@@ -19,6 +19,7 @@ import ie.sortons.events.domain.FbEvent;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 @SuppressWarnings("serial")
@@ -153,7 +154,10 @@ public class UcdQuick extends HttpServlet {
 		SimpleDateFormat dformat;
 		// Thursday, 14 February, 2013, at 8:00
 
-		if(dse.getStart_time().getHours()==0){
+		Calendar calendar = GregorianCalendar.getInstance();
+		calendar.setTime(dse.getStart_time());
+		
+		if(calendar.get(Calendar.HOUR_OF_DAY)==0){
 			dformat = new SimpleDateFormat("EEEE, dd MMMM, yyyy");
 		} else {
 			dformat = new SimpleDateFormat("EEEE, dd MMMM, yyyy, 'at' HH:mm");

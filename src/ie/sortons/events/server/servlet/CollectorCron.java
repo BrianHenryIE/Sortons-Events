@@ -52,6 +52,7 @@ import java.util.logging.Logger;
  * @author brianhenry
  *
  */
+@SuppressWarnings("serial")
 public class CollectorCron extends HttpServlet {
 
 	// For logging
@@ -150,7 +151,7 @@ public class CollectorCron extends HttpServlet {
 	
 	private String startTime() {
 		// TODO
-		// Set date to search from to yesterday?
+		// Set date to search from to yesterday? - No, that's dealt with on the display side.
 		// Use Jodatime?
 		SimpleDateFormat ISO8601FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 		String startTime = ISO8601FORMAT.format(new Date());
@@ -257,9 +258,9 @@ public class CollectorCron extends HttpServlet {
 		FqlStream fqlStream = new FqlStream();
 
 		
-		int events;
+	
 		for(String uid : returnSourceIdArray()) {
-			events = 0;
+			
 			
 			// TODO
 			// String-builder, please
@@ -313,7 +314,7 @@ public class CollectorCron extends HttpServlet {
 						// If the event doesn't have this page recorded yet...
 						if(!eventsWithSources.get(matcher.group().substring(20)).contains(uid)){
 							eventsWithSources.get(matcher.group().substring(20)).add(uid);
-							events++;
+							
 							streamEvents++;
 						}
 			        }
@@ -334,7 +335,7 @@ public class CollectorCron extends HttpServlet {
 									// If the event doesn't have this page recorded yet...
 									if(!eventsWithSources.get(matcher.group().substring(20)).contains(uid)){
 										eventsWithSources.get(matcher.group().substring(20)).add(uid);
-										events++;
+										
 										streamEvents++;
 									}
 						        }	
@@ -467,11 +468,7 @@ public class CollectorCron extends HttpServlet {
 				} else {
 					// If there's one already there
 					// Add the current list of pages associated with the event
-					// System.out.println("Event exists with pages:");
-					for(String fbpage : existingEvent.getFbPages()){
-						// System.out.println(fbpage);
-					}
-					
+
 					if( existingEvent.addFbPages(eventsWithSources.get(eid)) ){
 						// And save if it was updated
 						ofy().save().entity(existingEvent).now();
@@ -538,34 +535,7 @@ public class CollectorCron extends HttpServlet {
 		out.flush();
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	private String unixTimeInPast(int hours){
-		
-		return Integer.toString((int) (System.currentTimeMillis() / 1000L) - (hours * 60 * 60));
-		
-	}
-	
-	private String getPagesForEvent(ArrayList<String> pagesSet){
-		
-		StringBuilder pages = new StringBuilder();
-		
-		for(String pageId : pagesSet) {
-			 if (pages.length() > 0) pages.append(", ");
-			 pages.append(pageId);
-		}
-		
-		return pages.toString();
-	}
 
-	
-	
-	
 	
 	
 	public void doPost(HttpServletRequest request, HttpServletResponse response)

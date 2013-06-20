@@ -20,8 +20,7 @@ import com.googlecode.objectify.annotation.Index;
 @Entity
 public class FbEvent {
 	
-	 // public class FbEvent extends DatastoreObject {
-	
+
 	 @Id @Getter
 	 private String eid;
 	 @Getter
