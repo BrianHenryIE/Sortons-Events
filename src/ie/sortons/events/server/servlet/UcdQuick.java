@@ -180,7 +180,7 @@ public class UcdQuick extends HttpServlet {
 		
 		System.out.println("Servlet execution... POST");
 
-		// In case doPost is called somehow.
+		
 		doGet(request, response);
 		
 	}

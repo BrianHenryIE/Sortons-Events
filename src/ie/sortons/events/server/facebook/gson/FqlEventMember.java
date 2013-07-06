@@ -4,6 +4,7 @@ package ie.sortons.events.server.facebook.gson;
 import com.google.gson.Gson;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -20,14 +21,11 @@ import lombok.Getter;
  * @author brianhenry
  *
  */
-@Getter 
+@Getter @NoArgsConstructor
 public class FqlEventMember {
 
-	
 	private FqlEventMember.FqlEventMemberItem[] data; 
 
-	private FqlEventMember () {}
-	
 	public String toString(){
 		Gson gson = new Gson();
 		return gson.toJson(this);
@@ -35,11 +33,8 @@ public class FqlEventMember {
 
 
 	
-	@Getter
+	@Getter @NoArgsConstructor
 	public static class FqlEventMemberItem {
-		
-		
-		public FqlEventMemberItem () {}
 	
 		private String eid;
 		private String inviter;

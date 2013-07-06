@@ -4,6 +4,7 @@ package ie.sortons.events.server.facebook.gson;
 import com.google.gson.Gson;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
 
@@ -47,10 +48,9 @@ not_replied_count
 */
 
 
-@Getter 
+@Getter @NoArgsConstructor
 public class FqlEvent {
 
-	private FqlEvent () {}
 	
 	private FqlEvent.FqlEventItem[] data; 
  
@@ -61,11 +61,9 @@ public class FqlEvent {
 
 	
 	
-	@Getter
+	@Getter @NoArgsConstructor
 	public static class FqlEventItem {
 		
-		private FqlEventItem () {}
-
 		private String eid;
 		private String name;
 		private String pic_small;

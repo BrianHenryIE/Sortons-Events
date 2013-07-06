@@ -11,7 +11,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
+
 
 /*
 { "data": [
@@ -34,7 +35,7 @@ import lombok.Setter;
 */
 
 
-@Getter 
+@Getter @NoArgsConstructor
 public class FqlStream {
 
 	private FqlStreamItem[] data; 
@@ -47,7 +48,7 @@ public class FqlStream {
 	
 	
 	
-	@Getter @Setter
+	@Getter @NoArgsConstructor
 	public static class FqlStreamItem {
 	/*	
 	    
@@ -69,8 +70,6 @@ public class FqlStream {
 	    	}
 	*/
 		
-		public FqlStreamItem() { }
-	    	
 		private String post_id;
 		private String actor_id;
 		private String target_id;
@@ -123,11 +122,9 @@ public class FqlStream {
 
 	
 	
-	@Getter
+	@Getter @NoArgsConstructor
 	public static class FqlStreamItemAttachment {
 
-		public FqlStreamItemAttachment () {}
-			
 		private FqlStreamItemAttachmentMediaItem[] media; 
 	  
 
@@ -138,11 +135,9 @@ public class FqlStream {
 		
 	}
 	
-	@Getter @Setter
+	@Getter @NoArgsConstructor
 	public static class FqlStreamItemAttachmentMediaItem {
 		
-		public FqlStreamItemAttachmentMediaItem () {}
-
 		private String href;
 		private String alt;
 		private String type;
@@ -157,11 +152,9 @@ public class FqlStream {
 	}
 	
 	
-	@Getter @Setter
+	@Getter @NoArgsConstructor
 	public static class FqlStreamItemAttachmentMediaItemPhoto {
 
-		public FqlStreamItemAttachmentMediaItemPhoto() {}
-		
 		private String aid;
 		private String pid;
 		private String fbid;
@@ -176,10 +169,8 @@ public class FqlStream {
 	
 	
 
-	@Getter @Setter
+	@Getter @NoArgsConstructor
 	public static class FqlStreamItemAttachmentMediaItemPhotoImage {
-		
-		public FqlStreamItemAttachmentMediaItemPhotoImage() {}
 		
 		private String src;
 		private String width;

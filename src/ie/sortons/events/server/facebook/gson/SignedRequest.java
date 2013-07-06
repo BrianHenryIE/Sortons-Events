@@ -96,7 +96,7 @@ public class SignedRequest {
 	/*
 	 *  ParseSignedRequest
 	 *  - This method takes an encoded signed_request string (which we receive in
-	 *    facebooks POST request) and decodes it into a java object
+	 *    facebook'ss POST request) and decodes it into a java object
 	 *    
 	 *    @see http://developers.facebook.com/docs/reference/login/signed-request/
 	 */
