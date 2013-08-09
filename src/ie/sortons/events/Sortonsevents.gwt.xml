@@ -18,7 +18,15 @@
   <!-- <inherits name='com.google.gwt.user.theme.dark.Dark'/>     -->
 
   <!-- Other module inherits                                      -->
-		
+
+  <inherits name="com.google.gwt.http.HTTP" /> 
+  
+  <inherits name="com.google.gwt.json.JSON" />
+  
+
+  <inherits name="com.gwtfb.GwtFB" />
+  <inherits name="ie.sortons.gwtfbplus.GWTFBplus" />
+    
   <!-- Specify the app entry point class.                         -->
   <entry-point class='ie.sortons.events.client.Sortonsevents'/>
 
@@ -26,4 +34,6 @@
   <source path='client'/>
   <source path='shared'/>
 
+  <source path='ie.sortons.gwtfbplus'/>
+    
 </module>

@@ -1,0 +1,90 @@
+<!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
+	xmlns:g="urn:import:com.google.gwt.user.client.ui">
+
+<ui:style>
+	
+a {	
+    color: #3B5998;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+
+a:visited {	
+    color: #3B5998;
+}
+
+a:hover {
+	color: #3B5998;
+	text-decoration: underline;
+}
+
+
+.eventWidget {	
+	margin: 0 0 5px;
+	border-color: #E9E9E9;
+	border-style:solid;
+	border-width: 0 0 1px 0;
+	padding: 5px 0 0;
+	
+	width: 100%;
+}
+	
+.eventPicture {
+	width: 50px;
+	
+	
+}
+
+.eventDetails {
+	margin-left: 10px;
+
+}
+
+
+.eventLink {
+
+	font-weight: bold;
+	font-size : 13px;
+}
+
+
+.startTime {
+ 	color: gray;
+	line-height:1.6;
+}
+
+.pages {
+
+	float: right;
+	margin-top: 15px;
+
+}
+
+</ui:style>
+	
+	<g:FlowPanel>
+	
+		<g:FlowPanel addStyleNames="{style.pages}" ui:field="pages"/>
+		
+		<g:HorizontalPanel addStyleNames="{style.eventWidget}">
+		
+			<g:cell width="50px">
+				<g:Image  addStyleNames="{style.eventPicture}" ui:field="eventPicture" />
+			</g:cell>
+			
+			<g:VerticalPanel addStyleNames="{style.eventDetails}" >
+	
+				<g:Anchor addStyleNames="{style.eventLink}" ui:field="eventLink" />
+				<g:Label addStyleNames="{style.startTime}" ui:field="startTime"/>
+				<g:Label ui:field="location"/>
+	
+			</g:VerticalPanel>
+	
+		</g:HorizontalPanel>
+		
+	</g:FlowPanel>
+	
+</ui:UiBinder> 
+

@@ -15,16 +15,16 @@ import com.google.gson.GsonBuilder;
 import com.googlecode.objectify.ObjectifyService;
 import static com.googlecode.objectify.ObjectifyService.ofy;
 
-import ie.sortons.events.domain.FbEvent;
-import ie.sortons.events.server.facebook.gson.FqlEvent;
-import ie.sortons.events.server.facebook.gson.FqlEvent.FqlEventItem;
-import ie.sortons.events.server.facebook.gson.FqlEventMember;
-import ie.sortons.events.server.facebook.gson.FqlEventMember.FqlEventMemberItem;
-import ie.sortons.events.server.facebook.gson.FqlStream;
-import ie.sortons.events.server.facebook.gson.FqlStream.FqlStreamItem;
-import ie.sortons.events.server.facebook.gson.FqlStream.FqlStreamItemAttachment;
-import ie.sortons.events.server.facebook.gson.FqlStream.FqlStreamItemAttachmentMediaItem;
-import ie.sortons.events.server.facebook.gson.FqlStream.FqlStreamItemAttachmentAdapter;
+import ie.sortons.events.server.FbEvent;
+import ie.sortons.gwtfbplus.server.fql.FqlEvent;
+import ie.sortons.gwtfbplus.server.fql.FqlEventMember;
+import ie.sortons.gwtfbplus.server.fql.FqlStream;
+import ie.sortons.gwtfbplus.server.fql.FqlEvent.FqlEventItem;
+import ie.sortons.gwtfbplus.server.fql.FqlEventMember.FqlEventMemberItem;
+import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItem;
+import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItemAttachment;
+import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItemAttachmentAdapter;
+import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItemAttachmentMediaItem;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -148,7 +148,8 @@ public class CollectorCron extends HttpServlet {
 		return sb.toString();
 	}
 	
-	
+	// TODO
+	// This method should be called by the constructor and populate the field once!
 	private String startTime() {
 		// TODO
 		// Set date to search from to yesterday? - No, that's dealt with on the display side.
