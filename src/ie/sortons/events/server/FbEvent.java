@@ -44,7 +44,9 @@ public class FbEvent {
 	 private List<FbPage> fbPagesDetail = new ArrayList<FbPage>();
 	 
 	 public void addFbPageDetail(FbPage fbPage){
-		 fbPagesDetail.add(fbPage);
+		 if(!fbPagesDetail.contains(fbPage)){
+			 fbPagesDetail.add(fbPage);
+		 }
 	 }
 	 
 	 public FbEvent() {

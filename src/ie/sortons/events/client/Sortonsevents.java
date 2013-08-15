@@ -1,9 +1,12 @@
 package ie.sortons.events.client;
 
 import ie.sortons.events.client.widgets.EventWidget;
+import ie.sortons.gwtfbplus.client.api.Canvas;
+import ie.sortons.gwtfbplus.client.newresources.Resources;
 import ie.sortons.gwtfbplus.client.overlay.DataObject;
 
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsonUtils;
@@ -13,6 +16,7 @@ import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.URL;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 
@@ -22,11 +26,15 @@ import com.google.gwt.user.client.ui.RootPanel;
 public class Sortonsevents implements EntryPoint {
 
 	// Must be https
-	//private static final String JSON_URL = "https://ucdfbevents.appspot.com/_ah/api/upcomingevents/v1/fbeventcollection/";
+	private static final String JSON_URL = "https://ucdfbevents.appspot.com/_ah/api/upcomingevents/v1/fbeventcollection/";
 	
 	
-	private static final String JSON_URL = "http://testbed.org.org:8888/_ah/api/upcomingevents/v1/fbeventcollection/";
+	// private static final String JSON_URL = "http://testbed.org.org:8888/_ah/api/upcomingevents/v1/fbeventcollection/";
 	
+	// We'll add this to the rootpanel
+	// A panel that autogrows (and fires an event for never ending scrolling) and which
+	// has the default styles aplied would be nice.
+	FlowPanel view = new FlowPanel();
 	
 	/**
 	 * This is the entry point method.
@@ -36,6 +44,10 @@ public class Sortonsevents implements EntryPoint {
 		System.out.println("Entrypoint");
 
 		// Nothing has been written yet.
+		
+		// Inject the GwtFB+ stylesheet which cascades Facebook styles through the document. 
+		GWT.<Resources>create(Resources.class).newCss().ensureInjected();
+		 
 
 		String url = JSON_URL + "1";
 		url = URL.encode(url);
@@ -53,7 +65,7 @@ public class Sortonsevents implements EntryPoint {
 				public void onResponseReceived(Request request, Response response) {
 					if (200 == response.getStatusCode()) {
 						displayEvents(JsonUtils.safeEval(response.getText()));
-						// System.out.println(response.getText());
+						//System.out.println(response.getText());
 					} else {
 						System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ")");
 						//System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
@@ -75,7 +87,7 @@ public class Sortonsevents implements EntryPoint {
 		
 		JsArray<EventOverlay> upcoming = dataObject.getObject("items").cast();
 
-		FlowPanel view = new FlowPanel();
+		
 		
 		RootPanel.get("gwt").add(view);
 		
@@ -85,7 +97,16 @@ public class Sortonsevents implements EntryPoint {
 			
 		}
 
-			
-		
+		// Update the scrollbars
+		Timer t = new Timer() {
+			@Override
+			public void run() {
+				Canvas.setSize();
+			}
+		};
+
+		// Schedule the timer to run once in 1 second.
+		t.schedule(1000);
+
 	}
 }

@@ -4,12 +4,6 @@
 
 <ui:style>
 	
-a {	
-    color: #3B5998;
-    cursor: pointer;
-    text-decoration: none;
-}
-
 
 a:visited {	
     color: #3B5998;
@@ -59,7 +53,8 @@ a:hover {
 
 	float: right;
 	margin-top: 15px;
-
+	position:absolute;
+	right: 0;
 }
 
 </ui:style>

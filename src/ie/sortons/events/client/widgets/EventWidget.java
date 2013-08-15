@@ -2,8 +2,12 @@ package ie.sortons.events.client.widgets;
 
 import ie.sortons.events.client.EventOverlay;
 import ie.sortons.events.client.EventOverlay.FbPage;
+import ie.sortons.gwtfbplus.client.newresources.Resources;
+import ie.sortons.gwtfbplus.client.widgets.Link;
+import ie.sortons.gwtfbplus.client.widgets.popups.ToolTipPanel;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.Style.Display;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
@@ -32,10 +36,13 @@ public class EventWidget extends Composite {
 	@UiField Label location;
 	
 	@UiField FlowPanel pages;
+
 	
 	// TODO: Editor framework
 	public EventWidget(EventOverlay rowEvent) {
 	
+		GWT.<Resources>create(Resources.class).newCss().ensureInjected();
+		
 		initWidget(uiBinder.createAndBindUi(this));
 		
 		eventLink.setText(rowEvent.getName());
@@ -45,16 +52,23 @@ public class EventWidget extends Composite {
 	    startTime.setText(rowEvent.getStartTimeString());
 	    location.setText(rowEvent.getLocation());
 
+	   
+	    pages.clear();
+	    
 	    for(FbPage page : rowEvent.getFbPagesDetail()) {
 	    	
-	    	Image image = new Image("//graph.facebook.com/" + page.getId() + "/picture?type=square");
-	    	image.setHeight("25px");
-	    	image.setWidth("25px");
-	    	Link link = new Link(page.getLink(), image, page.getName());
-	    	link.getElement().getStyle().setMarginLeft(10, Unit.PX);
-	    	link.setTarget("_blank");
+	    	Image pageImage = new Image("//graph.facebook.com/" + page.getId() + "/picture?type=square");
+	    	pageImage.setHeight("25px");
+	    	pageImage.setWidth("25px");
 	    	
-	    	pages.add(link); 
+	    	ToolTipPanel pageImageToolTip = new ToolTipPanel(page.getName(), pageImage);
+	    	pageImageToolTip.getElement().getStyle().setMarginLeft(10, Unit.PX);
+	    	pageImageToolTip.getElement().getStyle().setDisplay(Display.INLINE_BLOCK);
+	    	
+	    	Link pageLink = new Link(page.getLink(), pageImageToolTip);
+	    	pageLink.setTarget("_blank");
+	    	
+	    	pages.add(pageLink); 
 
 	    }
 		

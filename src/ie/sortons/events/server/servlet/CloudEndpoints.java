@@ -28,15 +28,15 @@ public class CloudEndpoints {
 		upcomingEvents.clear();
 		
 		List<FbEvent> dsEvents = ofy().load().type(FbEvent.class).filter("start_time_date >", getHoursAgoOrToday(12)).list();
-		for(FbEvent dse : dsEvents){
+		for(FbEvent datastoreEvent : dsEvents){
 			
-			if((dse.getEnd_time_date()==null)||(dse.getEnd_time_date().after(now))){
+			if((datastoreEvent.getEnd_time_date()==null)||(datastoreEvent.getEnd_time_date().after(now))){
 				
-				for(String s : dse.getFbPages()){
-					dse.addFbPageDetail(Data.getUcdPages().get(s));
+				for(String s : datastoreEvent.getFbPages()){
+					datastoreEvent.addFbPageDetail(Data.getUcdPages().get(s));
 				}
 				
-				upcomingEvents.add(dse);
+				upcomingEvents.add(datastoreEvent);
 			}
 		}
 			 
