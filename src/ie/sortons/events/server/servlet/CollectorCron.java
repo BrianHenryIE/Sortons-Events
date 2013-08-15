@@ -1,45 +1,49 @@
 package ie.sortons.events.server.servlet;
 
 
-import java.io.IOException;
-import java.io.PrintWriter;
-
-import javax.servlet.ServletException;
-
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.googlecode.objectify.ObjectifyService;
 import static com.googlecode.objectify.ObjectifyService.ofy;
-
 import ie.sortons.events.server.FbEvent;
 import ie.sortons.gwtfbplus.server.fql.FqlEvent;
-import ie.sortons.gwtfbplus.server.fql.FqlEventMember;
-import ie.sortons.gwtfbplus.server.fql.FqlStream;
 import ie.sortons.gwtfbplus.server.fql.FqlEvent.FqlEventItem;
+import ie.sortons.gwtfbplus.server.fql.FqlEventMember;
 import ie.sortons.gwtfbplus.server.fql.FqlEventMember.FqlEventMemberItem;
+import ie.sortons.gwtfbplus.server.fql.FqlStream;
 import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItem;
 import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItemAttachment;
 import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItemAttachmentAdapter;
 import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItemAttachmentMediaItem;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.logging.Logger;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.google.appengine.api.urlfetch.HTTPResponse;
+import com.google.appengine.api.urlfetch.URLFetchService;
+import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.googlecode.objectify.ObjectifyService;
 
 
 /**
@@ -90,43 +94,10 @@ public class CollectorCron extends HttpServlet {
 	
 	private String[] returnSourceIdArray() {
 		
-		
 		// Pages
 		String[] pageIds = {"118467031573937", "473152689386103", "447777375242973", "127545843963923", "239881959387896", "161778087221610", "126104739882", "175454489163498", "139957459378369", "278853952124958", "137692179658572", "173016349413959", "131131310360391", "202573026466256", "146517502081660", "316221368472305", "211370445611484", "202260986482121", "156373707999", "133490393390530", "136338279838233", "150292068388184", "337965352958721", "460882940611003", "286540920602", "131129730276987", "268895813228504", "141777375891020", "174621319227004", "282741040919", "34990218027", "83511592970", "409660182427219", "28513863752", "155115431976", "152283968129269", "180101625380523", "253158991449992", "133490393390530", "241174982589463", "174520041078", "203697936329506", "91134337138", "111658608910928", "396054886046", "141264382554448", "181396551877444", "208084049281702", "143041413568", "176275335721055", "108890152514874", "192366654091", "176384918291", "126606836145", "78735572813", "138793279477130", "115418846072", "2257757601", "148350735311367", "207531919313205", "344354688954336", "261859710608040", "332118046848072", "173887419321014", "415460538531087", "207087485969553", "254826547898099", "204916542348", "228161603938446", "141778049173767", "221771424506555", "211108608943007", "107542286070006", "168336586481", "421568037902568", "112316168824785", "348767665216313", "160971937270778", "116499245089367", "354215754630222", "115485713810", "102655619896504", "200252276677578", "299856336707985", "118381161532495", "209211902542558", "282209558476898", "171367331615", "143646962364105", "212287795548180", "246639295371049", "297966243582851", "126140080035", "165317087536", "418483748205965", "307219992653932", "375771609166382", "132009863517651", "109526719109431", "161510670543551", "115612350207", "207201872643691", "132833570085389", "108200809206512", "206311936133875", "316177085126933", "288191144552313", "174860662650484", "194358640696009", "206346189385219", "101900576539434", "313567945399874", "215914288544352", "157542607689069", "156646187812921", "156811441017133", "251121894916612", "168697359423", "157273654298850", "152874088057448", "195776623828731", "119514614775123", "109391145752624", "136370403167283", "459546714076305", "184945418245572", "102098431584", "459214567428021", "281450966645", "312695760434", "118723664854693", "107304295955006", "130080540384787", "165385645244", "201851259837577", "122785661107885", "298531403568454", "155413827805891", "111543909024337", "113594572035355", "155350824485272", "161670733944640", "118467031573937", "521394121234482", "136993096401894", "196489580433396", "139259739475312", "230980453691830", "226759940744267", "154038127958057", "115320111818273", "110728775624246", "235263863153669", "169336618997", "111590025562911", "423079787763984", "273389792679439", "100968186727371", "160859433936358", "128079370576571", "384088081662771", "100677603374187", "214806051864062", "467180833326125", "102917616412477", "175452312503085", "216264865098997", "149133168480230"};
 
-
-		
-		// Profiles 
-		// String[] profileIds = {"100003866208875", "100002785833934", "100001267781183", "100001939255923", "1694053934", "100002377014079", "100001093827036", "100001555586193", "1076387603"};
-		
-				
-		// Return on a section of the list so it's not overloaded. Cheap fix for now.
-		// Cron is every 10 minutes. Split it in six.
-		Calendar rightNow = Calendar.getInstance();
-		int sixthTime = Math.abs(rightNow.get(Calendar.MINUTE)/10);
-		
-		
-		int sixthList = Math.abs(pageIds.length/6);
-		
-		
-		String[] sixthIds = new String[(sixthTime==5) ? (pageIds.length - (sixthList*sixthTime)) : sixthList];
-		
-		// System.out.println("list length: " + pageIds.length);
-		// System.out.println("Current minute: " + rightNow.get(Calendar.MINUTE));
-		// System.out.println("sixthTime: " + sixthTime);
-		// System.out.println("sixthList: " + sixthList);
-		// System.out.println("sixthIds.length:" + sixthIds.length);
-		
-		
-		
-		int sixthListPos = 0;
-		for(int i = (sixthList*sixthTime); i < ( (sixthTime==5) ? pageIds.length : ((sixthList*sixthTime) + sixthList) ); i++){
-			sixthIds[sixthListPos] = pageIds[i];
-			sixthListPos++;
-		}
-		
-		return sixthIds;
-		
+		return pageIds;
 	}
 	
 	
@@ -159,6 +130,7 @@ public class CollectorCron extends HttpServlet {
 		//convert YYYYMMDDTHH:mm:ss+HH00 into YYYYMMDDTHH:mm:ss+HH:00
 		//- note the added colon for the Timezone
 		startTime = startTime.substring(0, startTime.length()-2) + ":" + startTime.substring(startTime.length()-2);
+		
 		return startTime;
 	}
 	
@@ -233,8 +205,6 @@ public class CollectorCron extends HttpServlet {
 		
 	}
 	
-	
-	
 	/**
 	 * Loop through the uids and make a graph call for each to get their stream
 	 * Read the stream items for event URLs in the messages and the attachments
@@ -244,8 +214,71 @@ public class CollectorCron extends HttpServlet {
 	 * 
 	 * 
 	 * @param ids
+	 * @see http://ikaisays.com/2010/06/29/using-asynchronous-urlfetch-on-java-app-engine/
 	 */
-	private void findEventsPostedByIds(String[] ids){
+	private void findEventsPostedByIdsAsync(){
+
+		URL graphcall;
+
+		URLFetchService fetcher = URLFetchServiceFactory.getURLFetchService();
+		
+		Map<String, Future<HTTPResponse>> asyncResponses = new HashMap<String, Future<HTTPResponse>>();
+		
+		for(String uid : returnSourceIdArray()) {
+
+			// TODO
+			// String-builder, please
+			// graphcall = fqlcallstub + streamCallStub + uid + "%20AND%20created_time%20%3E%20" + unixTimeInPast(1) + "&access_token=" + access_token;
+			// created_time > gives an oauth exception
+			try {
+				
+				graphcall = new URL(fqlcallstub + streamCallStub + uid + "&access_token=" + access_token);
+				Future<HTTPResponse> responseFuture = fetcher.fetchAsync(graphcall);
+				asyncResponses.put(uid, responseFuture);
+				
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
+		}
+
+		
+		   Iterator<Entry<String, Future<HTTPResponse>>> it = asyncResponses.entrySet().iterator();
+		   while (it.hasNext()) {
+		        Map.Entry<String, Future<HTTPResponse>> pairs = (Map.Entry<String, Future<HTTPResponse>>)it.next();
+		        
+		        String uid = pairs.getKey();
+		        Future<HTTPResponse> future = pairs.getValue();
+		        			
+				HTTPResponse response;
+				try {
+					response = future.get();
+					// I'm guessing it fires an exception here if the future's not ready to be got				
+
+					System.out.println("Future in " + uid);
+					it.remove(); // avoids a ConcurrentModificationException
+
+					processResponse(new String(response.getContent()), uid);
+
+				} catch (InterruptedException e) {
+					// Guess you would do something here
+					System.out.println("InterruptedException " + uid);
+					// System.out.println(e.toString());
+				} catch (ExecutionException e) {
+					// Guess you would do something here
+					System.out.println("ExecutionException " + uid);
+					// System.out.println(e.toString());
+				}
+			}
+
+	}
+
+    
+    
+
+	private void processResponse(String json, String uid) {
 		
 		// Regex for extracting the url from wall posts
 		Pattern pattern = Pattern.compile("facebook.com/events/[0-9]*");
@@ -253,103 +286,64 @@ public class CollectorCron extends HttpServlet {
 		
 		int streamEvents = 0;
 		
-		String graphcall = new String();
-		String json = new String();
 		
-		FqlStream fqlStream = new FqlStream();
-
+		//TODO
+		//check that we've actually got data before trying to process it
+        
+		FqlStream fqlStream = gson.fromJson(json, FqlStream.class);
+		// System.out.println("json cast to FqlStream object");
 		
-	
-		for(String uid : returnSourceIdArray()) {
-			
-			
-			// TODO
-			// String-builder, please
-			// graphcall = fqlcallstub + streamCallStub + uid + "%20AND%20created_time%20%3E%20" + unixTimeInPast(1) + "&access_token=" + access_token;
-			// created_time > gives an oauth exception
-			graphcall = fqlcallstub + streamCallStub + uid + "&access_token=" + access_token;
-			
-			json = "";
-			try {
-				// System.out.println(graphcall);
-				// out.println(graphcall);
-				
-	            URL url = new URL(graphcall);
-	            BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-	            String line;
-	
-	            while ((line = reader.readLine()) != null) {
-	            	json += line;
-	            }
-	            reader.close();
-	
-	        } catch (MalformedURLException e) {
-	        	// System.out.println("catch (MalformedURLException e)");
-	            // ...
-	        } catch (IOException e) {
-	        	// System.out.println("catch (IOException e)");
-	            // ...
-	        }
-			
-			//TODO
-			//check that we've actually got data before trying to process it
-	        
-			fqlStream = gson.fromJson(json, FqlStream.class);
-			// // System.out.println("json cast to FqlStream object");
-			
-			
-			// System.out.println("Wall posts found on " + uid +": "+ fqlStream.getData().length );
-			// out.println("Wall posts found on " + uid +": "+ fqlStream.getData().length );
-			
-			if((fqlStream != null) && (fqlStream.getData() != null) && (fqlStream.getData().length>0)) {
-				for (FqlStreamItem item : fqlStream.getData()) {
-				    
-					// Read the message
-					matcher = pattern.matcher(item.getMessage());
-					while (matcher.find()) {
+		
+		// System.out.println("Wall posts found on " + uid +": "+ fqlStream.getData().length );
+		// out.println("Wall posts found on " + uid +": "+ fqlStream.getData().length );
+		
+		if((fqlStream != null) && (fqlStream.getData() != null) && (fqlStream.getData().length>0)) {
+			for (FqlStreamItem item : fqlStream.getData()) {
+			    
+				// Read the message
+				matcher = pattern.matcher(item.getMessage());
+				while (matcher.find()) {
+					
+					// If the event doesn't have a list yet...
+					if(!eventsWithSources.containsKey(matcher.group().substring(20))){
+						eventsWithSources.put(matcher.group().substring(20), new ArrayList<String>());
+					}
+					// If the event doesn't have this page recorded yet...
+					if(!eventsWithSources.get(matcher.group().substring(20)).contains(uid)){
+						eventsWithSources.get(matcher.group().substring(20)).add(uid);
 						
-						// If the event doesn't have a list yet...
-						if(!eventsWithSources.containsKey(matcher.group().substring(20))){
-							eventsWithSources.put(matcher.group().substring(20), new ArrayList<String>());
-						}
-						// If the event doesn't have this page recorded yet...
-						if(!eventsWithSources.get(matcher.group().substring(20)).contains(uid)){
-							eventsWithSources.get(matcher.group().substring(20)).add(uid);
+						streamEvents++;
+					}
+		        }
+			
+				// Read the atachments
+				if((item.getAttachment()!=null)&&(item.getAttachment().getMedia().length>0)){
+						
+					for(FqlStreamItemAttachmentMediaItem mediaitem : item.getAttachment().getMedia()){
 							
-							streamEvents++;
-						}
-			        }
-				
-					// Read the atachments
-					if((item.getAttachment()!=null)&&(item.getAttachment().getMedia().length>0)){
+						if((mediaitem.getHref()!=null)){
 							
-						for(FqlStreamItemAttachmentMediaItem mediaitem : item.getAttachment().getMedia()){
-								
-							if((mediaitem.getHref()!=null)){
-								
-								matcher = pattern.matcher(mediaitem.getHref());
-								while (matcher.find()) {
-									// If the event doesn't have a list yet...
-									if(!eventsWithSources.containsKey(matcher.group().substring(20))){
-										eventsWithSources.put(matcher.group().substring(20), new ArrayList<String>());
-									}
-									// If the event doesn't have this page recorded yet...
-									if(!eventsWithSources.get(matcher.group().substring(20)).contains(uid)){
-										eventsWithSources.get(matcher.group().substring(20)).add(uid);
-										
-										streamEvents++;
-									}
-						        }	
-							}	
-						}
+							matcher = pattern.matcher(mediaitem.getHref());
+							while (matcher.find()) {
+								// If the event doesn't have a list yet...
+								if(!eventsWithSources.containsKey(matcher.group().substring(20))){
+									eventsWithSources.put(matcher.group().substring(20), new ArrayList<String>());
+								}
+								// If the event doesn't have this page recorded yet...
+								if(!eventsWithSources.get(matcher.group().substring(20)).contains(uid)){
+									eventsWithSources.get(matcher.group().substring(20)).add(uid);
+									
+									streamEvents++;
+								}
+					        }	
+						}	
 					}
 				}
 			}
-			
-			// System.out.println("Events found on " + uid + ": " + events);
-			// out.println("Events found on " + uid + ": " + events);
-			// next pageId
 		}
+		
+		// System.out.println("Events found on " + uid + ": " + events);
+		// out.println("Events found on " + uid + ": " + events);
 		
 		out.println("Posted events:   " + streamEvents);
 		// log.info("Posted events:   " + streamEvents);
@@ -357,7 +351,6 @@ public class CollectorCron extends HttpServlet {
 		
 		
 	}
-	
 	
 	private void findEventDetails(){
 		
@@ -520,7 +513,7 @@ public class CollectorCron extends HttpServlet {
 		out.println("<pre>");
 				
 		findEventsCreatedByIds(returnSourceIdArray());
-		findEventsPostedByIds(returnSourceIdArray());
+		findEventsPostedByIdsAsync();
 		
 		out.println("Total events:    " + eventsWithSources.size());
 		// log.info("Total events:    " + eventsWithSources.size());
