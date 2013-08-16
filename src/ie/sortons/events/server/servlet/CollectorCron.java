@@ -66,40 +66,24 @@ public class CollectorCron extends HttpServlet {
 	// The app's fb access token. Never to be used client-side.
 	private String access_token = "470244209665073%7CrbUtPwZewT7KpkNinkKym5LDaHw";
 	
-	
-	// TODO
-	// Replace these with string-builders.
+	// FQL call pieces
 	private String fqlcallstub = "https://graph.facebook.com/fql?q=";
 	private String streamCallStub = "SELECT%20source_id%2C%20post_id%2C%20actor_id%2C%20target_id%2C%20message%2C%20attachment.media%20FROM%20stream%20WHERE%20source_id%20%3D%20"; // &access_token="+access_token;
-	
-
 	
 	// Map<EventID, List<Pages event found from>> 
 	private Map<String, ArrayList<String>> eventsWithSources = null;
 	
 	// Gson object to contain the details of events
 	private FqlEvent eventsDetails;
-	
-	
+		
 	// Instance of Gson which will convert json to objects. 
 	// Adapter added because of differences in structure between when
 	// there is an attachment or not in stream items.
 	private Gson gson = new GsonBuilder().registerTypeAdapter(FqlStreamItemAttachment.class, new FqlStreamItemAttachmentAdapter()).create();
 
-	
-	
-	
-	
-	
-	
-	private String[] returnSourceIdArray() {
-		
-		// Pages
-		String[] pageIds = {"118467031573937", "473152689386103", "447777375242973", "127545843963923", "239881959387896", "161778087221610", "126104739882", "175454489163498", "139957459378369", "278853952124958", "137692179658572", "173016349413959", "131131310360391", "202573026466256", "146517502081660", "316221368472305", "211370445611484", "202260986482121", "156373707999", "133490393390530", "136338279838233", "150292068388184", "337965352958721", "460882940611003", "286540920602", "131129730276987", "268895813228504", "141777375891020", "174621319227004", "282741040919", "34990218027", "83511592970", "409660182427219", "28513863752", "155115431976", "152283968129269", "180101625380523", "253158991449992", "133490393390530", "241174982589463", "174520041078", "203697936329506", "91134337138", "111658608910928", "396054886046", "141264382554448", "181396551877444", "208084049281702", "143041413568", "176275335721055", "108890152514874", "192366654091", "176384918291", "126606836145", "78735572813", "138793279477130", "115418846072", "2257757601", "148350735311367", "207531919313205", "344354688954336", "261859710608040", "332118046848072", "173887419321014", "415460538531087", "207087485969553", "254826547898099", "204916542348", "228161603938446", "141778049173767", "221771424506555", "211108608943007", "107542286070006", "168336586481", "421568037902568", "112316168824785", "348767665216313", "160971937270778", "116499245089367", "354215754630222", "115485713810", "102655619896504", "200252276677578", "299856336707985", "118381161532495", "209211902542558", "282209558476898", "171367331615", "143646962364105", "212287795548180", "246639295371049", "297966243582851", "126140080035", "165317087536", "418483748205965", "307219992653932", "375771609166382", "132009863517651", "109526719109431", "161510670543551", "115612350207", "207201872643691", "132833570085389", "108200809206512", "206311936133875", "316177085126933", "288191144552313", "174860662650484", "194358640696009", "206346189385219", "101900576539434", "313567945399874", "215914288544352", "157542607689069", "156646187812921", "156811441017133", "251121894916612", "168697359423", "157273654298850", "152874088057448", "195776623828731", "119514614775123", "109391145752624", "136370403167283", "459546714076305", "184945418245572", "102098431584", "459214567428021", "281450966645", "312695760434", "118723664854693", "107304295955006", "130080540384787", "165385645244", "201851259837577", "122785661107885", "298531403568454", "155413827805891", "111543909024337", "113594572035355", "155350824485272", "161670733944640", "118467031573937", "521394121234482", "136993096401894", "196489580433396", "139259739475312", "230980453691830", "226759940744267", "154038127958057", "115320111818273", "110728775624246", "235263863153669", "169336618997", "111590025562911", "423079787763984", "273389792679439", "100968186727371", "160859433936358", "128079370576571", "384088081662771", "100677603374187", "214806051864062", "467180833326125", "102917616412477", "175452312503085", "216264865098997", "149133168480230"};
+	// TODO move into datastore
+	private String[] sourceIdArray = {"118467031573937", "473152689386103", "447777375242973", "127545843963923", "239881959387896", "161778087221610", "126104739882", "175454489163498", "139957459378369", "278853952124958", "137692179658572", "173016349413959", "131131310360391", "202573026466256", "146517502081660", "316221368472305", "211370445611484", "202260986482121", "156373707999", "133490393390530", "136338279838233", "150292068388184", "337965352958721", "460882940611003", "286540920602", "131129730276987", "268895813228504", "141777375891020", "174621319227004", "282741040919", "34990218027", "83511592970", "409660182427219", "28513863752", "155115431976", "152283968129269", "180101625380523", "253158991449992", "133490393390530", "241174982589463", "174520041078", "203697936329506", "91134337138", "111658608910928", "396054886046", "141264382554448", "181396551877444", "208084049281702", "143041413568", "176275335721055", "108890152514874", "192366654091", "176384918291", "126606836145", "78735572813", "138793279477130", "115418846072", "2257757601", "148350735311367", "207531919313205", "344354688954336", "261859710608040", "332118046848072", "173887419321014", "415460538531087", "207087485969553", "254826547898099", "204916542348", "228161603938446", "141778049173767", "221771424506555", "211108608943007", "107542286070006", "168336586481", "421568037902568", "112316168824785", "348767665216313", "160971937270778", "116499245089367", "354215754630222", "115485713810", "102655619896504", "200252276677578", "299856336707985", "118381161532495", "209211902542558", "282209558476898", "171367331615", "143646962364105", "212287795548180", "246639295371049", "297966243582851", "126140080035", "165317087536", "418483748205965", "307219992653932", "375771609166382", "132009863517651", "109526719109431", "161510670543551", "115612350207", "207201872643691", "132833570085389", "108200809206512", "206311936133875", "316177085126933", "288191144552313", "174860662650484", "194358640696009", "206346189385219", "101900576539434", "313567945399874", "215914288544352", "157542607689069", "156646187812921", "156811441017133", "251121894916612", "168697359423", "157273654298850", "152874088057448", "195776623828731", "119514614775123", "109391145752624", "136370403167283", "459546714076305", "184945418245572", "102098431584", "459214567428021", "281450966645", "312695760434", "118723664854693", "107304295955006", "130080540384787", "165385645244", "201851259837577", "122785661107885", "298531403568454", "155413827805891", "111543909024337", "113594572035355", "155350824485272", "161670733944640", "118467031573937", "521394121234482", "136993096401894", "196489580433396", "139259739475312", "230980453691830", "226759940744267", "154038127958057", "115320111818273", "110728775624246", "235263863153669", "169336618997", "111590025562911", "423079787763984", "273389792679439", "100968186727371", "160859433936358", "128079370576571", "384088081662771", "100677603374187", "214806051864062", "467180833326125", "102917616412477", "175452312503085", "216264865098997", "149133168480230"};
 
-		return pageIds;
-	}
-	
 	
 	/**
 	 * Takes and array of Strings {"abc", "def", "ghi"}
@@ -121,6 +105,7 @@ public class CollectorCron extends HttpServlet {
 	
 	// TODO
 	// This method should be called by the constructor and populate the field once!
+	// And shouldn't be in here at all
 	private String startTime() {
 		// TODO
 		// Set date to search from to yesterday? - No, that's dealt with on the display side.
@@ -146,18 +131,12 @@ public class CollectorCron extends HttpServlet {
 	 * 
 	 * @param ids
 	 */
-	private void findEventsCreatedByIds(String[] ids){
+	private void findEventsCreatedByIds(){
 		
 		String json = "";
+		
+		String fql = "SELECT uid, eid, rsvp_status FROM event_member WHERE start_time > '" + startTime() + "' AND uid IN ("+arrayToCommaSeparatedList(sourceIdArray)+")";
 
-		
-		// TODO
-		// Move to string-builder above
-		String fql = "SELECT uid, eid, rsvp_status FROM event_member WHERE start_time > '" + startTime() + "' AND uid IN ("+arrayToCommaSeparatedList(returnSourceIdArray())+")";
-			
-		// System.out.println(fqlcallstub + fql + "&access_token=" + access_token);
-		// out.println(fqlcallstub + fql + "&access_token=" + access_token);
-		
 		try {
 			// System.out.println("Getting all page events: " + fql);
             URL url = new URL(fqlcallstub + URLEncoder.encode(fql, "UTF-8") + "&access_token=" + access_token);
@@ -165,9 +144,7 @@ public class CollectorCron extends HttpServlet {
             String line;
 
             while ((line = reader.readLine()) != null) {
-            	json += line;
-            	// System.out.println(line);
-            	
+            	json += line;           	
             }
             reader.close();
 
@@ -204,7 +181,7 @@ public class CollectorCron extends HttpServlet {
 		
 		
 	}
-	
+
 	/**
 	 * Loop through the uids and make a graph call for each to get their stream
 	 * Read the stream items for event URLs in the messages and the attachments
@@ -218,60 +195,45 @@ public class CollectorCron extends HttpServlet {
 	 */
 	private void findEventsPostedByIdsAsync(){
 
-		URL graphcall;
-
 		URLFetchService fetcher = URLFetchServiceFactory.getURLFetchService();
-		
-		Map<String, Future<HTTPResponse>> asyncResponses = new HashMap<String, Future<HTTPResponse>>();
-		
-		for(String uid : returnSourceIdArray()) {
 
-			// TODO
-			// String-builder, please
+		Map<String, Future<HTTPResponse>> asyncResponses = new HashMap<String, Future<HTTPResponse>>();
+
+		for(String uid : sourceIdArray) {
+
 			// graphcall = fqlcallstub + streamCallStub + uid + "%20AND%20created_time%20%3E%20" + unixTimeInPast(1) + "&access_token=" + access_token;
 			// created_time > gives an oauth exception
+
 			try {
-				
-				graphcall = new URL(fqlcallstub + streamCallStub + uid + "&access_token=" + access_token);
+				URL graphcall = new URL(fqlcallstub + streamCallStub + uid + "&access_token=" + access_token);
 				Future<HTTPResponse> responseFuture = fetcher.fetchAsync(graphcall);
 				asyncResponses.put(uid, responseFuture);
-				
+
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
-			
+
+
 		}
 
-		
-		   Iterator<Entry<String, Future<HTTPResponse>>> it = asyncResponses.entrySet().iterator();
-		   while (it.hasNext()) {
-		        Map.Entry<String, Future<HTTPResponse>> pairs = (Map.Entry<String, Future<HTTPResponse>>)it.next();
-		        
-		        String uid = pairs.getKey();
-		        Future<HTTPResponse> future = pairs.getValue();
-		        			
-				HTTPResponse response;
-				try {
-					response = future.get();
-					// I'm guessing it fires an exception here if the future's not ready to be got				
 
-					System.out.println("Future in " + uid);
-					it.remove(); // avoids a ConcurrentModificationException
+		Iterator<Entry<String, Future<HTTPResponse>>> it = asyncResponses.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry<String, Future<HTTPResponse>> future = (Map.Entry<String, Future<HTTPResponse>>)it.next();
 
-					processResponse(new String(response.getContent()), uid);
-
-				} catch (InterruptedException e) {
-					// Guess you would do something here
-					System.out.println("InterruptedException " + uid);
-					// System.out.println(e.toString());
-				} catch (ExecutionException e) {
-					// Guess you would do something here
-					System.out.println("ExecutionException " + uid);
-					// System.out.println(e.toString());
-				}
+			try {
+				HTTPResponse response = future.getValue().get();	
+				it.remove(); 
+				processResponse(new String(response.getContent()), future.getKey());
+			} catch (InterruptedException e) {
+				System.out.println("InterruptedException " + future.getKey());
+				// System.out.println(e.toString());
+			} catch (ExecutionException e) {
+				System.out.println("ExecutionException " + future.getKey());
+				// System.out.println(e.toString());
 			}
+		}
 
 	}
 
@@ -352,27 +314,25 @@ public class CollectorCron extends HttpServlet {
 		
 	}
 	
+	/**
+	 * Takes the list of event ids found on or by pages and gets their name, location etc.
+	 */
 	private void findEventDetails(){
 		
-		// Let's get the event details
-		
 		// Get the list of events from eventsWithSources
-		String eventIdsList;
+		// TODO This will fail with an empty list.
 		StringBuilder eidsb = new StringBuilder();
 		for(String eid : eventsWithSources.keySet()) {
 			 if (eidsb.length() > 0) eidsb.append(',');
 			 eidsb.append(eid);
 		}
-		eventIdsList = eidsb.toString();
+		String eventIdsList = eidsb.toString();
 		
 
 		// Ask Facebook for their details
-		
-		// TODO
-		// String-builder
 		String eventDetailsFql  = "SELECT eid, name, location, start_time, end_time, pic_square FROM event WHERE eid IN (" + eventIdsList + ") AND  start_time > '" + startTime() + "' ORDER BY start_time";
 		
-		// out.println(eventDetailsFql);
+		out.println(eventDetailsFql);
 		
 		String json = "";
 		try {
@@ -394,19 +354,24 @@ public class CollectorCron extends HttpServlet {
             // ...
         }
 		
-		// out.println(json);
 		
 		// GSON!
 		// Convert the json string to java object
-		
 		eventsDetails = gson.fromJson(json, FqlEvent.class);
-
-		// TODO
-		// This was crashing when over 100 result were returned because I had LIMIT 100 which 
-		// I guess was giving me a paging link that the GSON wasn't ready for.
 		
-		// System.out.println("Upcoming events: " + eventsDetails.getData().length);
-		out.println("Upcoming events: " + eventsDetails.getData().length);
+
+		try {
+			out.println("Upcoming events: " + eventsDetails.getData().length);
+		} catch(NullPointerException e) {
+			
+			// TODO
+			// This isn't happening every time. When it does, the fql is fine, so
+			// a retry would be fine
+			
+			System.out.println("NullPointerException");
+			
+			
+		}
 		// log.info("Upcoming events: " + eventsDetails.getData().length);
 		
 	}
@@ -416,12 +381,9 @@ public class CollectorCron extends HttpServlet {
 	private void saveToDatastore(){
 
 		// Save to Datastore
-		
-		// TODO
-		// Move this to the constructor to catch exceptions early
 		ObjectifyService.register(FbEvent.class);
 
-		
+
 		// Counters for logs
         int newEvents = 0;
         int updatedEvents = 0;
@@ -512,7 +474,7 @@ public class CollectorCron extends HttpServlet {
 		
 		out.println("<pre>");
 				
-		findEventsCreatedByIds(returnSourceIdArray());
+		findEventsCreatedByIds();
 		findEventsPostedByIdsAsync();
 		
 		out.println("Total events:    " + eventsWithSources.size());

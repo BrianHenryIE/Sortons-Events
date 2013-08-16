@@ -25,7 +25,7 @@ import com.google.gwt.user.client.ui.RootPanel;
  */
 public class Sortonsevents implements EntryPoint {
 
-	// Must be https
+	// Must be https for cloud endpoints
 	private static final String JSON_URL = "https://ucdfbevents.appspot.com/_ah/api/upcomingevents/v1/fbeventcollection/";
 	
 	
