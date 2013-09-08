@@ -17,6 +17,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -161,22 +162,25 @@ public class CollectorCron extends HttpServlet {
 
 		// System.out.println("Events by pages " + fqlEventMember.getData().length);
 		
-		out.println("Created events : " + fqlEventMember.getData().length);
-		// log.info("Created events : " + fqlEventMember.getData().length);
-		
-		for (FqlEventMemberItem item : fqlEventMember.getData()) {
+		// TODO Figure out why this is sometimes coming up null
+		if(fqlEventMember!=null&&fqlEventMember.getData()!=null){
 			
-			// If this event hasn't yet been recorded in the list 
-			if(!eventsWithSources.containsKey(item.getEid())){
-				// Give it an entry with a list ready for its source
-				eventsWithSources.put(item.getEid(), new ArrayList<String>());
-			}
-			// If the event doesn't have this page recorded yet...
-			if(!eventsWithSources.get(item.getEid()).contains(item.getUid())){
-				eventsWithSources.get(item.getEid()).add(item.getUid());
+			out.println("Created events : " + fqlEventMember.getData().length);
+			// log.info("Created events : " + fqlEventMember.getData().length);
+			
+			for (FqlEventMemberItem item : fqlEventMember.getData()) {
+				
+				// If this event hasn't yet been recorded in the list 
+				if(!eventsWithSources.containsKey(item.getEid())){
+					// Give it an entry with a list ready for its source
+					eventsWithSources.put(item.getEid(), new ArrayList<String>());
+				}
+				// If the event doesn't have this page recorded yet...
+				if(!eventsWithSources.get(item.getEid()).contains(item.getUid())){
+					eventsWithSources.get(item.getEid()).add(item.getUid());
+				}
 			}
 		}
-		
 		
 		
 		
@@ -195,8 +199,11 @@ public class CollectorCron extends HttpServlet {
 	 */
 	private void findEventsPostedByIdsAsync(){
 
+		System.out.println("findEventsPostedByIdsAsync()");
+		
 		URLFetchService fetcher = URLFetchServiceFactory.getURLFetchService();
 
+		
 		Map<String, Future<HTTPResponse>> asyncResponses = new HashMap<String, Future<HTTPResponse>>();
 
 		for(String uid : sourceIdArray) {
@@ -205,7 +212,35 @@ public class CollectorCron extends HttpServlet {
 			// created_time > gives an oauth exception
 
 			try {
+				
 				URL graphcall = new URL(fqlcallstub + streamCallStub + uid + "&access_token=" + access_token);
+	            /*	            
+	            HttpURLConnection connection = null;
+				try {
+					connection = (HttpURLConnection) graphcall.openConnection();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+	            connection.setConnectTimeout(25000);
+	            connection.setReadTimeout(25000);
+	            try {
+					connection.connect();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+/*
+	            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+
+	            String line;
+	            while ((line = reader.readLine()) != null) {
+	            	json += line;           	
+	            }
+	            reader.close();
+	            //*/
+	            
+	            
 				Future<HTTPResponse> responseFuture = fetcher.fetchAsync(graphcall);
 				asyncResponses.put(uid, responseFuture);
 
@@ -214,26 +249,39 @@ public class CollectorCron extends HttpServlet {
 				e.printStackTrace();
 			}
 
-
 		}
-
-
+		
+		/* Didn't help
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		*/
+		
+		int failures = 0;
+		
 		Iterator<Entry<String, Future<HTTPResponse>>> it = asyncResponses.entrySet().iterator();
 		while (it.hasNext()) {
 			Map.Entry<String, Future<HTTPResponse>> future = (Map.Entry<String, Future<HTTPResponse>>)it.next();
 
 			try {
-				HTTPResponse response = future.getValue().get();	
-				it.remove(); 
+				HTTPResponse response = future.getValue().get();
+				// it.remove(); 
 				processResponse(new String(response.getContent()), future.getKey());
+				// System.out.println("processResponse " + future.getKey());
 			} catch (InterruptedException e) {
-				System.out.println("InterruptedException " + future.getKey());
+				//System.out.println("InterruptedException " + future.getKey());
 				// System.out.println(e.toString());
+				failures++;
 			} catch (ExecutionException e) {
-				System.out.println("ExecutionException " + future.getKey());
-				// System.out.println(e.toString());
+				//System.out.println(future.getKey() + " -- " + e.toString());
+				failures++;
 			}
 		}
+
+		System.out.println("failures: " + failures);
 
 	}
 
@@ -241,6 +289,8 @@ public class CollectorCron extends HttpServlet {
     
 
 	private void processResponse(String json, String uid) {
+		
+		// System.out.println("processResponse(String json, String uid)");
 		
 		// Regex for extracting the url from wall posts
 		Pattern pattern = Pattern.compile("facebook.com/events/[0-9]*");
@@ -307,7 +357,7 @@ public class CollectorCron extends HttpServlet {
 		// System.out.println("Events found on " + uid + ": " + events);
 		// out.println("Events found on " + uid + ": " + events);
 		
-		out.println("Posted events:   " + streamEvents);
+		out.println("Posted events: " + uid + " : " + streamEvents);
 		// log.info("Posted events:   " + streamEvents);
 		
 		
@@ -319,6 +369,8 @@ public class CollectorCron extends HttpServlet {
 	 */
 	private void findEventDetails(){
 		
+		System.out.println("findEventDetails()");
+		
 		// Get the list of events from eventsWithSources
 		// TODO This will fail with an empty list.
 		StringBuilder eidsb = new StringBuilder();
@@ -328,32 +380,52 @@ public class CollectorCron extends HttpServlet {
 		}
 		String eventIdsList = eidsb.toString();
 		
-
+		
+		
 		// Ask Facebook for their details
-		String eventDetailsFql  = "SELECT eid, name, location, start_time, end_time, pic_square FROM event WHERE eid IN (" + eventIdsList + ") AND  start_time > '" + startTime() + "' ORDER BY start_time";
+		String eventDetailsFql  = "SELECT eid, name, location, start_time, end_time, pic_square FROM event WHERE eid IN (" + eventIdsList + ") AND start_time > '" + startTime() + "' ORDER BY start_time";
 		
 		out.println(eventDetailsFql);
 		
+		Date before = new Date();
+
 		String json = "";
+        
 		try {
 			// System.out.println("Getting details of all events");
+            // TODO Make this easier on Facebook so it won't timeout.
             URL url = new URL(fqlcallstub + URLEncoder.encode(eventDetailsFql, "UTF-8") + "&access_token=" + access_token);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-            String line;
+            System.out.println(url);
+            
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(25000);
+            connection.setReadTimeout(25000);
+            connection.setDoOutput(true);
+            connection.connect();
 
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+
+            String line;
             while ((line = reader.readLine()) != null) {
-            	json += line;
+            	json += line;           	
             }
             reader.close();
-
+            
+            // System.out.println("json: "+json);
+   
         } catch (MalformedURLException e) {
-        	// System.out.println("catch (MalformedURLException e)");
+        	System.out.println("catch (MalformedURLException e)");
             // ...
         } catch (IOException e) {
-        	// System.out.println("catch (IOException e)");
+        	System.out.println(e.toString());
+        	System.out.println(e.getCause());
+        	
             // ...
         }
 		
+		Date after = new Date();
+		
+		System.out.println("Time taken: " + (after.getTime()-before.getTime()));
 		
 		// GSON!
 		// Convert the json string to java object
@@ -363,10 +435,6 @@ public class CollectorCron extends HttpServlet {
 		try {
 			out.println("Upcoming events: " + eventsDetails.getData().length);
 		} catch(NullPointerException e) {
-			
-			// TODO
-			// This isn't happening every time. When it does, the fql is fine, so
-			// a retry would be fine
 			
 			System.out.println("NullPointerException");
 			
@@ -380,6 +448,8 @@ public class CollectorCron extends HttpServlet {
 	
 	private void saveToDatastore(){
 
+		System.out.println("saveToDatastore()");
+		
 		// Save to Datastore
 		ObjectifyService.register(FbEvent.class);
 
@@ -473,7 +543,7 @@ public class CollectorCron extends HttpServlet {
 		out = response.getWriter();
 		
 		out.println("<pre>");
-				
+
 		findEventsCreatedByIds();
 		findEventsPostedByIdsAsync();
 		

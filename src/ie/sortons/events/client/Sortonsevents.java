@@ -1,6 +1,7 @@
 package ie.sortons.events.client;
 
 import ie.sortons.events.client.widgets.EventWidget;
+import ie.sortons.events.shared.FbConfig;
 import ie.sortons.gwtfbplus.client.api.Canvas;
 import ie.sortons.gwtfbplus.client.newresources.Resources;
 import ie.sortons.gwtfbplus.client.overlay.DataObject;
@@ -19,6 +20,7 @@ import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.gwtfb.sdk.FBCore;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -27,12 +29,18 @@ public class Sortonsevents implements EntryPoint {
 
 	// Must be https for cloud endpoints
 	private static final String JSON_URL = "https://ucdfbevents.appspot.com/_ah/api/upcomingevents/v1/fbeventcollection/";
+			
+	// Courtesy of gwtfb.com
+	private FBCore fbCore = GWT.create(FBCore.class);
+
+	public String APPID = FbConfig.getAppID();	
+	private boolean status = true;
+	private boolean xfbml = true;
+	private boolean cookie = true;
 	
-	
-	// private static final String JSON_URL = "http://testbed.org.org:8888/_ah/api/upcomingevents/v1/fbeventcollection/";
-	
+
 	// We'll add this to the rootpanel
-	// A panel that autogrows (and fires an event for never ending scrolling) and which
+	// TODO A panel that autogrows (and fires an event for never ending scrolling) and which
 	// has the default styles aplied would be nice.
 	FlowPanel view = new FlowPanel();
 	
@@ -48,6 +56,8 @@ public class Sortonsevents implements EntryPoint {
 		// Inject the GwtFB+ stylesheet which cascades Facebook styles through the document. 
 		GWT.<Resources>create(Resources.class).newCss().ensureInjected();
 		 
+		// Initialize the Facebook API
+		fbCore.init(APPID, status, cookie, xfbml);
 
 		String url = JSON_URL + "1";
 		url = URL.encode(url);

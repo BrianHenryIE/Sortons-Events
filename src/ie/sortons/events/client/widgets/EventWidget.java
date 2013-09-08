@@ -48,7 +48,7 @@ public class EventWidget extends Composite {
 		eventLink.setText(rowEvent.getName());
 		eventLink.setHref("http://www.facebook.com/event.php?eid="  + rowEvent.getEid());
 		eventLink.setTarget("_blank");
-		eventPicture.setUrl(rowEvent.getPic_square());
+		eventPicture.setUrl("//graph.facebook.com/" + rowEvent.getEid() + "/picture?type=square");
 	    startTime.setText(rowEvent.getStartTimeString());
 	    location.setText(rowEvent.getLocation());
 
