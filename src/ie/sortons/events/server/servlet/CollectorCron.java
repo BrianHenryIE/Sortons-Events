@@ -23,11 +23,14 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
@@ -38,6 +41,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.joda.time.DateTime;
 
 import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
@@ -103,6 +108,17 @@ public class CollectorCron extends HttpServlet {
 		}
 		return sb.toString();
 	}
+
+	private String arrayToCommaSeparatedList(Set<String> keySet) {
+		StringBuilder sb = new StringBuilder();
+		for (String id : keySet) { 
+		    if (sb.length() > 0) sb.append(',');
+		    sb.append(id);
+		}
+		return sb.toString();
+	}
+
+	
 	
 	// TODO
 	// This method should be called by the constructor and populate the field once!
@@ -186,6 +202,157 @@ public class CollectorCron extends HttpServlet {
 		
 	}
 
+	
+	
+
+	/**
+	 * Loop through the uids and make a graph call for each to get their stream
+	 * Read the stream items for event URLs in the messages and the attachments
+	 * 
+	 * We can't query for multiple source ids in stream as an app
+	 * http://stackoverflow.com/questions/12306564/accessing-stream-data-for-pages-using-application-access-token
+	 * 
+	 * 
+	 * @param ids
+	 */
+	private void findEventsPostedByIds(){
+
+		// Regex for extracting the url from wall posts
+		Pattern pattern = Pattern.compile("facebook.com/events/[0-9]*");
+		Matcher matcher;
+
+		int streamEvents = 0;
+
+		String graphcall = new String();
+		String json = new String();
+
+		FqlStream fqlStream = new FqlStream();
+
+
+		Date now = new Date();
+
+		Calendar calendar = GregorianCalendar.getInstance(); // creates a new calendar instance
+		calendar.setTime(now);   // assigns calendar to given date 
+		int minute = calendar.get(Calendar.MINUTE); 
+		int sixth = minute/10;
+		
+		log.info("sixth: " + sixth);
+		log.info("lower bound: " + ((sourceIdArray.length/6)*sixth) );
+		log.info("upper bound: " + ((sourceIdArray.length/6)*(sixth +1)));
+
+		int entry = 0;
+
+		
+		
+		DateTime today = new DateTime();
+		long unixTimeToday = (today.withTimeAtStartOfDay().getMillis()/1000);
+		
+		for(String uid : sourceIdArray) {
+
+			// Only process 1/6 of the list each time the cron runs. This is temporary until the async timeouts are fixed.
+			if( (entry >= (sourceIdArray.length/6)*sixth) && (entry <= ((sourceIdArray.length/6)*(sixth +1))) ) {
+			
+				
+				graphcall = fqlcallstub + streamCallStub + uid + "%20AND%20created_time%20%3E%20" + unixTimeToday + "&access_token=" + access_token;
+				// created_time > gives an oauth exception
+				// graphcall = fqlcallstub + streamCallStub + uid + "&access_token=" + access_token;
+
+				// System.out.println(graphcall);
+				
+				json = "";
+				try {
+					
+					// out.println(graphcall);
+
+					URL url = new URL(graphcall);
+					BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+					String line;
+
+					while ((line = reader.readLine()) != null) {
+						json += line;
+					}
+					reader.close();
+
+				} catch (MalformedURLException e) {
+					// System.out.println("catch (MalformedURLException e)");
+					// ...
+				} catch (IOException e) {
+					// System.out.println("catch (IOException e)");
+					// ...
+				}
+
+				//TODO
+				//check that we've actually got data before trying to process it
+
+				fqlStream = gson.fromJson(json, FqlStream.class);
+				// // System.out.println("json cast to FqlStream object");
+
+
+				// System.out.println("Wall posts found on " + uid +": "+ fqlStream.getData().length );
+				// out.println("Wall posts found on " + uid +": "+ fqlStream.getData().length );
+
+				if((fqlStream != null) && (fqlStream.getData() != null) && (fqlStream.getData().length>0)) {
+					for (FqlStreamItem item : fqlStream.getData()) {
+
+						// Read the message
+						matcher = pattern.matcher(item.getMessage());
+						while (matcher.find()) {
+
+							// If the event doesn't have a list yet...
+							if(!eventsWithSources.containsKey(matcher.group().substring(20))){
+								eventsWithSources.put(matcher.group().substring(20), new ArrayList<String>());
+							}
+							// If the event doesn't have this page recorded yet...
+							if(!eventsWithSources.get(matcher.group().substring(20)).contains(uid)){
+								eventsWithSources.get(matcher.group().substring(20)).add(uid);
+
+								streamEvents++;
+							}
+						}
+
+						// Read the atachments
+						if((item.getAttachment()!=null)&&(item.getAttachment().getMedia().length>0)){
+
+							for(FqlStreamItemAttachmentMediaItem mediaitem : item.getAttachment().getMedia()){
+
+								if((mediaitem.getHref()!=null)){
+
+									matcher = pattern.matcher(mediaitem.getHref());
+									while (matcher.find()) {
+										// If the event doesn't have a list yet...
+										if(!eventsWithSources.containsKey(matcher.group().substring(20))){
+											eventsWithSources.put(matcher.group().substring(20), new ArrayList<String>());
+										}
+										// If the event doesn't have this page recorded yet...
+										if(!eventsWithSources.get(matcher.group().substring(20)).contains(uid)){
+											eventsWithSources.get(matcher.group().substring(20)).add(uid);
+
+											streamEvents++;
+
+											log.info(uid + " : " + matcher.group().substring(20));
+										}
+									}	
+								}	
+							}
+						}
+					}
+				}
+
+			}
+			// System.out.println("Events found on " + uid + ": " + events);
+			// out.println("Events found on " + uid + ": " + events);
+			entry++;
+			// next pageId
+		
+		}
+
+		log.info("Posted events:   " + streamEvents);
+		out.println("Posted events:   " + streamEvents);
+		
+	}
+
+	
+	
 	/**
 	 * Loop through the uids and make a graph call for each to get their stream
 	 * Read the stream items for event URLs in the messages and the attachments
@@ -206,14 +373,19 @@ public class CollectorCron extends HttpServlet {
 		
 		Map<String, Future<HTTPResponse>> asyncResponses = new HashMap<String, Future<HTTPResponse>>();
 
+		DateTime today = new DateTime();
+		long unixTimeToday = (today.withTimeAtStartOfDay().getMillis()/1000);
+		
+		
 		for(String uid : sourceIdArray) {
 
 			// graphcall = fqlcallstub + streamCallStub + uid + "%20AND%20created_time%20%3E%20" + unixTimeInPast(1) + "&access_token=" + access_token;
-			// created_time > gives an oauth exception
 
 			try {
 				
-				URL graphcall = new URL(fqlcallstub + streamCallStub + uid + "&access_token=" + access_token);
+				//URL graphcall = new URL(fqlcallstub + streamCallStub + uid + "&access_token=" + access_token);
+				URL graphcall = new URL(fqlcallstub + streamCallStub + uid + "%20AND%20created_time%20%3E%20" + unixTimeToday + "&access_token=" + access_token);
+				
 	            /*	            
 	            HttpURLConnection connection = null;
 				try {
@@ -281,17 +453,21 @@ public class CollectorCron extends HttpServlet {
 			}
 		}
 
-		System.out.println("failures: " + failures);
+		System.out.println("failures: " + failures + " of " + sourceIdArray.length);
+
+		// log.info("Posted events:   " + streamEventsTotal);
+		out.println("Posted events:   " + streamEventsTotal);
 
 	}
 
     
-    
+    private int streamEventsTotal = 0;
 
 	private void processResponse(String json, String uid) {
 		
 		// System.out.println("processResponse(String json, String uid)");
 		
+		// TODO use the simpler regex without a pattern and matcher
 		// Regex for extracting the url from wall posts
 		Pattern pattern = Pattern.compile("facebook.com/events/[0-9]*");
 		Matcher matcher;
@@ -357,10 +533,14 @@ public class CollectorCron extends HttpServlet {
 		// System.out.println("Events found on " + uid + ": " + events);
 		// out.println("Events found on " + uid + ": " + events);
 		
-		out.println("Posted events: " + uid + " : " + streamEvents);
-		// log.info("Posted events:   " + streamEvents);
 		
 		
+		if(streamEvents>0){
+			out.println("Posted events: " + uid + " : " + streamEvents);
+			log.info("Posted events: " + uid + " : " + streamEvents);
+		}
+		
+		streamEvents = streamEvents + streamEventsTotal;
 		
 	}
 	
@@ -371,15 +551,18 @@ public class CollectorCron extends HttpServlet {
 		
 		System.out.println("findEventDetails()");
 		
-		// Get the list of events from eventsWithSources
-		// TODO This will fail with an empty list.
-		StringBuilder eidsb = new StringBuilder();
-		for(String eid : eventsWithSources.keySet()) {
-			 if (eidsb.length() > 0) eidsb.append(',');
-			 eidsb.append(eid);
-		}
-		String eventIdsList = eidsb.toString();
+		// The events we have now are all probably in the future.
+		// Some came from pages' created events, which Facebook default to only future events
+		// The rest come from wall posts and we're only searching today's wall posts, so people probably aren't posting old ones
+
+		// TODO
+		// It's probably quicker here/less likely to timeout to check if the events already exist in the datastore before 
+		// making a fb api call.
 		
+		
+		// Get the list of events from eventsWithSources
+		// TODO This will fail with an empty list. (will it?)
+		String eventIdsList = arrayToCommaSeparatedList(eventsWithSources.keySet());
 		
 		
 		// Ask Facebook for their details
@@ -420,7 +603,10 @@ public class CollectorCron extends HttpServlet {
         	System.out.println(e.toString());
         	System.out.println(e.getCause());
         	
-            // ...
+        	Date after2 = new Date();
+        	out.println(e.toString());
+    		out.println("Time taken: " + (after2.getTime()-before.getTime()));
+            
         }
 		
 		Date after = new Date();
@@ -437,13 +623,12 @@ public class CollectorCron extends HttpServlet {
 		} catch(NullPointerException e) {
 			
 			System.out.println("NullPointerException");
-			
+			out.println("NullPointerException");
 			
 		}
 		// log.info("Upcoming events: " + eventsDetails.getData().length);
 		
 	}
-	
 	
 	
 	private void saveToDatastore(){
@@ -545,6 +730,7 @@ public class CollectorCron extends HttpServlet {
 		out.println("<pre>");
 
 		findEventsCreatedByIds();
+		//findEventsPostedByIds();
 		findEventsPostedByIdsAsync();
 		
 		out.println("Total events:    " + eventsWithSources.size());
