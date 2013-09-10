@@ -205,152 +205,6 @@ public class CollectorCron extends HttpServlet {
 	
 	
 
-	/**
-	 * Loop through the uids and make a graph call for each to get their stream
-	 * Read the stream items for event URLs in the messages and the attachments
-	 * 
-	 * We can't query for multiple source ids in stream as an app
-	 * http://stackoverflow.com/questions/12306564/accessing-stream-data-for-pages-using-application-access-token
-	 * 
-	 * 
-	 * @param ids
-	 */
-	private void findEventsPostedByIds(){
-
-		// Regex for extracting the url from wall posts
-		Pattern pattern = Pattern.compile("facebook.com/events/[0-9]*");
-		Matcher matcher;
-
-		int streamEvents = 0;
-
-		String graphcall = new String();
-		String json = new String();
-
-		FqlStream fqlStream = new FqlStream();
-
-
-		Date now = new Date();
-
-		Calendar calendar = GregorianCalendar.getInstance(); // creates a new calendar instance
-		calendar.setTime(now);   // assigns calendar to given date 
-		int minute = calendar.get(Calendar.MINUTE); 
-		int sixth = minute/10;
-		
-		log.info("sixth: " + sixth);
-		log.info("lower bound: " + ((sourceIdArray.length/6)*sixth) );
-		log.info("upper bound: " + ((sourceIdArray.length/6)*(sixth +1)));
-
-		int entry = 0;
-
-		
-		
-		DateTime today = new DateTime();
-		long unixTimeToday = (today.withTimeAtStartOfDay().getMillis()/1000);
-		
-		for(String uid : sourceIdArray) {
-
-			// Only process 1/6 of the list each time the cron runs. This is temporary until the async timeouts are fixed.
-			if( (entry >= (sourceIdArray.length/6)*sixth) && (entry <= ((sourceIdArray.length/6)*(sixth +1))) ) {
-			
-				
-				graphcall = fqlcallstub + streamCallStub + uid + "%20AND%20created_time%20%3E%20" + unixTimeToday + "&access_token=" + access_token;
-				// created_time > gives an oauth exception
-				// graphcall = fqlcallstub + streamCallStub + uid + "&access_token=" + access_token;
-
-				// System.out.println(graphcall);
-				
-				json = "";
-				try {
-					
-					// out.println(graphcall);
-
-					URL url = new URL(graphcall);
-					BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-					String line;
-
-					while ((line = reader.readLine()) != null) {
-						json += line;
-					}
-					reader.close();
-
-				} catch (MalformedURLException e) {
-					// System.out.println("catch (MalformedURLException e)");
-					// ...
-				} catch (IOException e) {
-					// System.out.println("catch (IOException e)");
-					// ...
-				}
-
-				//TODO
-				//check that we've actually got data before trying to process it
-
-				fqlStream = gson.fromJson(json, FqlStream.class);
-				// // System.out.println("json cast to FqlStream object");
-
-
-				// System.out.println("Wall posts found on " + uid +": "+ fqlStream.getData().length );
-				// out.println("Wall posts found on " + uid +": "+ fqlStream.getData().length );
-
-				if((fqlStream != null) && (fqlStream.getData() != null) && (fqlStream.getData().length>0)) {
-					for (FqlStreamItem item : fqlStream.getData()) {
-
-						// Read the message
-						matcher = pattern.matcher(item.getMessage());
-						while (matcher.find()) {
-
-							// If the event doesn't have a list yet...
-							if(!eventsWithSources.containsKey(matcher.group().substring(20))){
-								eventsWithSources.put(matcher.group().substring(20), new ArrayList<String>());
-							}
-							// If the event doesn't have this page recorded yet...
-							if(!eventsWithSources.get(matcher.group().substring(20)).contains(uid)){
-								eventsWithSources.get(matcher.group().substring(20)).add(uid);
-
-								streamEvents++;
-							}
-						}
-
-						// Read the atachments
-						if((item.getAttachment()!=null)&&(item.getAttachment().getMedia().length>0)){
-
-							for(FqlStreamItemAttachmentMediaItem mediaitem : item.getAttachment().getMedia()){
-
-								if((mediaitem.getHref()!=null)){
-
-									matcher = pattern.matcher(mediaitem.getHref());
-									while (matcher.find()) {
-										// If the event doesn't have a list yet...
-										if(!eventsWithSources.containsKey(matcher.group().substring(20))){
-											eventsWithSources.put(matcher.group().substring(20), new ArrayList<String>());
-										}
-										// If the event doesn't have this page recorded yet...
-										if(!eventsWithSources.get(matcher.group().substring(20)).contains(uid)){
-											eventsWithSources.get(matcher.group().substring(20)).add(uid);
-
-											streamEvents++;
-
-											log.info(uid + " : " + matcher.group().substring(20));
-										}
-									}	
-								}	
-							}
-						}
-					}
-				}
-
-			}
-			// System.out.println("Events found on " + uid + ": " + events);
-			// out.println("Events found on " + uid + ": " + events);
-			entry++;
-			// next pageId
-		
-		}
-
-		log.info("Posted events:   " + streamEvents);
-		out.println("Posted events:   " + streamEvents);
-		
-	}
-
 	
 	
 	/**
@@ -366,7 +220,7 @@ public class CollectorCron extends HttpServlet {
 	 */
 	private void findEventsPostedByIdsAsync(){
 
-		System.out.println("findEventsPostedByIdsAsync()");
+		// System.out.println("findEventsPostedByIdsAsync()");
 		
 		URLFetchService fetcher = URLFetchServiceFactory.getURLFetchService();
 
@@ -453,8 +307,10 @@ public class CollectorCron extends HttpServlet {
 			}
 		}
 
-		System.out.println("failures: " + failures + " of " + sourceIdArray.length);
-
+		if(failures>0){
+			log.info("failures: " + failures + " of " + sourceIdArray.length);
+		}
+		
 		// log.info("Posted events:   " + streamEventsTotal);
 		out.println("Posted events:   " + streamEventsTotal);
 
@@ -537,7 +393,6 @@ public class CollectorCron extends HttpServlet {
 		
 		if(streamEvents>0){
 			out.println("Posted events: " + uid + " : " + streamEvents);
-			log.info("Posted events: " + uid + " : " + streamEvents);
 		}
 		
 		streamEvents = streamEvents + streamEventsTotal;
@@ -549,7 +404,7 @@ public class CollectorCron extends HttpServlet {
 	 */
 	private void findEventDetails(){
 		
-		System.out.println("findEventDetails()");
+		//System.out.println("findEventDetails()");
 		
 		// The events we have now are all probably in the future.
 		// Some came from pages' created events, which Facebook default to only future events
@@ -578,7 +433,7 @@ public class CollectorCron extends HttpServlet {
 			// System.out.println("Getting details of all events");
             // TODO Make this easier on Facebook so it won't timeout.
             URL url = new URL(fqlcallstub + URLEncoder.encode(eventDetailsFql, "UTF-8") + "&access_token=" + access_token);
-            System.out.println(url);
+            //System.out.println(url);
             
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(25000);
@@ -611,7 +466,7 @@ public class CollectorCron extends HttpServlet {
 		
 		Date after = new Date();
 		
-		System.out.println("Time taken: " + (after.getTime()-before.getTime()));
+		//System.out.println("Time taken: " + (after.getTime()-before.getTime()));
 		
 		// GSON!
 		// Convert the json string to java object
