@@ -1,7 +1,7 @@
 package ie.sortons.events.client.widgets;
 
-import ie.sortons.events.client.EventOverlay;
-import ie.sortons.events.client.EventOverlay.FbPage;
+import ie.sortons.events.client.overlay.FbEventOverlay;
+import ie.sortons.events.client.overlay.FbEventOverlay.FbPage;
 import ie.sortons.gwtfbplus.client.newresources.Resources;
 import ie.sortons.gwtfbplus.client.widgets.Link;
 import ie.sortons.gwtfbplus.client.widgets.popups.ToolTipPanel;
@@ -39,7 +39,7 @@ public class EventWidget extends Composite {
 
 	
 	// TODO: Editor framework
-	public EventWidget(EventOverlay rowEvent) {
+	public EventWidget(FbEventOverlay rowEvent) {
 	
 		GWT.<Resources>create(Resources.class).newCss().ensureInjected();
 		

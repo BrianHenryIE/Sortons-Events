@@ -2,7 +2,7 @@ package ie.sortons.events.server.servlet;
 
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
-import ie.sortons.events.server.FbEvent;
+import ie.sortons.events.server.datastore.FbEvent;
 import ie.sortons.gwtfbplus.server.fql.FqlEvent;
 import ie.sortons.gwtfbplus.server.fql.FqlEvent.FqlEventItem;
 import ie.sortons.gwtfbplus.server.fql.FqlEventMember;
@@ -23,9 +23,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -464,9 +462,6 @@ public class CollectorCron extends HttpServlet {
             
         }
 		
-		Date after = new Date();
-		
-		//System.out.println("Time taken: " + (after.getTime()-before.getTime()));
 		
 		// GSON!
 		// Convert the json string to java object
@@ -488,7 +483,9 @@ public class CollectorCron extends HttpServlet {
 	
 	private void saveToDatastore(){
 
-		System.out.println("saveToDatastore()");
+		// TODO: only if there's something to save!
+		
+		// System.out.println("saveToDatastore()");
 		
 		// Save to Datastore
 		ObjectifyService.register(FbEvent.class);
@@ -522,7 +519,7 @@ public class CollectorCron extends HttpServlet {
 				// Batch this datastore call
 				
 				// Search the datastore for the event
-				FbEvent existingEvent = ofy().load().type(FbEvent.class).filter("eid", eid).first().get();
+				FbEvent existingEvent = ofy().load().type(FbEvent.class).filter("eid", eid).first().now();
 				
 				// TODO
 				// This could be null if the ds call fails. Deal with it.

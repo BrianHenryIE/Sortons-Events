@@ -1,6 +1,5 @@
 package ie.sortons.events.shared;
 
-import ie.sortons.events.server.FbPage;
 
 import java.util.HashMap;
 
