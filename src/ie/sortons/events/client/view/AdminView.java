@@ -1,16 +1,16 @@
 package ie.sortons.events.client.view;
 
+import ie.sortons.events.client.presenter.AdminPresenter;
+
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.HasClickHandlers;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Widget;
 
-public class AdminView extends Composite {
+public class AdminView extends Composite implements AdminPresenter.Display {
 
 	private static AdminViewUiBinder uiBinder = GWT
 			.create(AdminViewUiBinder.class);
@@ -30,9 +30,10 @@ public class AdminView extends Composite {
 		
 	}
 
-	@UiHandler("addPageButton")
-	void onClick(ClickEvent e) {
-		Window.alert("Hello!");
+	
+	@Override
+	public HasClickHandlers getAddButton() {
+		return addPageButton;
 	}
 
 

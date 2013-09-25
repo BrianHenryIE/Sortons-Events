@@ -1,7 +1,9 @@
 package ie.sortons.events.client;
 
-import ie.sortons.events.client.overlay.FbEventOverlay;
-import ie.sortons.events.client.widgets.EventWidget;
+import ie.sortons.events.client.presenter.AdminPresenter;
+import ie.sortons.events.client.view.AdminView;
+import ie.sortons.events.client.view.overlay.FbEventOverlay;
+import ie.sortons.events.client.view.widgets.EventWidget;
 import ie.sortons.events.shared.FbConfig;
 import ie.sortons.gwtfbplus.client.api.Canvas;
 import ie.sortons.gwtfbplus.client.newresources.Resources;
@@ -15,11 +17,8 @@ import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsonUtils;
 import com.google.gwt.event.shared.SimpleEventBus;
 import com.google.gwt.http.client.Request;
-import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
-import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
-import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.RootPanel;
@@ -30,11 +29,9 @@ import com.gwtfb.sdk.FBCore;
  * Entry point classes define <code>onModuleLoad()</code>.
  */
 public class Sortonsevents implements EntryPoint {
-
-	// Must be https for cloud endpoints
-	private static final String JSON_URL = "https://sortonsevents.appspot.com/_ah/api/upcomingEvents/v1/fbeventcollection/";
-	//private static final String JSON_URL = "http://testbed.org.org:8888/_ah/api/upcomingEvents/v1/fbeventcollection/";
-																	
+	
+	
+															
 	// Courtesy of gwtfb.com
 	private FBCore fbCore = GWT.create(FBCore.class);
 
@@ -62,6 +59,9 @@ public class Sortonsevents implements EntryPoint {
 
 		System.out.println("Entrypoint");
 
+		SimpleEventBus eventBus = new SimpleEventBus();
+		Model rpcService = new Model();
+		
 		// Nothing has been written yet.
 				
 		// Inject the GwtFB+ stylesheet which cascades Facebook styles through the document. 
@@ -86,6 +86,8 @@ public class Sortonsevents implements EntryPoint {
 			// We're inside a Page tab
 			System.out.println("Page ID: " + SignedRequest.parseSignedRequest().getPage().getId());
 
+
+
 			if (SignedRequest.parseSignedRequest().getPage().getAdmin() == true) {
 				// We're the page admin
 				//TODO some sort of security!
@@ -94,28 +96,15 @@ public class Sortonsevents implements EntryPoint {
 				// Show the login button
 				
 				// Show the admin panel
-				AdminPresenter adminPresenter = new AdminPresenter();
+				AdminPresenter adminPresenter = new AdminPresenter(eventBus, rpcService, new AdminView());
 				SimplePanel adminPanel = new SimplePanel();
-			    adminPresenter.setView(adminPanel);
+			    adminPresenter.go(adminPanel);
 
 				view.add(adminPanel);
 			}
-		}
-
-		
-		
-		
-		
-		
-		String url = JSON_URL + "1"; // SignedRequest.parseSignedRequest().getPage().getId()
-		url = URL.encode(url);
-
-		// Send request to server and catch any errors.
-		RequestBuilder builder = new RequestBuilder(RequestBuilder.GET, url);
-
-		try {
-			@SuppressWarnings("unused")
-			Request request = builder.sendRequest(null, new RequestCallback() {
+			
+			
+			rpcService.getEventsForPage(new RequestCallback() {
 				public void onError(Request request, Throwable exception) {
 					System.out.println("Couldn't retrieve JSON");
 				}
@@ -123,7 +112,7 @@ public class Sortonsevents implements EntryPoint {
 				public void onResponseReceived(Request request, Response response) {
 					if (200 == response.getStatusCode()) {
 
-//displayEvents(JsonUtils.safeEval(response.getText()));
+						displayEvents(JsonUtils.safeEval(response.getText()));
 						//System.out.println(response.getText());
 					} else {
 						System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ")");
@@ -132,9 +121,16 @@ public class Sortonsevents implements EntryPoint {
 					}
 				}
 			});
-		} catch (RequestException e) {
-			System.out.println("Couldn't retrieve JSON : " + e.getMessage());
+			
+			
 		}
+
+		
+		
+		
+		
+		
+		
 	}
 	
 

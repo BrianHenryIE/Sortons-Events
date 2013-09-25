@@ -1,4 +1,4 @@
-package ie.sortons.events.client.overlay;
+package ie.sortons.events.client.view.overlay;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;

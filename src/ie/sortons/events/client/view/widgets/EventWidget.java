@@ -1,7 +1,7 @@
-package ie.sortons.events.client.widgets;
+package ie.sortons.events.client.view.widgets;
 
-import ie.sortons.events.client.overlay.FbEventOverlay;
-import ie.sortons.events.client.overlay.FbEventOverlay.FbPage;
+import ie.sortons.events.client.view.overlay.FbEventOverlay;
+import ie.sortons.events.client.view.overlay.FbEventOverlay.FbPage;
 import ie.sortons.gwtfbplus.client.newresources.Resources;
 import ie.sortons.gwtfbplus.client.widgets.Link;
 import ie.sortons.gwtfbplus.client.widgets.popups.ToolTipPanel;

@@ -1,4 +1,4 @@
-package ie.sortons.events.client.overlay;
+package ie.sortons.events.client.view.overlay;
 
 import java.util.Date;
 import java.util.HashSet;
