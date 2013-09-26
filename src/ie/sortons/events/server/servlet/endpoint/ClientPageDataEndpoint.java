@@ -82,9 +82,20 @@ public class ClientPageDataEndpoint {
 	}
 		
 	@ApiMethod(name = "clientdata.addPage", httpMethod = "post")
-	public FbPage addPage(@Named("clientpageid") String clientpageid, FbPage newPage) {
-		
+	public FbPage addPage(@Named("clientpageid") String clientpageid, FbPage jsonPage) {
 		// TODO some sort of security
+		
+		// Get the FbPage associated with the page_id
+		
+		// TODO move out!
+		// The app's fb access token. Never to be used client-side.
+		FbPage newPage;
+		
+		if( jsonPage.getName()=="" || jsonPage.getPageUrl()=="" ){
+			newPage = getPageFromId(jsonPage.getPageId());
+		} else {
+			newPage = jsonPage;
+		}
 		
 		ClientPageData clientPageData = getClientPageData(clientpageid);
 		
@@ -98,11 +109,18 @@ public class ClientPageDataEndpoint {
 	
 
 	@ApiMethod(name = "clientdata.excludePage", httpMethod = "post")
-	public FbPage excludePage(@Named("clientpageid") String clientpageid, FbPage newPage) {
+	public FbPage excludePage(@Named("clientpageid") String clientpageid, FbPage jsonPage) {
 		
 		// TODO some sort of security
 		
 		ClientPageData clientPageData = getClientPageData(clientpageid);
+		
+		FbPage newPage;
+		if( jsonPage.getName()=="" || jsonPage.getPageUrl()=="" ){
+			newPage = getPageFromId(jsonPage.getPageId());
+		} else {
+			newPage = jsonPage;
+		}
 		
 		clientPageData.excludePage(newPage);
 		
@@ -112,5 +130,38 @@ public class ClientPageDataEndpoint {
 		return newPage;
 	}
 	
+	private FbPage getPageFromId(String pageId) {
+		// FQL call pieces
+		String fqlcallstub = "https://graph.facebook.com/fql?q=";
+		String fql = "SELECT page_id, name, page_url FROM page WHERE page_id = " + pageId;
+		String access_token = "470244209665073%7CrbUtPwZewT7KpkNinkKym5LDaHw";
+		
+		String json = "";
+		
+		try {
+			// System.out.println("Getting all page events: " + fql);
+            URL url = new URL(fqlcallstub + URLEncoder.encode(fql, "UTF-8") + "&access_token=" + access_token);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+            	json += line;           	
+            }
+            reader.close();
+
+        } catch (MalformedURLException e) {
+        	// System.out.println("catch (MalformedURLException e)");
+            // ...
+        } catch (IOException e) {
+        	// System.out.println("catch (IOException e)");
+            // ...
+        }
+		
+		Gson gson = new Gson();
+		// Convert the json string to java object
+		FbPage newPage = gson.fromJson(json, FbPage.class);
+		
+		return newPage;
+	}
 
 }

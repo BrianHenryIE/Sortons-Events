@@ -20,7 +20,7 @@ public class UpcomingEventsEndpoint {
 	public static ArrayList<FbEvent> upcomingEvents = new ArrayList<FbEvent>();
 	
 	
-	public List<FbEvent> getList(@Named("id") Integer id) {
+	public List<FbEvent> getList(@Named("id") String id) {
 			 
 		Date now = new Date();
 		ObjectifyService.register(FbEvent.class);
