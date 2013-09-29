@@ -2,9 +2,11 @@ package ie.sortons.events.client;
 
 import ie.sortons.events.client.appevent.PageLikesReceivedEvent;
 import ie.sortons.events.client.view.overlay.FbPageOverlay;
-import ie.sortons.events.shared.FbPage;
+import ie.sortons.events.shared.DsFbPage;
+import ie.sortons.events.shared.DsFbPageJsonizer;
 import ie.sortons.gwtfbplus.client.overlay.SignedRequest;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.event.shared.SimpleEventBus;
@@ -21,6 +23,9 @@ import com.gwtfb.sdk.FBCore;
 
 public class ClientModel {
 
+	// When it comes time to refactor:
+	// https://code.google.com/p/google-apis-client-generator/wiki/TableOfContents
+
 	private String currentPageId = SignedRequest.parseSignedRequest().getPage().getId();
 	private FBCore fbCore;
 	private SimpleEventBus eventBus;
@@ -28,6 +33,7 @@ public class ClientModel {
 
 	public ClientModel(SimpleEventBus eventBus) {
 		this.eventBus = eventBus;
+
 	}
 
 
@@ -76,8 +82,7 @@ public class ClientModel {
 	}
 
 
-
-	public void addPage(FbPage newPage, RequestCallback callback) {
+	public void addPage(DsFbPage newPage, RequestCallback callback) {
 
 		String addPageAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/addPage/"+currentPageId;
 		// String addPageAPI = "http://testbed.org.org:8888/_ah/api/clientdata/v1/addPage/"+currentPageId;
@@ -86,22 +91,19 @@ public class ClientModel {
 
 		addPageBuilder.setHeader("Content-Type", "application/json");
 
-
-		//TODO
-		String newPage2 = "{\n" +
-				"\"name\":\"UCD Cycling Club\",\n" +
-				"\"pageId\":\"282209558476898\",\n" +
-				"\"pageUrl\":\"http://www.facebook.com/pages/UCD-Cycling-Club/282209558476898\"\n" +
-				"}";
-
-
 		try {
 			@SuppressWarnings("unused")
-			Request request = addPageBuilder.sendRequest(newPage2, callback);
+			Request request = addPageBuilder.sendRequest(newPage.asJsonString(), callback);
 		} catch (RequestException e) {
 			System.out.println("Couldn't retrieve JSON : " + e.getMessage());
 		}
 
+	}
+	
+	public void graphCall(String graphPath, AsyncCallback<JavaScriptObject> callback) {
+		
+		fbCore.api(graphPath, callback);
+		
 	}
 
 	public void getPageLikes() {
@@ -128,7 +130,7 @@ public class ClientModel {
 				if (likes.length() > 0) {
 
 					eventBus.fireEvent(new PageLikesReceivedEvent(likes));
-					
+
 				} else {
 					// TODO
 					// reset the start time and get the friends who are attending
@@ -142,6 +144,9 @@ public class ClientModel {
 			}
 		});	
 	}
+
+
+
 
 
 }

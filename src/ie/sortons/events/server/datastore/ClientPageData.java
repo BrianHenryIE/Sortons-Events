@@ -1,6 +1,6 @@
 package ie.sortons.events.server.datastore;
 
-import ie.sortons.events.shared.FbPage;
+import ie.sortons.events.shared.DsFbPage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,24 +19,24 @@ public class ClientPageData {
 	private String clientPageId;
 
 	@Getter
-	private FbPage clientPage;
+	private DsFbPage clientPage;
 	
 	@Getter
-	private List<FbPage> includedPages = new ArrayList<FbPage>();
+	private List<DsFbPage> includedPages = new ArrayList<DsFbPage>();
 
 	@Getter
-	private List<FbPage> excludedPages = new ArrayList<FbPage>();
+	private List<DsFbPage> excludedPages = new ArrayList<DsFbPage>();
 
 	
 	public ClientPageData() { }
 	
 
-	public ClientPageData(FbPage clientPageDetails) {
+	public ClientPageData(DsFbPage clientPageDetails) {
 		this.clientPage = clientPageDetails;
 		this.clientPageId = clientPageDetails.getPageId();
 	}
 
-	public boolean addPage(FbPage page) {
+	public boolean addPage(DsFbPage page) {
 		boolean added = false;
 		if(!includedPages.contains(page)){
 			includedPages.add(page);
@@ -48,7 +48,7 @@ public class ClientPageData {
 		return added;
 	}
 	
-	public boolean excludePage(FbPage page) {
+	public boolean excludePage(DsFbPage page) {
 		
 		boolean excluded = false;
 		if(includedPages.contains(page)){

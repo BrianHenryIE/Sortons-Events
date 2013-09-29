@@ -2,16 +2,20 @@ package ie.sortons.events.client.view;
 
 import ie.sortons.events.client.presenter.AdminPresenter;
 import ie.sortons.events.client.view.overlay.FbPageOverlay;
+import ie.sortons.events.client.view.widgets.AdminPageItem;
 
 import java.util.List;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.JsArray;
 import com.google.gwt.event.dom.client.HasClickHandlers;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlowPanel;
+import com.google.gwt.user.client.ui.HasText;
+import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 
 public class AdminView extends Composite implements AdminPresenter.Display {
@@ -24,13 +28,19 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 
 	public AdminView() {
 		initWidget(uiBinder.createAndBindUi(this));
+		
+		addPageTextBox.getElement().setAttribute("placeholder", "Enter a Facebook Page URL or Page ID");
+		
 	}
 
 	@UiField
 	Button addPageButton;
 	
 	@UiField
-	FlowPanel suggestedPages;
+	TextBox addPageTextBox;
+	
+	@UiField
+	FlowPanel includedPages;
 
 	
 	@Override
@@ -46,8 +56,12 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 	}
 
 	@Override
-	public void setIncludedPages(List<FbPageOverlay> includedPagesList) {
-		// TODO Auto-generated method stub
+	public void setIncludedPages(JsArray<FbPageOverlay> includedPagesList) {
+				
+		
+		for(int i = 0; i < includedPagesList.length(); i++) { // FbPageOverlay page: includedPagesList) {
+			includedPages.add( new AdminPageItem( includedPagesList.get(i) ) );
+		}
 		
 	}
 
@@ -55,6 +69,11 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 	public void setIgnoredPages(List<FbPageOverlay> ignoredPagesList) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public HasText getNewPage() {
+		return addPageTextBox;
 	}
 
 }

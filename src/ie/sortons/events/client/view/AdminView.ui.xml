@@ -3,7 +3,7 @@
 	xmlns:g="urn:import:com.google.gwt.user.client.ui">
 	<ui:style>
 
-.tableCss {
+.settingsTable {
 	width: 100%;
 	
 	border-collapse: collapse;
@@ -14,39 +14,49 @@
 	border-bottom: 1px solid #aaa;
 }
 
-.tableRow {
+.settingsTable tr {
 	height: 34px;
 	border-top: 1px solid #e9e9e9;
 }
 
-.tableRow:hover {
+.settingsTable tr:hover {
 	background-color: #f7f7f7;
 }
 
-.title {
+.settingsTable th {
+	vertical-align: top;
+	padding-top: 10px;
 	font-weight: bold;
 	color: #333;
-	margin-left: 10px;
+	padding-left: 10px;
 }
 
+.settingsTable td {
+	padding: 10px;
+}
+
+
+.addPageTextBox {
+	width: 450px;
+}
 	</ui:style>
 	<g:HTMLPanel>
 
-	    <table class="{style.tableCss}" >
-	        <tr class="{style.tableRow}" >
-	   			<td></td> 
-	   			<td ><g:TextBox ui:field="addPageText"/> <g:Button ui:field="addPageButton">Add Page</g:Button></td>
+	    <table class="{style.settingsTable}" >
+	        <tr>
+	   			<th>Add Page:</th> 
+	   			<td ><g:TextBox ui:field="addPageTextBox" addStyleNames="{style.addPageTextBox}"/> <g:Button ui:field="addPageButton">Add Page</g:Button></td>
 	    	</tr>
-	    	<tr class="{style.tableRow}" >
-				<td><g:Label addStyleNames="{style.title}">Suggestions:</g:Label></td> 
+	    	<tr>
+				<th>Suggestions:</th> 
 				<td><g:FlowPanel ui:field="suggestedPages"/></td> 
 			</tr>
-			<tr class="{style.tableRow}" >
-				<td><g:Label addStyleNames="{style.title}">Included Pages:</g:Label></td> 
+			<tr>
+				<th>Included Pages:</th> 
 				<td><g:FlowPanel ui:field="includedPages"/></td> 
 			</tr>
-			<tr class="{style.tableRow}" >
-				<td><g:Label addStyleNames="{style.title}">Ignored Pages:</g:Label></td> 
+			<tr>
+				<th>Ignored Pages:</th> 
 				<td><g:FlowPanel ui:field="ignoredPages"/></td> 
 			</tr>
 		</table>
