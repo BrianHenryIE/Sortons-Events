@@ -3,10 +3,8 @@ package ie.sortons.events.client;
 import ie.sortons.events.client.appevent.PageLikesReceivedEvent;
 import ie.sortons.events.client.view.overlay.FbPageOverlay;
 import ie.sortons.events.shared.FbPage;
-import ie.sortons.events.shared.FbPageJsonizer;
 import ie.sortons.gwtfbplus.client.overlay.SignedRequest;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.event.shared.SimpleEventBus;
@@ -58,7 +56,7 @@ public class ClientDAO {
 			@SuppressWarnings("unused")
 			Request request = builder.sendRequest(null, callback);
 		} catch (RequestException e) {
-			System.out.println("Couldn't retrieve JSON : " + e.getMessage());
+			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :getEventsForPage()");
 		}
 	}
 
@@ -76,7 +74,7 @@ public class ClientDAO {
 			@SuppressWarnings("unused")
 			Request request = builder.sendRequest(null, callback);
 		} catch (RequestException e) {
-			System.out.println("catch (RequestException e) Couldn't retrieve JSON : " + e.getMessage() + " ap");
+			System.out.println("catch (RequestException e) Couldn't retrieve JSON : " + e.getMessage() + " getClientPageData()");
 		}
 
 	}
@@ -95,7 +93,7 @@ public class ClientDAO {
 			@SuppressWarnings("unused")
 			Request request = addPageBuilder.sendRequest(newPage.asJsonString(), callback);
 		} catch (RequestException e) {
-			System.out.println("Couldn't retrieve JSON : " + e.getMessage());
+			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :addPage()");
 		}
 
 	}

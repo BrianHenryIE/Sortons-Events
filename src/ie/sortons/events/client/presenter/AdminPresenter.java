@@ -2,7 +2,6 @@ package ie.sortons.events.client.presenter;
 
 
 import ie.sortons.events.client.ClientDAO;
-import ie.sortons.events.client.appevent.PageLikesReceivedEvent;
 import ie.sortons.events.client.view.overlay.ClientPageDataOverlay;
 import ie.sortons.events.client.view.overlay.FbGraphOverlay;
 import ie.sortons.events.client.view.overlay.FbPageOverlay;
@@ -12,7 +11,6 @@ import ie.sortons.events.shared.FbPage;
 import java.util.List;
 
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsonUtils;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -25,13 +23,12 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.HasText;
 import com.google.gwt.user.client.ui.HasWidgets;
 import com.google.gwt.user.client.ui.Widget;
-import com.google.web.bindery.event.shared.binder.EventHandler;
-import com.gwtfb.client.DataObject;
 
 
 public class AdminPresenter implements Presenter {
 
 	private final ClientDAO rpcService;
+	@SuppressWarnings("unused")
 	private final EventBus eventBus;
 	private final Display display;
 	private ClientPageData clientPageDetails;  
@@ -97,7 +94,7 @@ public class AdminPresenter implements Presenter {
 					displayClientData();
 
 				} else {
-					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") getClientPageData");
+					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.getClientPageData()");
 					//System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ") getClientPageData");
 					//System.out.println("Couldn't retrieve JSON (" + response.getText() + ")" getClientPageData);
 				}
@@ -216,7 +213,7 @@ public class AdminPresenter implements Presenter {
 
 
 				} else {
-					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ")");
+					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.addPage()");
 					//System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
 					//System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
 				}

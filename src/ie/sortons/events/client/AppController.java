@@ -28,6 +28,7 @@ public class AppController {
 
 	private ClientDAO rpcService;
 	private SimpleEventBus eventBus;
+	@SuppressWarnings("unused")
 	private HasWidgets container;
 
 	

@@ -93,4 +93,22 @@ public class ClientPageData {
 		return excluded;
 	}
 
+	public FbPage getPageById(String pageId){
+		FbPage thePage = null;		
+		for(FbPage page : includedPages){
+			if(page.getPageId() == pageId){
+				thePage = page;
+			}
+		}
+		return thePage;
+		
+	}
+
+	public List<String> getIncludedPageIds() {
+		List<String> pageIds = new ArrayList<String>();
+		for(FbPage page : includedPages){
+			pageIds.add(page.getPageId());
+		}
+		return pageIds;
+	}
 }

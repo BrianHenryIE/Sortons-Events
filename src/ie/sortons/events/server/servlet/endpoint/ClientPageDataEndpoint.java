@@ -29,7 +29,7 @@ public class ClientPageDataEndpoint {
 	}
 	
 	//TODO maybe use int and not String: more efficient!?
-	public static ClientPageData getClientPageData(@Named("clientid") String clientPageId) {
+	public ClientPageData getClientPageData(@Named("clientid") String clientPageId) {
 
 		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
 

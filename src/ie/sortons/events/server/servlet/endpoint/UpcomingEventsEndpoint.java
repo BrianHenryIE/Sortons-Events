@@ -3,7 +3,6 @@ package ie.sortons.events.server.servlet.endpoint;
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.server.datastore.FbEvent;
 import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.Data;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -22,27 +21,28 @@ public class UpcomingEventsEndpoint {
 	
 	{
 		ObjectifyService.register(FbEvent.class);
+		ObjectifyService.register(ClientPageData.class);
 	}
 	
-	public List<FbEvent> getList(@Named("id") String id) {
+	public List<FbEvent> getList(@Named("id") String clientPageId) {
 			 
 		Date now = new Date();
 		
 		
-		ClientPageData clientPage = ClientPageDataEndpoint.getClientPageData(id);
-		
-		clientPage.getIncludedPages()
-		
+		ClientPageData clientPage = ofy().load().type(ClientPageData.class).id(clientPageId).now();
+				
 		upcomingEvents.clear();
 		
-		List<FbEvent> dsEvents = ofy().load().type(FbEvent.class).filter("start_time_date >", getHoursAgoOrToday(12)).list();
-				
+		// List<FbEvent> dsEvents = ofy().load().type(FbEvent.class).filter("start_time_date >", getHoursAgoOrToday(12)).list();
+		List<FbEvent> dsEvents = ofy().load().type(FbEvent.class).filter("fbPagesStrings in", clientPage.getIncludedPageIds()).filter("start_time_date >", getHoursAgoOrToday(12)).list();
+		
+		
 		for(FbEvent datastoreEvent : dsEvents){
 			
 			if((datastoreEvent.getEnd_time_date()==null)||(datastoreEvent.getEnd_time_date().after(now))){
 				
-				for(String s : datastoreEvent.getFbPagesStrings()){
-					datastoreEvent.addFbPageDetail(Data.getUcdPages().get(s));
+				for(String pageId : datastoreEvent.getFbPagesStrings()){
+					datastoreEvent.addFbPageDetail(clientPage.getPageById(pageId));
 				}
 				
 				upcomingEvents.add(datastoreEvent);
