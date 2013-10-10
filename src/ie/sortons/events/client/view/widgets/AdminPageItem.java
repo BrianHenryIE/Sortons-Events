@@ -55,7 +55,7 @@ public class AdminPageItem extends Composite {
     	Link pageLink = new Link(page.getPageUrl(), pageImageToolTip);
     	pageLink.setTarget("_blank");
     	
-    	picPanel.add(pageImageToolTip);
+    	picPanel.add(pageLink);
 		
 	}
 
