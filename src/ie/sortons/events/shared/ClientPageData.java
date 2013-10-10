@@ -81,7 +81,7 @@ public class ClientPageData {
 
 		boolean excluded = false;
 		if(includedPages.contains(page)){
-			includedPages.remove(page.getPageId());
+			includedPages.remove(page);
 			excluded = true;
 		}
 		if(!ignoredPages.contains(page)){

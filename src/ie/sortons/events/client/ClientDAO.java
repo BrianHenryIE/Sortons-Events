@@ -98,6 +98,24 @@ public class ClientDAO {
 
 	}
 	
+	public void ignorePage(FbPage page, RequestCallback callback) {
+		
+		String ignorePageAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/ignorePage/"+currentPageId;
+
+		RequestBuilder ignorePageBuilder = new RequestBuilder(RequestBuilder.POST, ignorePageAPI);
+
+		ignorePageBuilder.setHeader("Content-Type", "application/json");
+
+		try {
+			@SuppressWarnings("unused")
+			Request request = ignorePageBuilder.sendRequest(page.asJsonString(), callback);
+		} catch (RequestException e) {
+			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :addPage()");
+		}
+
+	}
+	
+	
 	public void graphCall(String graphPath, AsyncCallback<JavaScriptObject> callback) {
 		
 		fbCore.api(graphPath, callback);
@@ -142,6 +160,9 @@ public class ClientDAO {
 			}
 		});	
 	}
+
+
+
 
 
 

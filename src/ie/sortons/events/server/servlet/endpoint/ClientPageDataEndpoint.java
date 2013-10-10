@@ -107,8 +107,8 @@ public class ClientPageDataEndpoint {
 	}
 	
 
-	@ApiMethod(name = "clientdata.excludePage", httpMethod = "post")
-	public FbPage excludePage(@Named("clientpageid") String clientpageid, FbPage jsonPage) {
+	@ApiMethod(name = "clientdata.ignorePage", httpMethod = "post")
+	public FbPage ignorePage(@Named("clientpageid") String clientpageid, FbPage jsonPage) {
 		
 		// TODO some sort of security
 		

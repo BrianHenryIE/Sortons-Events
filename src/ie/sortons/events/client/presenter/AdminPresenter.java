@@ -39,6 +39,8 @@ public class AdminPresenter implements Presenter {
 		void setIncludedPages(List<FbPage> includedList);
 		void setSuggestedPages(List<FbPage> suggestionsList);
 
+		void setPresenter(AdminPresenter presenter);
+		
 		Widget asWidget();
 	}
 
@@ -64,6 +66,8 @@ public class AdminPresenter implements Presenter {
 		this.rpcService = rpcService;
 		this.eventBus = eventBus;
 		this.display = view;		
+		
+		view.setPresenter(this);
 	}
 
 
@@ -90,7 +94,7 @@ public class AdminPresenter implements Presenter {
 					ClientPageDataOverlay clientPageDetailsJS = JsonUtils.safeEval(response.getText()).cast();
 
 					clientPageDetails = new ClientPageData(clientPageDetailsJS);
-					
+
 					displayClientData();
 
 				} else {
@@ -195,19 +199,9 @@ public class AdminPresenter implements Presenter {
 					FbPageOverlay pageJs = JsonUtils.safeEval(response.getText()).cast();
 
 					FbPage page = new FbPage(pageJs);
-					
-					System.out.println(page.getName() + " ... clientPageDetails.getIncludedPages().contains(page): " + clientPageDetails.getIncludedPages().contains(page));
 
-					if(!clientPageDetails.getIncludedPages().contains(page)){
-						clientPageDetails.addPage(page);
-					}
+					clientPageDetails.addPage(page);
 
-					if(clientPageDetails.getIgnoredPages().contains(page)){
-						clientPageDetails.ignorePage(page);
-					}
-
-					System.out.println(page.getName() + " ... clientPageDetails.getIncludedPages().contains(page): " + clientPageDetails.getIncludedPages().contains(page));
-					
 					// then update UI
 					displayClientData();
 
@@ -224,7 +218,38 @@ public class AdminPresenter implements Presenter {
 
 	}
 
+	public void ignorePage(FbPage page){
 
+		rpcService.ignorePage(page, new RequestCallback() {
+			public void onError(Request request, Throwable exception) {
+				System.out.println("Couldn't retrieve JSON: ignorePage/onError");
+			}
+
+			public void onResponseReceived(Request request, Response response) {
+				if (200 == response.getStatusCode()) {
+
+					FbPageOverlay pageJs = JsonUtils.safeEval(response.getText()).cast();
+
+					FbPage page = new FbPage(pageJs);
+
+					clientPageDetails.ignorePage(page);
+					
+					// then update UI
+					displayClientData();
+
+
+				} else {
+					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.addPage()");
+					//System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
+					//System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
+				}
+			}
+		});
+		
+		// TODO
+		// UI cleanup
+		
+	}
 
 
 	// Display as suggestions

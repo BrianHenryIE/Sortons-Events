@@ -25,6 +25,12 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 	interface AdminViewUiBinder extends UiBinder<Widget, AdminView> {
 	}
 
+	AdminPresenter presenter;
+	
+	public void setPresenter(AdminPresenter presenter){
+		this.presenter = presenter;
+	}
+	
 	public AdminView() {
 		initWidget(uiBinder.createAndBindUi(this));
 		
@@ -75,7 +81,7 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 		
 		for(FbPage page: pagesList) {
 			
-			AdminPageItem api = new AdminPageItem( page );
+			AdminPageItem api = new AdminPageItem(page, presenter);
 			
 			if(panel==includedPagesPanel){
 				api.removeAddButton();

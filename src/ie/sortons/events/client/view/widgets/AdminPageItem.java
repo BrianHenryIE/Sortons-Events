@@ -1,5 +1,6 @@
 package ie.sortons.events.client.view.widgets;
 
+import ie.sortons.events.client.presenter.AdminPresenter;
 import ie.sortons.events.shared.FbPage;
 import ie.sortons.gwtfbplus.client.newresources.Resources;
 import ie.sortons.gwtfbplus.client.widgets.Link;
@@ -7,6 +8,8 @@ import ie.sortons.gwtfbplus.client.widgets.popups.ToolTipPanel;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.Display;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Composite;
@@ -33,8 +36,9 @@ public class AdminPageItem extends Composite {
 
 	
 	private FbPage page;
+	private AdminPresenter presenter;
 	
-	public AdminPageItem(FbPage page) {
+	public AdminPageItem(final FbPage page, final AdminPresenter presenter) {
 		
 		initWidget(uiBinder.createAndBindUi(this));
 		
@@ -56,6 +60,13 @@ public class AdminPageItem extends Composite {
     	pageLink.setTarget("_blank");
     	
     	picPanel.add(pageLink);
+    	
+    	ignoreButton.addClickHandler(new ClickHandler(){
+
+			@Override
+			public void onClick(ClickEvent event) {
+				presenter.ignorePage(page);
+			}});
 		
 	}
 

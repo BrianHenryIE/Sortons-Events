@@ -107,7 +107,7 @@ public class CollectorCron extends HttpServlet {
 				}
 			}
 
-			String[] pagesArray = new String[sourceClientPagesStrings.size()];
+			pagesArray = new String[sourceClientPagesStrings.size()];
 		}
 		return pagesArray;
 
