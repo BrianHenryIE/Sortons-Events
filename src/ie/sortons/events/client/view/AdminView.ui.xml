@@ -49,15 +49,11 @@
 	    	</tr>
 	    	<tr>
 				<th>Suggestions:</th> 
-				<td><g:FlowPanel ui:field="suggestedPages"/></td> 
+				<td><g:FlowPanel ui:field="suggestedPagesPanel"/></td> 
 			</tr>
 			<tr>
 				<th>Included Pages:</th> 
-				<td><g:FlowPanel ui:field="includedPages"/></td> 
-			</tr>
-			<tr>
-				<th>Ignored Pages:</th> 
-				<td><g:FlowPanel ui:field="ignoredPages"/></td> 
+				<td><g:FlowPanel ui:field="includedPagesPanel"/></td> 
 			</tr>
 		</table>
 

@@ -2,6 +2,7 @@ package ie.sortons.events.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.event.shared.SimpleEventBus;
+import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 
 public class Sortonsevents implements EntryPoint {
@@ -11,9 +12,12 @@ public class Sortonsevents implements EntryPoint {
 		System.out.println("Entrypoint");
 
 		SimpleEventBus eventBus = new SimpleEventBus();
-		ClientModel rpcService = new ClientModel(eventBus);
+		ClientDAO rpcService = new ClientDAO(eventBus);
 		AppController appViewer = new AppController(rpcService, eventBus);
-		appViewer.go(RootPanel.get("gwt"));
+		
+		FlowPanel fp = new FlowPanel();
+		RootPanel.get("gwt").add(fp);
+		appViewer.go(fp);
 		
 	}
 	

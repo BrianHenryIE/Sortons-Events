@@ -1,12 +1,13 @@
 package ie.sortons.events.client.presenter;
 
 
-import ie.sortons.events.client.ClientModel;
+import ie.sortons.events.client.ClientDAO;
 import ie.sortons.events.client.appevent.PageLikesReceivedEvent;
 import ie.sortons.events.client.view.overlay.ClientPageDataOverlay;
 import ie.sortons.events.client.view.overlay.FbGraphOverlay;
 import ie.sortons.events.client.view.overlay.FbPageOverlay;
-import ie.sortons.events.shared.DsFbPage;
+import ie.sortons.events.shared.ClientPageData;
+import ie.sortons.events.shared.FbPage;
 
 import java.util.List;
 
@@ -30,21 +31,17 @@ import com.gwtfb.client.DataObject;
 
 public class AdminPresenter implements Presenter {
 
-	private final ClientModel rpcService;
+	private final ClientDAO rpcService;
 	private final EventBus eventBus;
-	private final Display display;  
+	private final Display display;
+	private ClientPageData clientPageDetails;  
 
 	public interface Display {
 		HasText getNewPage();
 		HasClickHandlers getAddButton();
-		void setIncludedPages(JsArray<FbPageOverlay> jsArray);
-		void setSuggestedPages(List<FbPageOverlay> suggestionsList);
-		void setIgnoredPages(List<FbPageOverlay> ignoredPagesList);
-		//HasClickHandlers getDeleteButton();
-		//HasClickHandlers getList();
+		void setIncludedPages(List<FbPage> includedList);
+		void setSuggestedPages(List<FbPage> suggestionsList);
 
-		//int getClickedRow(ClickEvent event);
-		//List<Integer> getSelectedRows();
 		Widget asWidget();
 	}
 
@@ -52,21 +49,21 @@ public class AdminPresenter implements Presenter {
 	//private static final MyEventBinder eventBinder = GWT.create(MyEventBinder.class);
 
 	public void bind() {
-		
+
 		display.getAddButton().addClickHandler(new ClickHandler() {   
 			public void onClick(ClickEvent event) {
 				processTextBox();
 			}
 		});
-		
+
 	}
 
 
 
 
-	public AdminPresenter(EventBus eventBus, final ClientModel rpcService, Display view) {
+	public AdminPresenter(EventBus eventBus, final ClientDAO rpcService, Display view) {
 		//eventBinder.bindEventHandlers(this, eventBus);
-		
+
 		this.rpcService = rpcService;
 		this.eventBus = eventBus;
 		this.display = view;		
@@ -92,8 +89,13 @@ public class AdminPresenter implements Presenter {
 
 			public void onResponseReceived(Request request, Response response) {
 				if (200 == response.getStatusCode()) {
-					displayClientData(JsonUtils.safeEval(response.getText()));
-					// System.out.println(response.getText());
+
+					ClientPageDataOverlay clientPageDetailsJS = JsonUtils.safeEval(response.getText()).cast();
+
+					clientPageDetails = new ClientPageData(clientPageDetailsJS);
+					
+					displayClientData();
+
 				} else {
 					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") getClientPageData");
 					//System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ") getClientPageData");
@@ -105,19 +107,22 @@ public class AdminPresenter implements Presenter {
 	}
 
 
-	protected void displayClientData(JavaScriptObject clientPageDetailsJSO) {
+	private void displayClientData(){
 
-		ClientPageDataOverlay clientPageDetails = clientPageDetailsJSO.cast();
-
-		System.out.println("returned: "+clientPageDetails.getClientPageId());
-		
 		display.setIncludedPages(clientPageDetails.getIncludedPages());
-		
 
 	}
 
 
-	
+	private void getSuggestions() {
+
+		// Get the page's likes
+		// filter out the included and ignored pages
+
+		// Get the included pages' likes.
+
+	}
+
 	private void processTextBox() {
 
 
@@ -127,57 +132,59 @@ public class AdminPresenter implements Presenter {
 		// send it to the server
 		// add it to the included pages list
 		// get the new page's likes to add to suggestions.
-		
-		
+
+
 		System.out.println("Button clicked");
 
 		// Get the text that has been entered and build the graph call
-		
+
 		String textEntered = display.getNewPage().getText();
 		String graphPath = "/";
-		
+
+		//TODO get rid of anything after ?
+		// http://www.facebook.com/ISS.UCD?ref=stream
+
 		// Sometimes http://www.facebook.com/pages/Randals-Rest-UCD/107542286070006		
 		if( textEntered.matches(".*facebook\\.com/pages/[^/]*/\\d*/?") ) {
-			
+
 			graphPath += textEntered.split(".*facebook\\.com/pages/[^/]*/")[1].replace("/", "");
-		
-		// Sometimes facebook.com/PageName
+
+			// Sometimes facebook.com/PageName
 		} else if( textEntered.matches(".*facebook\\.com/[^/]*/?") ) {
-			
+
 			graphPath += textEntered.split(".*facebook\\.com/")[1].replace("/", "");
-	
-		// Sometimes 107542286070006	
+
+			// Sometimes 107542286070006	
 		} else if( textEntered.matches("\\d*") ) {
-			
+
 			graphPath += textEntered;
-			
+
 		}
-		
+		// TODO
+		// Give feedback when it doesn't match
+
 		graphPath += "?fields=name,id,link";
 
-		
 		rpcService.graphCall(graphPath,  new AsyncCallback<JavaScriptObject>() {
 			public void onSuccess(JavaScriptObject response) {
 
 				FbGraphOverlay pageDetails = response.cast();
 
-				DsFbPage newPage = new DsFbPage(pageDetails.getName(), pageDetails.getLink(), pageDetails.getId());
-				
+				FbPage newPage = new FbPage(pageDetails.getName(), pageDetails.getLink(), pageDetails.getId());
+
 				addPage(newPage); 
-				
-				// now how to clean up after?
-				
+
 			}
 			@Override
 			public void onFailure(Throwable caught) {
 				// TODO Auto-generated method stub
 			}
 		});	
-		
+
 	}
-	
-	public void addPage(DsFbPage newPage){
-		
+
+	public void addPage(FbPage newPage){
+
 		rpcService.addPage(newPage, new RequestCallback() {
 			public void onError(Request request, Throwable exception) {
 				System.out.println("Couldn't retrieve JSON");
@@ -187,6 +194,27 @@ public class AdminPresenter implements Presenter {
 				if (200 == response.getStatusCode()) {
 
 					System.out.println(response.getText());
+
+					FbPageOverlay pageJs = JsonUtils.safeEval(response.getText()).cast();
+
+					FbPage page = new FbPage(pageJs);
+					
+					System.out.println(page.getName() + " ... clientPageDetails.getIncludedPages().contains(page): " + clientPageDetails.getIncludedPages().contains(page));
+
+					if(!clientPageDetails.getIncludedPages().contains(page)){
+						clientPageDetails.addPage(page);
+					}
+
+					if(clientPageDetails.getIgnoredPages().contains(page)){
+						clientPageDetails.ignorePage(page);
+					}
+
+					System.out.println(page.getName() + " ... clientPageDetails.getIncludedPages().contains(page): " + clientPageDetails.getIncludedPages().contains(page));
+					
+					// then update UI
+					displayClientData();
+
+
 				} else {
 					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ")");
 					//System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
@@ -194,9 +222,9 @@ public class AdminPresenter implements Presenter {
 				}
 			}
 		});
-		
-		
-		
+
+
+
 	}
 
 

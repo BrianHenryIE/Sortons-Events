@@ -9,6 +9,7 @@ import ie.sortons.gwtfbplus.client.overlay.SignedRequest;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.SimpleEventBus;
+import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HasWidgets;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.gwtfb.sdk.FBCore;
@@ -25,12 +26,12 @@ public class AppController {
 	private boolean cookie = true;
 
 
-	private ClientModel rpcService;
+	private ClientDAO rpcService;
 	private SimpleEventBus eventBus;
 	private HasWidgets container;
 
 	
-	public AppController(ClientModel rpcService, SimpleEventBus eventBus) {
+	public AppController(ClientDAO rpcService, SimpleEventBus eventBus) {
 		this.rpcService = rpcService;
 		this.eventBus = eventBus;
 		
@@ -81,8 +82,10 @@ public class AppController {
 			}
 
 
+			
 			PageEventsPresenter pep = new PageEventsPresenter(rpcService);
-			SimplePanel pepPanel = new SimplePanel();
+			
+			FlowPanel pepPanel = new FlowPanel(); // this was SimplePanel ... WHY? TODO!
 			pep.go(pepPanel);
 
 			container.add(pepPanel);

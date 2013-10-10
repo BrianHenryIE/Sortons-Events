@@ -43,6 +43,9 @@ public class EventWidget extends Composite {
 	
 		GWT.<Resources>create(Resources.class).newCss().ensureInjected();
 		
+		
+		
+		
 		initWidget(uiBinder.createAndBindUi(this));
 		
 		eventLink.setText(rowEvent.getName());

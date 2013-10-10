@@ -2,6 +2,7 @@ package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.server.datastore.FbEvent;
+import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.Data;
 
 import java.util.ArrayList;
@@ -19,11 +20,18 @@ public class UpcomingEventsEndpoint {
 	
 	public static ArrayList<FbEvent> upcomingEvents = new ArrayList<FbEvent>();
 	
+	{
+		ObjectifyService.register(FbEvent.class);
+	}
 	
 	public List<FbEvent> getList(@Named("id") String id) {
 			 
 		Date now = new Date();
-		ObjectifyService.register(FbEvent.class);
+		
+		
+		ClientPageData clientPage = ClientPageDataEndpoint.getClientPageData(id);
+		
+		clientPage.getIncludedPages()
 		
 		upcomingEvents.clear();
 		

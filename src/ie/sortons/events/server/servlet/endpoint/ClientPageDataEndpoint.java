@@ -1,9 +1,9 @@
 package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
-import ie.sortons.events.server.datastore.ClientPageData;
+import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.FbConfig;
-import ie.sortons.events.shared.DsFbPage;
+import ie.sortons.events.shared.FbPage;
 import ie.sortons.gwtfbplus.server.fql.FqlPage;
 import ie.sortons.gwtfbplus.server.fql.FqlPage.FqlPageItem;
 
@@ -29,7 +29,7 @@ public class ClientPageDataEndpoint {
 	}
 	
 	//TODO maybe use int and not String: more efficient!?
-	public ClientPageData getClientPageData(@Named("clientid") String clientPageId) {
+	public static ClientPageData getClientPageData(@Named("clientid") String clientPageId) {
 
 		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
 
@@ -66,10 +66,12 @@ public class ClientPageDataEndpoint {
 			// Convert the json string to java object
 			FqlPageItem fqlPage = gson.fromJson(json, FqlPage.class).getData()[0];
 						
-			DsFbPage clientPageDetails = new DsFbPage(fqlPage.getName(), fqlPage.getPageUrl(), clientPageId);
+			FbPage clientPageDetails = new FbPage(fqlPage.getName(), fqlPage.getPageUrl(), clientPageId);
 
+			
 			// Add new entry
 			ClientPageData newClient = new ClientPageData(clientPageDetails);
+						
 			ofy().save().entity(newClient).now();
 
 			return newClient;
@@ -82,14 +84,11 @@ public class ClientPageDataEndpoint {
 	}
 		
 	@ApiMethod(name = "clientdata.addPage", httpMethod = "post")
-	public DsFbPage addPage(@Named("clientpageid") String clientpageid, DsFbPage jsonPage) {
+	public FbPage addPage(@Named("clientpageid") String clientpageid, FbPage jsonPage) {
 		// TODO some sort of security
 		
-		// Get the FbPage associated with the page_id
-		
 		// TODO move out!
-		// The app's fb access token. Never to be used client-side.
-		DsFbPage newPage;
+		FbPage newPage;
 		
 		if( jsonPage.getName()=="" || jsonPage.getPageUrl()=="" ){
 			newPage = getPageFromId(jsonPage.getPageId());
@@ -109,20 +108,20 @@ public class ClientPageDataEndpoint {
 	
 
 	@ApiMethod(name = "clientdata.excludePage", httpMethod = "post")
-	public DsFbPage excludePage(@Named("clientpageid") String clientpageid, DsFbPage jsonPage) {
+	public FbPage excludePage(@Named("clientpageid") String clientpageid, FbPage jsonPage) {
 		
 		// TODO some sort of security
 		
 		ClientPageData clientPageData = getClientPageData(clientpageid);
 		
-		DsFbPage newPage;
+		FbPage newPage;
 		if( jsonPage.getName()=="" || jsonPage.getPageUrl()=="" ){
 			newPage = getPageFromId(jsonPage.getPageId());
 		} else {
 			newPage = jsonPage;
 		}
 		
-		clientPageData.excludePage(newPage);
+		clientPageData.ignorePage(newPage);
 		
 		ofy().save().entity(clientPageData).now();
 		
@@ -130,7 +129,7 @@ public class ClientPageDataEndpoint {
 		return newPage;
 	}
 	
-	private DsFbPage getPageFromId(String pageId) {
+	private FbPage getPageFromId(String pageId) {
 		// FQL call pieces
 		String fqlcallstub = "https://graph.facebook.com/fql?q=";
 		String fql = "SELECT page_id, name, page_url FROM page WHERE page_id = " + pageId;
@@ -159,7 +158,7 @@ public class ClientPageDataEndpoint {
 		
 		Gson gson = new Gson();
 		// Convert the json string to java object
-		DsFbPage newPage = gson.fromJson(json, DsFbPage.class);
+		FbPage newPage = gson.fromJson(json, FbPage.class);
 		
 		return newPage;
 	}

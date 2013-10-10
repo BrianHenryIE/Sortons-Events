@@ -1,6 +1,6 @@
 package ie.sortons.events.client.presenter;
 
-import ie.sortons.events.client.ClientModel;
+import ie.sortons.events.client.ClientDAO;
 import ie.sortons.events.client.view.overlay.FbEventOverlay;
 import ie.sortons.events.client.view.widgets.EventWidget;
 import ie.sortons.gwtfbplus.client.api.Canvas;
@@ -13,12 +13,13 @@ import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.user.client.Timer;
+import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HasWidgets;
 
 public class PageEventsPresenter implements Presenter {
 
-	private ClientModel rpcService;
-	private HasWidgets container;
+	private ClientDAO rpcService;
+	private FlowPanel container;
 	
 
 	public void bind(){
@@ -27,7 +28,7 @@ public class PageEventsPresenter implements Presenter {
 	}
 
 
-	public PageEventsPresenter(ClientModel rpcService) {
+	public PageEventsPresenter(ClientDAO rpcService) {
 		this.rpcService = rpcService;
 	}
 
@@ -82,7 +83,7 @@ public class PageEventsPresenter implements Presenter {
 
 	@Override
 	public void go(HasWidgets container) {
-		this.container = container;
+		this.container = (FlowPanel) container;
 
 		getEvents();
 	}

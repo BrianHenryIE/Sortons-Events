@@ -1,7 +1,7 @@
 package ie.sortons.events.server.datastore;
 
 
-import ie.sortons.events.shared.DsFbPage;
+import ie.sortons.events.shared.FbPage;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -43,9 +43,9 @@ public class FbEvent {
 	 @AlsoLoad("fbPages") private List<String> fbPagesStrings = new ArrayList<String>();
 	 
 	 @Getter
-	 private List<DsFbPage> fbPagesDetail = new ArrayList<DsFbPage>();
+	 private List<FbPage> fbPagesDetail = new ArrayList<FbPage>();
 	 
-	 public void addFbPageDetail(DsFbPage fbPage){
+	 public void addFbPageDetail(FbPage fbPage){
 		 if(!fbPagesDetail.contains(fbPage)){
 			 fbPagesDetail.add(fbPage);
 		 }
