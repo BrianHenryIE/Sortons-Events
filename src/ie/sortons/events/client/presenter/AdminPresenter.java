@@ -150,7 +150,7 @@ public class AdminPresenter implements Presenter {
 
 			graphPath += textEntered.split(".*facebook\\.com/pages/[^/]*/")[1].replace("/", "");
 
-			// Sometimes facebook.com/PageName
+			// Sometimes http://www.facebook.com/UCD.Alumni?ref=stream&hc_location=stream
 		} else if( textEntered.matches(".*facebook\\.com/[^/]*/?") ) {
 
 			graphPath += textEntered.split(".*facebook\\.com/")[1].replace("/", "");
@@ -174,6 +174,11 @@ public class AdminPresenter implements Presenter {
 				FbPage newPage = new FbPage(pageDetails.getName(), pageDetails.getLink(), pageDetails.getId());
 
 				addPage(newPage); 
+				
+				
+				// TODO
+				// This should only empty when it's successful
+				display.getNewPage().setText("");
 
 			}
 			@Override

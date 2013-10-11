@@ -34,51 +34,58 @@ public class AdminPageItem extends Composite {
 	@UiField
 	Image ignoreButton;
 
-	
+
 	private FbPage page;
 	private AdminPresenter presenter;
-	
+
 	public AdminPageItem(final FbPage page, final AdminPresenter presenter) {
-		
+
 		initWidget(uiBinder.createAndBindUi(this));
-		
+
 		Resources.INSTANCE.css().ensureInjected(); 
-		
+
 		addButton.setResource(Resources.INSTANCE.greenPlus());
 		ignoreButton.setResource(Resources.INSTANCE.redX());
 
 		this.page = page;
-		
-    	Image pageImage = new Image("//graph.facebook.com/" + page.getPageId() + "/picture?type=square");
-    	pageImage.setHeight("50px");
-    	pageImage.setWidth("50px");
-    	
-    	ToolTipPanel pageImageToolTip = new ToolTipPanel(page.getName(), pageImage);
-    	pageImageToolTip.getElement().getStyle().setDisplay(Display.INLINE_BLOCK);
-    	
-    	Link pageLink = new Link(page.getPageUrl(), pageImageToolTip);
-    	pageLink.setTarget("_blank");
-    	
-    	picPanel.add(pageLink);
-    	
-    	ignoreButton.addClickHandler(new ClickHandler(){
 
+		Image pageImage = new Image("//graph.facebook.com/" + page.getPageId() + "/picture?type=square");
+		pageImage.setHeight("50px");
+		pageImage.setWidth("50px");
+
+		ToolTipPanel pageImageToolTip = new ToolTipPanel(page.getName(), pageImage);
+		pageImageToolTip.getElement().getStyle().setDisplay(Display.INLINE_BLOCK);
+
+		Link pageLink = new Link(page.getPageUrl(), pageImageToolTip);
+		pageLink.setTarget("_blank");
+
+		picPanel.add(pageLink);
+
+		ignoreButton.addClickHandler(new ClickHandler(){
 			@Override
 			public void onClick(ClickEvent event) {
 				presenter.ignorePage(page);
-			}});
+			}
+		});
 		
+		addButton.addClickHandler(new ClickHandler(){
+			@Override
+			public void onClick(ClickEvent event) {
+				presenter.addPage(page);
+			}
+		});
+
 	}
 
 	public void removeAddButton() {
 		addButton.setVisible(false);
 	}
-	
+
 	public void removeIgnoreButton() {
 		ignoreButton.setVisible(false);
 	}
-	
-	
+
+
 	public FbPage getPage(){
 		return page;
 	}

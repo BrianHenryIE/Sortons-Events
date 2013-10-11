@@ -6,7 +6,7 @@
 			position: relative;
 			padding: 5px;
 			display: inline-block;
-			margin-right: 10px;
+			margin-right: 7px;
 			margin-bottom: 10px;
 		}
 

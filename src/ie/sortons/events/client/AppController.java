@@ -38,7 +38,7 @@ public class AppController {
 		
 
 		// Inject the GwtFB+ stylesheet which cascades Facebook styles through the document. 
-		GWT.<Resources>create(Resources.class).newCss().ensureInjected();
+		GWT.<Resources>create(Resources.class).css().ensureInjected();
 
 		// Initialize the Facebook API
 		fbCore.init(APPID, status, cookie, xfbml);
@@ -66,7 +66,6 @@ public class AppController {
 			System.out.println("Page ID: " + SignedRequest.parseSignedRequest().getPage().getId());
 
 
-
 			if (SignedRequest.parseSignedRequest().getPage().getAdmin() == true) {
 				// We're the page admin
 				//TODO some sort of security!
@@ -81,8 +80,6 @@ public class AppController {
 
 				container.add(adminPanel);
 			}
-
-
 			
 			PageEventsPresenter pep = new PageEventsPresenter(rpcService);
 			

@@ -1,8 +1,8 @@
 package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
-import ie.sortons.events.server.datastore.FbEvent;
 import ie.sortons.events.shared.ClientPageData;
+import ie.sortons.events.shared.FbEvent;
 
 import java.util.ArrayList;
 import java.util.Calendar;

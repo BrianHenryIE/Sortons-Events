@@ -2,8 +2,8 @@ package ie.sortons.events.server.servlet;
 
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
-import ie.sortons.events.server.datastore.FbEvent;
 import ie.sortons.events.shared.ClientPageData;
+import ie.sortons.events.shared.FbEvent;
 import ie.sortons.gwtfbplus.server.fql.FqlEvent;
 import ie.sortons.gwtfbplus.server.fql.FqlEvent.FqlEventItem;
 import ie.sortons.gwtfbplus.server.fql.FqlEventMember;
@@ -30,7 +30,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
@@ -47,10 +46,13 @@ import org.joda.time.DateTime;
 import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
+import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
 import com.googlecode.objectify.ObjectifyService;
 
+import com.googlecode.objectify.cmd.Query;
 
 /**
  * Servlet which polls Facebook for events created by a list of ids
@@ -65,9 +67,6 @@ import com.googlecode.objectify.ObjectifyService;
 @SuppressWarnings("serial")
 public class CollectorCron extends HttpServlet {
 
-	{
-		ObjectifyService.register(ClientPageData.class);
-	}
 
 	// For logging
 	PrintWriter out;
@@ -80,8 +79,9 @@ public class CollectorCron extends HttpServlet {
 	private String fqlcallstub = "https://graph.facebook.com/fql?q=";
 	private String streamCallStub = "SELECT%20source_id%2C%20post_id%2C%20actor_id%2C%20target_id%2C%20message%2C%20attachment.media%20FROM%20stream%20WHERE%20source_id%20%3D%20"; // &access_token="+access_token;
 
+	
 	// Map<EventID, List<Pages event found from>> 
-	private Map<String, ArrayList<String>> eventsWithSources = null;
+	private Map<String, ArrayList<String>> eventsWithSources;
 
 	// Gson object to contain the details of events
 	private FqlEvent eventsDetails;
@@ -92,70 +92,63 @@ public class CollectorCron extends HttpServlet {
 	private Gson gson = new GsonBuilder().registerTypeAdapter(FqlStreamItemAttachment.class, new FqlStreamItemAttachmentAdapter()).create();
 
 
-	private List<String> sourceClientPagesStrings;
+	public void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 
-	private String[] pagesArray= null;
+		// Start the list fresh because if the servlet is still alive from the 
+		// last run, it will still have that data.
+		eventsWithSources = new HashMap<String, ArrayList<String>>();
 
-	private String[] getSourceIdsArray(){ 
+		String[] sourceIds = getSourceIdsFromDatastore();
+		
+		out = response.getWriter();
 
-		if(pagesArray==null){
-			List<ClientPageData> sourceClientPages = ofy().load().type(ClientPageData.class).list();
+		out.println("<pre>");
 
-			for(ClientPageData client : sourceClientPages){
-				for(String page : client.getIncludedPageIds()) {
-					sourceClientPagesStrings.add(page);
-				}
+		findEventsCreatedByIds(sourceIds);
+
+		findEventsPostedByIdsAsync(sourceIds);
+
+		findEventDetails();
+
+		saveToDatastore();
+
+		out.println("</pre>");
+		out.flush();
+	}
+
+	
+	public void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+
+		// In case doPost is called, somehow.
+		doGet(request, response);
+
+	}
+	
+	
+	private String[] getSourceIdsFromDatastore(){ 
+
+		
+		ArrayList<String> sourceClientPagesStrings = new ArrayList<String>();
+	
+		ObjectifyService.register(ClientPageData.class);
+
+		Query<ClientPageData> sourceClientPages = ofy().load().type(ClientPageData.class);
+		
+		for(ClientPageData client : sourceClientPages){
+			
+			for(String pageId : client.getIncludedPageIds()) {
+				sourceClientPagesStrings.add(pageId);
 			}
-
-			pagesArray = new String[sourceClientPagesStrings.size()];
 		}
+
+		String[] pagesArray = new String[sourceClientPagesStrings.size()];
+		
+		pagesArray = sourceClientPagesStrings.toArray(new String[sourceClientPagesStrings.size()]);
+		
 		return pagesArray;
 
-	}
-
-	/**
-	 * Takes and array of Strings {"abc", "def", "ghi"}
-	 * and returns a String "abc, def, ghi"
-	 * 
-	 * @param strings
-	 * @return
-	 */
-	private String arrayToCommaSeparatedList(String[] strings) {
-
-		// Take the array of page ids and make it into a regular string
-		StringBuilder sb = new StringBuilder();
-		for (String id : strings) { 
-			if (sb.length() > 0) sb.append(',');
-			sb.append(id);
-		}
-		return sb.toString();
-	}
-
-	private String arrayToCommaSeparatedList(Set<String> keySet) {
-		StringBuilder sb = new StringBuilder();
-		for (String id : keySet) { 
-			if (sb.length() > 0) sb.append(',');
-			sb.append(id);
-		}
-		return sb.toString();
-	}
-
-
-
-	// TODO
-	// This method should be called by the constructor and populate the field once!
-	// And shouldn't be in here at all
-	private String startTime() {
-		// TODO
-		// Set date to search from to yesterday? - No, that's dealt with on the display side.
-		// Use Jodatime?
-		SimpleDateFormat ISO8601FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-		String startTime = ISO8601FORMAT.format(new Date());
-		//convert YYYYMMDDTHH:mm:ss+HH00 into YYYYMMDDTHH:mm:ss+HH:00
-		//- note the added colon for the Timezone
-		startTime = startTime.substring(0, startTime.length()-2) + ":" + startTime.substring(startTime.length()-2);
-
-		return startTime;
 	}
 
 
@@ -163,18 +156,17 @@ public class CollectorCron extends HttpServlet {
 	 * Even using the app access token, we can query all ids at once. We're querying
 	 * event_member table. As a page cannot be invited to an event, if it is a member
 	 * then it was the creator. 
-	 * For profiles, they are members of events once invited which doesn't suit us.
 	 * 
 	 * If a page creates an event rsvp_status = ""
-	 * If a profile does, odds are it will be 
+	 * If a profile does, odds are it will be attending
 	 * 
 	 * @param ids
 	 */
-	private void findEventsCreatedByIds(){
+	private void findEventsCreatedByIds(String[] sourceIds){
 
 		String json = "";
 
-		String fql = "SELECT uid, eid, rsvp_status FROM event_member WHERE start_time > '" + startTime() + "' AND uid IN ("+arrayToCommaSeparatedList(getSourceIdsArray())+")";
+		String fql = "SELECT uid, eid, rsvp_status FROM event_member WHERE start_time > '" + startTime() + "' AND uid IN (" + Joiner.on(",").join(sourceIds) + ")";
 
 		try {
 			// System.out.println("Getting all page events: " + fql);
@@ -218,17 +210,13 @@ public class CollectorCron extends HttpServlet {
 					eventsWithSources.get(item.getEid()).add(item.getUid());
 				}
 			}
+		} else {
+			System.out.println("null in findEventsCreatedByIds(). Json:");
+			System.out.println(json);
 		}
-
-
-
 	}
 
-
-
-
-
-
+	
 	/**
 	 * Loop through the uids and make a graph call for each to get their stream
 	 * Read the stream items for event URLs in the messages and the attachments
@@ -240,73 +228,31 @@ public class CollectorCron extends HttpServlet {
 	 * @param ids
 	 * @see http://ikaisays.com/2010/06/29/using-asynchronous-urlfetch-on-java-app-engine/
 	 */
-	private void findEventsPostedByIdsAsync(){
+	private void findEventsPostedByIdsAsync(String[] sourceIds){
 
 		// System.out.println("findEventsPostedByIdsAsync()");
 
 		URLFetchService fetcher = URLFetchServiceFactory.getURLFetchService();
-
 
 		Map<String, Future<HTTPResponse>> asyncResponses = new HashMap<String, Future<HTTPResponse>>();
 
 		DateTime today = new DateTime();
 		long unixTimeToday = (today.withTimeAtStartOfDay().getMillis()/1000);
 
-
-		for(String uid : getSourceIdsArray()) {
-
-			// graphcall = fqlcallstub + streamCallStub + uid + "%20AND%20created_time%20%3E%20" + unixTimeInPast(1) + "&access_token=" + access_token;
+		for(String uid : sourceIds) {
 
 			try {
 
-				//URL graphcall = new URL(fqlcallstub + streamCallStub + uid + "&access_token=" + access_token);
 				URL graphcall = new URL(fqlcallstub + streamCallStub + uid + "%20AND%20created_time%20%3E%20" + unixTimeToday + "&access_token=" + access_token);
-
-				/*	            
-	            HttpURLConnection connection = null;
-				try {
-					connection = (HttpURLConnection) graphcall.openConnection();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-	            connection.setConnectTimeout(25000);
-	            connection.setReadTimeout(25000);
-	            try {
-					connection.connect();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-/*
-	            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-
-	            String line;
-	            while ((line = reader.readLine()) != null) {
-	            	json += line;           	
-	            }
-	            reader.close();
-	            //*/
-
 
 				Future<HTTPResponse> responseFuture = fetcher.fetchAsync(graphcall);
 				asyncResponses.put(uid, responseFuture);
 
 			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
 		}
-
-		/* Didn't help
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		 */
 
 		int failures = 0;
 
@@ -315,31 +261,25 @@ public class CollectorCron extends HttpServlet {
 			Map.Entry<String, Future<HTTPResponse>> future = (Map.Entry<String, Future<HTTPResponse>>)it.next();
 
 			try {
-				HTTPResponse response = future.getValue().get();
-				// it.remove(); 
+				HTTPResponse response = future.getValue().get(); 
 				processResponse(new String(response.getContent()), future.getKey());
-				// System.out.println("processResponse " + future.getKey());
 			} catch (InterruptedException e) {
-				//System.out.println("InterruptedException " + future.getKey());
-				// System.out.println(e.toString());
+				System.out.println("InterruptedException " + future.getKey());
+				System.out.println(e.toString());
 				failures++;
 			} catch (ExecutionException e) {
-				//System.out.println(future.getKey() + " -- " + e.toString());
+				System.out.println(future.getKey() + " -- " + e.toString());
 				failures++;
 			}
 		}
 
 		if(failures>0){
-			log.info("failures: " + failures + " of " + getSourceIdsArray().length);
+			log.info("failures: " + failures + " of " + sourceIds.length);
 		}
-
-		// log.info("Posted events:   " + streamEventsTotal);
-		out.println("Posted events:   " + streamEventsTotal);
 
 	}
 
 
-	private int streamEventsTotal = 0;
 
 	private void processResponse(String json, String uid) {
 
@@ -351,7 +291,6 @@ public class CollectorCron extends HttpServlet {
 		Matcher matcher;
 
 		int streamEvents = 0;
-
 
 		//TODO
 		//check that we've actually got data before trying to process it
@@ -411,16 +350,14 @@ public class CollectorCron extends HttpServlet {
 		// System.out.println("Events found on " + uid + ": " + events);
 		// out.println("Events found on " + uid + ": " + events);
 
-
-
 		if(streamEvents>0){
 			out.println("Posted events: " + uid + " : " + streamEvents);
 		}
 
-		streamEvents = streamEvents + streamEventsTotal;
 
 	}
 
+	
 	/**
 	 * Takes the list of event ids found on or by pages and gets their name, location etc.
 	 */
@@ -428,6 +365,8 @@ public class CollectorCron extends HttpServlet {
 
 		//System.out.println("findEventDetails()");
 
+		out.println("Total events:    " + eventsWithSources.size());
+		
 		// The events we have now are all probably in the future.
 		// Some came from pages' created events, which Facebook default to only future events
 		// The rest come from wall posts and we're only searching today's wall posts, so people probably aren't posting old ones
@@ -439,7 +378,7 @@ public class CollectorCron extends HttpServlet {
 
 		// Get the list of events from eventsWithSources
 		// TODO This will fail with an empty list. (will it?)
-		String eventIdsList = arrayToCommaSeparatedList(eventsWithSources.keySet());
+		String eventIdsList = Joiner.on(",").join(eventsWithSources.keySet());
 
 
 		// Ask Facebook for their details
@@ -486,11 +425,7 @@ public class CollectorCron extends HttpServlet {
 
 		}
 
-
-		// GSON!
-		// Convert the json string to java object
 		eventsDetails = gson.fromJson(json, FqlEvent.class);
-
 
 		try {
 			out.println("Upcoming events: " + eventsDetails.getData().length);
@@ -588,51 +523,18 @@ public class CollectorCron extends HttpServlet {
 
 
 
-	public void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-
-		// System.out.println("Servlet execution... GET");
-
-
+	private String startTime() {
 		// TODO
-		// Not sure what was going on but it seemed the total events was accumulating. I guess
-		// the servlet was staying alive and just rerunning?! 
-		eventsWithSources = null;
-		eventsWithSources = new HashMap<String, ArrayList<String>>();
+		// Set date to search from to yesterday? - No, that's dealt with on the display side.
+		// Use Jodatime?
+		SimpleDateFormat ISO8601FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+		String startTime = ISO8601FORMAT.format(new Date());
+		//convert YYYYMMDDTHH:mm:ss+HH00 into YYYYMMDDTHH:mm:ss+HH:00
+		//- note the added colon for the Timezone
+		startTime = startTime.substring(0, startTime.length()-2) + ":" + startTime.substring(startTime.length()-2);
 
-
-		out = response.getWriter();
-
-		out.println("<pre>");
-
-		findEventsCreatedByIds();
-		//findEventsPostedByIds();
-		findEventsPostedByIdsAsync();
-
-		out.println("Total events:    " + eventsWithSources.size());
-		// log.info("Total events:    " + eventsWithSources.size());
-
-		// Now we have the ids of all events posted to the wall and all events created by the pages.
-
-		findEventDetails();
-		saveToDatastore();
-
-
-
-		out.println("</pre>");
-		out.flush();
+		return startTime;
 	}
 
 
-
-
-	public void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-
-		// System.out.println("Servlet execution... POST");
-
-		// In case doPost is called, somehow.
-		doGet(request, response);
-
-	}
 }

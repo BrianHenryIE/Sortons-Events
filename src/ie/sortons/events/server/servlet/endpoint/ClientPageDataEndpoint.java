@@ -102,6 +102,9 @@ public class ClientPageDataEndpoint {
 		
 		ofy().save().entity(clientPageData).now();
 		
+		// TODO
+		// Check for events on this page immediately
+		
 		// TODO return an error, if appropriate
 		return newPage;
 	}

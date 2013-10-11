@@ -41,7 +41,7 @@ public class EventWidget extends Composite {
 	// TODO: Editor framework
 	public EventWidget(FbEventOverlay rowEvent) {
 	
-		GWT.<Resources>create(Resources.class).newCss().ensureInjected();
+		GWT.<Resources>create(Resources.class).css().ensureInjected();
 		
 		
 		

@@ -1,6 +1,8 @@
 <!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
 <ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
 	xmlns:g="urn:import:com.google.gwt.user.client.ui">
+	<ui:with field='gwtfbplus' type='ie.sortons.gwtfbplus.client.newresources.Resources'/>
+    
 	<ui:style>
 
 .settingsTable {
@@ -45,7 +47,7 @@
 	    <table class="{style.settingsTable}" >
 	        <tr>
 	   			<th>Add Page:</th> 
-	   			<td ><g:TextBox ui:field="addPageTextBox" addStyleNames="{style.addPageTextBox}"/> <g:Button ui:field="addPageButton">Add Page</g:Button></td>
+	   			<td ><g:TextBox ui:field="addPageTextBox" addStyleNames="{style.addPageTextBox}"/> <g:Button ui:field="addPageButton" addStyleNames="{gwtfbplus.css.blueButton}" >Add Page</g:Button></td>
 	    	</tr>
 	    	<tr>
 				<th>Suggestions:</th> 
