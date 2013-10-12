@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
@@ -79,7 +78,6 @@ public class CollectorCron extends HttpServlet {
 	private String fqlcallstub = "https://graph.facebook.com/fql?q=";
 	private String streamCallStub = "SELECT%20source_id%2C%20post_id%2C%20actor_id%2C%20target_id%2C%20message%2C%20attachment.media%20FROM%20stream%20WHERE%20source_id%20%3D%20"; // &access_token="+access_token;
 
-	
 	// Map<EventID, List<Pages event found from>> 
 	private Map<String, ArrayList<String>> eventsWithSources;
 
@@ -123,13 +121,11 @@ public class CollectorCron extends HttpServlet {
 
 		// In case doPost is called, somehow.
 		doGet(request, response);
-
 	}
 	
 	
 	private String[] getSourceIdsFromDatastore(){ 
 
-		
 		ArrayList<String> sourceClientPagesStrings = new ArrayList<String>();
 	
 		ObjectifyService.register(ClientPageData.class);
@@ -143,12 +139,7 @@ public class CollectorCron extends HttpServlet {
 			}
 		}
 
-		String[] pagesArray = new String[sourceClientPagesStrings.size()];
-		
-		pagesArray = sourceClientPagesStrings.toArray(new String[sourceClientPagesStrings.size()]);
-		
-		return pagesArray;
-
+		return sourceClientPagesStrings.toArray(new String[sourceClientPagesStrings.size()]);		
 	}
 
 
@@ -276,7 +267,6 @@ public class CollectorCron extends HttpServlet {
 		if(failures>0){
 			log.info("failures: " + failures + " of " + sourceIds.length);
 		}
-
 	}
 
 
@@ -297,7 +287,6 @@ public class CollectorCron extends HttpServlet {
 
 		FqlStream fqlStream = gson.fromJson(json, FqlStream.class);
 		// System.out.println("json cast to FqlStream object");
-
 
 		// System.out.println("Wall posts found on " + uid +": "+ fqlStream.getData().length );
 		// out.println("Wall posts found on " + uid +": "+ fqlStream.getData().length );
@@ -353,8 +342,6 @@ public class CollectorCron extends HttpServlet {
 		if(streamEvents>0){
 			out.println("Posted events: " + uid + " : " + streamEvents);
 		}
-
-
 	}
 
 	
@@ -375,11 +362,9 @@ public class CollectorCron extends HttpServlet {
 		// It's probably quicker here/less likely to timeout to check if the events already exist in the datastore before 
 		// making a fb api call.
 
-
 		// Get the list of events from eventsWithSources
 		// TODO This will fail with an empty list. (will it?)
 		String eventIdsList = Joiner.on(",").join(eventsWithSources.keySet());
-
 
 		// Ask Facebook for their details
 		String eventDetailsFql  = "SELECT eid, name, location, start_time, end_time, pic_square FROM event WHERE eid IN (" + eventIdsList + ") AND start_time > '" + startTime() + "' ORDER BY start_time";
@@ -436,7 +421,6 @@ public class CollectorCron extends HttpServlet {
 
 		}
 		// log.info("Upcoming events: " + eventsDetails.getData().length);
-
 	}
 
 
@@ -449,18 +433,15 @@ public class CollectorCron extends HttpServlet {
 		// Save to Datastore
 		ObjectifyService.register(FbEvent.class);
 
-
 		// Counters for logs
 		int newEvents = 0;
 		int updatedEvents = 0;
-
 
 		// Create a list for FbEvent entities from the events we know are in the future
 		Map<String, FbEvent> fbEventEntities = new HashMap<String, FbEvent>();
 
 		// and fill it with what we've found
 		if((eventsDetails != null)&&(eventsDetails.getData() != null)&&(eventsDetails.getData().length>0)){
-
 
 			for (FqlEventItem item : eventsDetails.getData()) {
 				// Create datastore entity objects
@@ -513,14 +494,11 @@ public class CollectorCron extends HttpServlet {
 				log.info("Events updated:  " + updatedEvents);
 			}
 
-
 			// System.out.println("New events:     " + newEvents);
 			// System.out.println("Updated events: " + updatedEvents);
 
 		} // end of gson length check
-
 	}
-
 
 
 	private String startTime() {
@@ -535,6 +513,5 @@ public class CollectorCron extends HttpServlet {
 
 		return startTime;
 	}
-
 
 }

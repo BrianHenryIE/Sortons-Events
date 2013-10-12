@@ -16,62 +16,59 @@ import com.googlecode.objectify.ObjectifyService;
 
 @Api(name = "upcomingEvents", version = "v1")
 public class UpcomingEventsEndpoint {
-	
-	public static ArrayList<FbEvent> upcomingEvents = new ArrayList<FbEvent>();
-	
+
 	{
 		ObjectifyService.register(FbEvent.class);
 		ObjectifyService.register(ClientPageData.class);
 	}
-	
+
+
+	public static ArrayList<FbEvent> upcomingEvents = new ArrayList<FbEvent>();
+
+
 	public List<FbEvent> getList(@Named("id") String clientPageId) {
-			 
+
 		Date now = new Date();
-		
-		
+
 		ClientPageData clientPage = ofy().load().type(ClientPageData.class).id(clientPageId).now();
-				
+
 		upcomingEvents.clear();
-		
-		// List<FbEvent> dsEvents = ofy().load().type(FbEvent.class).filter("start_time_date >", getHoursAgoOrToday(12)).list();
-		List<FbEvent> dsEvents = ofy().load().type(FbEvent.class).filter("fbPagesStrings in", clientPage.getIncludedPageIds()).filter("start_time_date >", getHoursAgoOrToday(12)).list();
-		
-		
+		//TODO ordering is wrong!
+		List<FbEvent> dsEvents = ofy().load().type(FbEvent.class).filter("start_time_date >", getHoursAgoOrToday(12)).filter("fbPagesStrings in", clientPage.getIncludedPageIds()).list();
+
 		for(FbEvent datastoreEvent : dsEvents){
-			
+
 			if((datastoreEvent.getEnd_time_date()==null)||(datastoreEvent.getEnd_time_date().after(now))){
-				
+
 				for(String pageId : datastoreEvent.getFbPagesStrings()){
 					datastoreEvent.addFbPageDetail(clientPage.getPageById(pageId));
 				}
-				
+
 				upcomingEvents.add(datastoreEvent);
 			}
 		}
-			 
-	    return upcomingEvents;
-	 }
 
-	  
-	  
+		return upcomingEvents;
+	}
 
-		private Date getHoursAgoOrToday(int hours) {
-			
-			Calendar calvar = Calendar.getInstance();
 
-	        int today = calvar.get(Calendar.DAY_OF_YEAR);
-	        
-	        // Subtract the specified number of hours 
-	        calvar.add(Calendar.HOUR_OF_DAY, -hours);
+	private Date getHoursAgoOrToday(int hours) {
 
-	        // Keep subtracting hours until we get to last night
-	        while (calvar.get(Calendar.DAY_OF_YEAR) == today){
-	        	calvar.add(Calendar.HOUR_OF_DAY, -1);
-	        }
+		Calendar calvar = Calendar.getInstance();
 
-	        Date ago = calvar.getTime();
-	        		
-			return ago;
+		int today = calvar.get(Calendar.DAY_OF_YEAR);
+
+		// Subtract the specified number of hours 
+		calvar.add(Calendar.HOUR_OF_DAY, -hours);
+
+		// Keep subtracting hours until we get to last night
+		while (calvar.get(Calendar.DAY_OF_YEAR) == today){
+			calvar.add(Calendar.HOUR_OF_DAY, -1);
 		}
-		
+
+		Date ago = calvar.getTime();
+
+		return ago;
+	}
+
 }
