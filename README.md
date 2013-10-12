@@ -11,10 +11,16 @@ Dependencies:
 -------------
 
 • [GSON](https://code.google.com/p/google-gson/) (v2.2.4) for server-side JSON parsing 
+
 • [Objectify](https://code.google.com/p/objectify-appengine/) for datastore operations
+
 • [Guava](https://code.google.com/p/guava-libraries/) for its string utilities
+
 • [Joda-Time](http://www.joda.org/joda-time/) for server-side times/dates
+
 • [GwtFB](https://github.com/olams/gwtfb) for client-side Facebook API calls
+
 • [GwtFB+](https://github.com/BrianHenryIE/GwtFBplus) for Facebook helpers and widgets
+
 • [Apache Commons Codec](http://commons.apache.org/proper/commons-codec/) (v1.5) for Base64 decoding
 
