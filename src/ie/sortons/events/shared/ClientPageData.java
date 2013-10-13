@@ -76,6 +76,7 @@ public class ClientPageData {
 		return added;
 	}
 
+	
 	// TODO
 	public boolean ignorePage(FbPage page) {
 
@@ -93,6 +94,7 @@ public class ClientPageData {
 		return excluded;
 	}
 
+	
 	public FbPage getPageById(String pageId){
 		FbPage thePage = null;		
 		for(FbPage page : includedPages){
@@ -101,9 +103,9 @@ public class ClientPageData {
 			}
 		}
 		return thePage;
-		
 	}
 
+	
 	public List<String> getIncludedPageIds() {
 		List<String> pageIds = new ArrayList<String>();
 		for(FbPage page : includedPages){
