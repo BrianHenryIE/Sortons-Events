@@ -1,7 +1,6 @@
 package ie.sortons.events.client;
 
 import ie.sortons.events.client.appevent.PageLikesReceivedEvent;
-import ie.sortons.events.client.view.overlay.FbPageOverlay;
 import ie.sortons.events.shared.FbPage;
 import ie.sortons.gwtfbplus.client.overlay.SignedRequest;
 
@@ -135,7 +134,7 @@ public class ClientDAO {
 				new AsyncCallback<JavaScriptObject>() {
 			public void onSuccess(JavaScriptObject response) {
 
-				JsArray<FbPageOverlay> likes;	
+				JsArray<FbPage.Overlay> likes;	
 
 				DataObject dataObject = response.cast();
 

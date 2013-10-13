@@ -100,6 +100,9 @@ public class CollectorCron extends HttpServlet {
 		discoveredEvents = mergeEventMaps(discoveredEvents, findEventsPostedByIdsAsync(sourcePages, false));
 		
 		discoveredEvents = mergeEventMaps(discoveredEvents, findEventDetails(discoveredEvents));
+
+		// TODO
+		// Drop the events in the past. They're being resaved to the datastore each time.
 		
 		saveToDatastore(discoveredEvents);
 

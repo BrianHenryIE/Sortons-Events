@@ -1,7 +1,5 @@
 package ie.sortons.events.shared;
 
-import ie.sortons.events.client.view.overlay.FbPageOverlay;
-
 import org.jsonmaker.gwt.client.JsonizerException;
 
 import com.google.gwt.core.client.GWT;
@@ -42,7 +40,7 @@ public class FbPage implements FbPageJsonizer, Comparable<FbPage> {
 	}
 
 
-	public FbPage(FbPageOverlay overlay) {
+	public FbPage(FbPage.Overlay overlay) {
 		this.pageId = overlay.getPageId();
 		this.name = overlay.getName();
 		this.pageUrl = overlay.getPageUrl();
@@ -69,14 +67,14 @@ public class FbPage implements FbPageJsonizer, Comparable<FbPage> {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	// I think I can leave this alone
 	@Override
 	public String asString(Object javaValue) throws JsonizerException {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	// How ot use this on client side and GSON server side?!
 	public String asJsonString() {
 		// Create a FbPageJsonizer instance
@@ -92,16 +90,28 @@ public class FbPage implements FbPageJsonizer, Comparable<FbPage> {
 
 	@Override
 	public final boolean equals(Object obj) {
-	  if (obj == this)
-	    return true;
-	  if (!(obj instanceof FbPage))
-	    return false;
-	  return compareTo((FbPage) obj) == 0;
+		if (obj == this)
+			return true;
+		if (!(obj instanceof FbPage))
+			return false;
+		return compareTo((FbPage) obj) == 0;
 	}
-	
+
 	@Override
 	public final int hashCode() {
-	  return pageId.hashCode();
+		return pageId.hashCode();
 	}
-	
+
+
+
+	public class Overlay extends JavaScriptObject {
+		protected Overlay() {}
+
+		public final native String getPageId() /*-{ return this.pageId; }-*/;
+		public final native String getName() /*-{ return this.name; }-*/;
+		public final native String getPageUrl() /*-{ return this.pageUrl; }-*/;
+
+	}
+
+
 }

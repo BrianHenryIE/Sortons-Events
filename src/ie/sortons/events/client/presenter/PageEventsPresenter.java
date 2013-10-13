@@ -77,6 +77,7 @@ public class PageEventsPresenter implements Presenter {
 
 		// Schedule the timer to run once in 1 second.
 		t.schedule(1500);
+		t.schedule(3000);
 
 	}
 

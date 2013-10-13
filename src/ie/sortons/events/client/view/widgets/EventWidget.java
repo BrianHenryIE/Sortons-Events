@@ -1,8 +1,8 @@
 package ie.sortons.events.client.view.widgets;
 
-import ie.sortons.events.client.view.overlay.FbPageOverlay;
 import ie.sortons.events.shared.DiscoveredEvent;
 import ie.sortons.events.shared.FbEvent;
+import ie.sortons.events.shared.FbPage;
 import ie.sortons.gwtfbplus.client.newresources.Resources;
 import ie.sortons.gwtfbplus.client.widgets.Link;
 import ie.sortons.gwtfbplus.client.widgets.popups.ToolTipPanel;
@@ -17,6 +17,7 @@ import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.Widget;
 
 public class EventWidget extends Composite {
@@ -30,7 +31,7 @@ public class EventWidget extends Composite {
 
 	@UiField Anchor eventLink;
 
-	@UiField Image eventPicture;
+	@UiField SimplePanel eventPicture;
 
 	@UiField Label startTime;
 	
@@ -50,15 +51,19 @@ public class EventWidget extends Composite {
 		initWidget(uiBinder.createAndBindUi(this));
 		
 		eventLink.setText(rowEvent.getFbEvent().getName());
-		eventLink.setHref("http://www.facebook.com/event.php?eid="  + fbEvent.getEid());
+		eventLink.setHref("//www.facebook.com/event.php?eid="  + fbEvent.getEid());
 		eventLink.setTarget("_blank");
-		eventPicture.setUrl("//graph.facebook.com/" + fbEvent.getEid() + "/picture?type=square");	
+		Image eventImage = new Image("//graph.facebook.com/" + fbEvent.getEid() + "/picture?type=square");
+		eventImage.getElement().getStyle().setHeight(50, Unit.PX);
+		eventImage.getElement().getStyle().setWidth(50, Unit.PX);
+		eventPicture.add(new Link("//www.facebook.com/event.php?eid="  + fbEvent.getEid(), eventImage, "_blank"));
+		
 	    startTime.setText(fbEvent.getStartTimeString());
 	    location.setText(fbEvent.getLocation());
 
 	   
 	    pages.clear();
-	    FbPageOverlay page;
+	    FbPage.Overlay page;
 	    while((page = rowEvent.getSourcePages().shift())!=null) {
 	    	
 	    	Image pageImage = new Image("//graph.facebook.com/" + page.getPageId() + "/picture?type=square");
@@ -69,8 +74,7 @@ public class EventWidget extends Composite {
 	    	pageImageToolTip.getElement().getStyle().setMarginLeft(10, Unit.PX);
 	    	pageImageToolTip.getElement().getStyle().setDisplay(Display.INLINE_BLOCK);
 	    	
-	    	Link pageLink = new Link(page.getPageUrl(), pageImageToolTip);
-	    	pageLink.setTarget("_blank");
+	    	Link pageLink = new Link(page.getPageUrl(), pageImageToolTip, "_blank");
 	    	
 	    	pages.add(pageLink); 
 

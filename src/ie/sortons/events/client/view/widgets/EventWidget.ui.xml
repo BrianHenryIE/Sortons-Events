@@ -27,8 +27,6 @@ a:hover {
 	
 .eventPicture {
 	width: 50px;
-	
-	
 }
 
 .eventDetails {
@@ -66,9 +64,9 @@ a:hover {
 		<g:HorizontalPanel addStyleNames="{style.eventWidget}">
 		
 			<g:cell width="50px">
-				<g:Image  addStyleNames="{style.eventPicture}" ui:field="eventPicture" />
+				<g:SimplePanel ui:field="eventPicture" addStyleNames="{style.eventPicture}" />
 			</g:cell>
-			
+						
 			<g:VerticalPanel addStyleNames="{style.eventDetails}" >
 	
 				<g:Anchor addStyleNames="{style.eventLink}" ui:field="eventLink" />

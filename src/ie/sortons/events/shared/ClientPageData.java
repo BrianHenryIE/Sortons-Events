@@ -1,11 +1,12 @@
 package ie.sortons.events.shared;
 
 
-import ie.sortons.events.client.view.overlay.ClientPageDataOverlay;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.JsArray;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
@@ -25,7 +26,7 @@ public class ClientPageData {
 
 	public ClientPageData() { }
 
-	public ClientPageData(ClientPageDataOverlay overlay) {
+	public ClientPageData(ClientPageData.Overlay overlay) {
 		this.clientPageId = overlay.getClientPageId();
 		this.clientPage = new FbPage(overlay.getClientPage());
 
@@ -113,4 +114,18 @@ public class ClientPageData {
 		}
 		return pageIds;
 	}
+	
+	public class Overlay extends JavaScriptObject {
+
+		protected Overlay() {} 
+
+		// TODO should this line be gone? It's mainly for datastore indexing...
+		public final native String getClientPageId() /*-{ return this.clientPageId; }-*/;
+
+		public final native FbPage.Overlay getClientPage() /*-{ return this.clientPageIds; }-*/;
+
+		public final native JsArray<FbPage.Overlay> getIncludedPages() /*-{ return this.includedPages; }-*/;
+		public final native JsArray<FbPage.Overlay> getIgnoredPages() /*-{ return this.ignoredPages; }-*/;
+	}
+
 }

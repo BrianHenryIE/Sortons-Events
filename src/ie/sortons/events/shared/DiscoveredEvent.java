@@ -1,7 +1,5 @@
 package ie.sortons.events.shared;
 
-import ie.sortons.events.client.view.overlay.FbPageOverlay;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,10 +82,7 @@ public class DiscoveredEvent {
 		protected Overlay() {}
 
 		public final native FbEvent.Overlay getFbEvent() /*-{ return this.fbEvent; }-*/;
-		public final native JsArray<FbPageOverlay> getSourcePages() /*-{ return this.sourcePages; }-*/;
-
+		public final native JsArray<FbPage.Overlay> getSourcePages() /*-{ return this.sourcePages; }-*/;
 	}
-
-
-
+	
 }

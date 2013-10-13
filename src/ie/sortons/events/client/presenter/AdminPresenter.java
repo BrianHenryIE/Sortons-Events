@@ -2,11 +2,9 @@ package ie.sortons.events.client.presenter;
 
 
 import ie.sortons.events.client.ClientDAO;
-import ie.sortons.events.client.view.overlay.ClientPageDataOverlay;
-import ie.sortons.events.client.view.overlay.FbGraphOverlay;
-import ie.sortons.events.client.view.overlay.FbPageOverlay;
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.FbPage;
+import ie.sortons.gwtfbplus.client.overlay.GraphPageOverlay;
 
 import java.util.List;
 
@@ -91,7 +89,7 @@ public class AdminPresenter implements Presenter {
 			public void onResponseReceived(Request request, Response response) {
 				if (200 == response.getStatusCode()) {
 
-					ClientPageDataOverlay clientPageDetailsJS = JsonUtils.safeEval(response.getText()).cast();
+					ClientPageData.Overlay clientPageDetailsJS = JsonUtils.safeEval(response.getText()).cast();
 
 					clientPageDetails = new ClientPageData(clientPageDetailsJS);
 
@@ -169,7 +167,7 @@ public class AdminPresenter implements Presenter {
 		rpcService.graphCall(graphPath,  new AsyncCallback<JavaScriptObject>() {
 			public void onSuccess(JavaScriptObject response) {
 
-				FbGraphOverlay pageDetails = response.cast();
+				GraphPageOverlay pageDetails = response.cast();
 
 				FbPage newPage = new FbPage(pageDetails.getName(), pageDetails.getLink(), pageDetails.getId());
 
@@ -201,7 +199,7 @@ public class AdminPresenter implements Presenter {
 
 					System.out.println(response.getText());
 
-					FbPageOverlay pageJs = JsonUtils.safeEval(response.getText()).cast();
+					FbPage.Overlay pageJs = JsonUtils.safeEval(response.getText()).cast();
 
 					FbPage page = new FbPage(pageJs);
 
@@ -233,7 +231,7 @@ public class AdminPresenter implements Presenter {
 			public void onResponseReceived(Request request, Response response) {
 				if (200 == response.getStatusCode()) {
 
-					FbPageOverlay pageJs = JsonUtils.safeEval(response.getText()).cast();
+					FbPage.Overlay pageJs = JsonUtils.safeEval(response.getText()).cast();
 
 					FbPage page = new FbPage(pageJs);
 
