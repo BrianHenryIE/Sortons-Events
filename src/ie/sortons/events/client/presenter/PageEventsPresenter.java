@@ -1,8 +1,8 @@
 package ie.sortons.events.client.presenter;
 
 import ie.sortons.events.client.ClientDAO;
-import ie.sortons.events.client.view.overlay.FbEventOverlay;
 import ie.sortons.events.client.view.widgets.EventWidget;
+import ie.sortons.events.shared.DiscoveredEvent;
 import ie.sortons.gwtfbplus.client.api.Canvas;
 import ie.sortons.gwtfbplus.client.overlay.DataObject;
 
@@ -45,7 +45,7 @@ public class PageEventsPresenter implements Presenter {
 					displayEvents(JsonUtils.safeEval(response.getText()));
 					//System.out.println(response.getText());
 				} else {
-					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ")");
+					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") PageEventsPresenter.getEvents");
 					//System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
 					//System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
 				}
@@ -59,7 +59,7 @@ public class PageEventsPresenter implements Presenter {
 
 		DataObject dataObject = response.cast();
 
-		JsArray<FbEventOverlay> upcoming = dataObject.getObject("items").cast();
+		JsArray<DiscoveredEvent.Overlay> upcoming = dataObject.getObject("items").cast();
 
 		for (int i = 0; i < upcoming.length(); i++){
 

@@ -43,7 +43,7 @@ public class ClientDAO {
 	public void getEventsForPage(RequestCallback callback) {
 
 		// Must be https for cloud endpoints
-		String JSON_URL = "https://sortonsevents.appspot.com/_ah/api/upcomingEvents/v1/fbeventcollection/";
+		String JSON_URL = "https://sortonsevents.appspot.com/_ah/api/upcomingEvents/v1/discoveredeventcollection/";
 		//String JSON_URL = "http://testbed.org.org:8888/_ah/api/upcomingEvents/v1/fbeventcollection/";
 
 		String url = JSON_URL + currentPageId;

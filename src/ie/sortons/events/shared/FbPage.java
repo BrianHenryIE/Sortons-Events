@@ -7,7 +7,6 @@ import org.jsonmaker.gwt.client.JsonizerException;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.googlecode.objectify.annotation.Embed;
-import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 
 
@@ -16,7 +15,7 @@ import com.googlecode.objectify.annotation.Index;
 public class FbPage implements FbPageJsonizer, Comparable<FbPage> {
 
 
-	@Id @Index
+	@Index
 	private String pageId;
 	private String name;
 	private String pageUrl;

@@ -1,7 +1,8 @@
 package ie.sortons.events.client.view.widgets;
 
-import ie.sortons.events.client.view.overlay.FbEventOverlay;
-import ie.sortons.events.client.view.overlay.FbEventOverlay.FbPage;
+import ie.sortons.events.client.view.overlay.FbPageOverlay;
+import ie.sortons.events.shared.DiscoveredEvent;
+import ie.sortons.events.shared.FbEvent;
 import ie.sortons.gwtfbplus.client.newresources.Resources;
 import ie.sortons.gwtfbplus.client.widgets.Link;
 import ie.sortons.gwtfbplus.client.widgets.popups.ToolTipPanel;
@@ -39,28 +40,28 @@ public class EventWidget extends Composite {
 
 	
 	// TODO: Editor framework
-	public EventWidget(FbEventOverlay rowEvent) {
+	public EventWidget(DiscoveredEvent.Overlay rowEvent) {
 	
 		GWT.<Resources>create(Resources.class).css().ensureInjected();
 		
-		
-		
+
+		FbEvent.Overlay fbEvent = rowEvent.getFbEvent();
 		
 		initWidget(uiBinder.createAndBindUi(this));
 		
-		eventLink.setText(rowEvent.getName());
-		eventLink.setHref("http://www.facebook.com/event.php?eid="  + rowEvent.getEid());
+		eventLink.setText(rowEvent.getFbEvent().getName());
+		eventLink.setHref("http://www.facebook.com/event.php?eid="  + fbEvent.getEid());
 		eventLink.setTarget("_blank");
-		eventPicture.setUrl("//graph.facebook.com/" + rowEvent.getEid() + "/picture?type=square");
-	    startTime.setText(rowEvent.getStartTimeString());
-	    location.setText(rowEvent.getLocation());
+		eventPicture.setUrl("//graph.facebook.com/" + fbEvent.getEid() + "/picture?type=square");	
+	    startTime.setText(fbEvent.getStartTimeString());
+	    location.setText(fbEvent.getLocation());
 
 	   
 	    pages.clear();
-	    
-	    for(FbPage page : rowEvent.getFbPagesDetail()) {
+	    FbPageOverlay page;
+	    while((page = rowEvent.getSourcePages().shift())!=null) {
 	    	
-	    	Image pageImage = new Image("//graph.facebook.com/" + page.getId() + "/picture?type=square");
+	    	Image pageImage = new Image("//graph.facebook.com/" + page.getPageId() + "/picture?type=square");
 	    	pageImage.setHeight("25px");
 	    	pageImage.setWidth("25px");
 	    	
@@ -68,7 +69,7 @@ public class EventWidget extends Composite {
 	    	pageImageToolTip.getElement().getStyle().setMarginLeft(10, Unit.PX);
 	    	pageImageToolTip.getElement().getStyle().setDisplay(Display.INLINE_BLOCK);
 	    	
-	    	Link pageLink = new Link(page.getLink(), pageImageToolTip);
+	    	Link pageLink = new Link(page.getPageUrl(), pageImageToolTip);
 	    	pageLink.setTarget("_blank");
 	    	
 	    	pages.add(pageLink); 

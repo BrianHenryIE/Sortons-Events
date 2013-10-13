@@ -2,7 +2,7 @@ package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.FbEvent;
+import ie.sortons.events.shared.DiscoveredEvent;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -18,15 +18,15 @@ import com.googlecode.objectify.ObjectifyService;
 public class UpcomingEventsEndpoint {
 
 	{
-		ObjectifyService.register(FbEvent.class);
+		ObjectifyService.register(DiscoveredEvent.class);
 		ObjectifyService.register(ClientPageData.class);
 	}
 
 
-	public static ArrayList<FbEvent> upcomingEvents = new ArrayList<FbEvent>();
+	public ArrayList<DiscoveredEvent> upcomingEvents = new ArrayList<DiscoveredEvent>();
 
 
-	public List<FbEvent> getList(@Named("id") String clientPageId) {
+	public List<DiscoveredEvent> getList(@Named("id") String clientPageId) {
 
 		Date now = new Date();
 
@@ -34,15 +34,11 @@ public class UpcomingEventsEndpoint {
 
 		upcomingEvents.clear();
 		//TODO ordering is wrong!
-		List<FbEvent> dsEvents = ofy().load().type(FbEvent.class).filter("start_time_date >", getHoursAgoOrToday(12)).filter("fbPagesStrings in", clientPage.getIncludedPageIds()).list();
+		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("sourcePages.pageId in", clientPage.getIncludedPageIds()).filter("fbEvent.startTimeDate >", getHoursAgoOrToday(12)).order("fbEvent.startTimeDate").list();
 
-		for(FbEvent datastoreEvent : dsEvents){
+		for(DiscoveredEvent datastoreEvent : dsEvents){
 
-			if((datastoreEvent.getEnd_time_date()==null)||(datastoreEvent.getEnd_time_date().after(now))){
-
-				for(String pageId : datastoreEvent.getFbPagesStrings()){
-					datastoreEvent.addFbPageDetail(clientPage.getPageById(pageId));
-				}
+			if((datastoreEvent.getFbEvent().getEndTimeDate()==null)||(datastoreEvent.getFbEvent().getEndTimeDate().after(now))){
 
 				upcomingEvents.add(datastoreEvent);
 			}
