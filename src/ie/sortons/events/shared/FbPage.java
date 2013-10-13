@@ -30,7 +30,7 @@ public class FbPage implements FbPageJsonizer, Comparable<FbPage> {
 		return pageUrl;
 	}
 
-	public FbPage(){
+	protected FbPage(){
 	}
 
 	public FbPage(String name, String pageUrl, String pageId){
@@ -104,7 +104,7 @@ public class FbPage implements FbPageJsonizer, Comparable<FbPage> {
 
 
 
-	public class Overlay extends JavaScriptObject {
+	public static class Overlay extends JavaScriptObject {
 		protected Overlay() {}
 
 		public final native String getPageId() /*-{ return this.pageId; }-*/;

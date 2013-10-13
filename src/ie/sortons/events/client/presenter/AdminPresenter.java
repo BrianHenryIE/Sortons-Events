@@ -9,6 +9,7 @@ import ie.sortons.gwtfbplus.client.overlay.GraphPageOverlay;
 import java.util.List;
 
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsonUtils;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -25,12 +26,11 @@ import com.google.gwt.user.client.ui.Widget;
 
 public class AdminPresenter implements Presenter {
 
-	private final ClientDAO rpcService;
+	private final ClientDAO dao;
 	@SuppressWarnings("unused")
 	private final EventBus eventBus;
 	private final Display display;
-	private ClientPageData clientPageDetails;  
-
+	
 	public interface Display {
 		HasText getNewPage();
 		HasClickHandlers getAddButton();
@@ -54,17 +54,15 @@ public class AdminPresenter implements Presenter {
 		});
 
 	}
-
-
-
+	
 
 	public AdminPresenter(EventBus eventBus, final ClientDAO rpcService, Display view) {
 		//eventBinder.bindEventHandlers(this, eventBus);
 
-		this.rpcService = rpcService;
+		this.dao = rpcService;
 		this.eventBus = eventBus;
 		this.display = view;		
-		
+		getClientPageData();
 		view.setPresenter(this);
 	}
 
@@ -74,53 +72,30 @@ public class AdminPresenter implements Presenter {
 		bind();
 		container.clear();
 		container.add(display.asWidget());
-		getClientPageData();
-		rpcService.getPageLikes();
+		
+	
 	}
-
 
 
 	private void getClientPageData() {
-		rpcService.getClientPageData(new RequestCallback() {
-			public void onError(Request request, Throwable exception) {
-				System.out.println("Couldn't retrieve JSON getClientPageData");
-			}
-
-			public void onResponseReceived(Request request, Response response) {
-				if (200 == response.getStatusCode()) {
-
-					ClientPageData.Overlay clientPageDetailsJS = JsonUtils.safeEval(response.getText()).cast();
-
-					clientPageDetails = new ClientPageData(clientPageDetailsJS);
-
-					displayClientData();
-
-				} else {
-					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.getClientPageData()");
-					//System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ") getClientPageData");
-					//System.out.println("Couldn't retrieve JSON (" + response.getText() + ")" getClientPageData);
-				}
-			}
-		});
-
+		dao.refreshClientPageData(this);
 	}
 
-
-	private void displayClientData(){
-
-		display.setIncludedPages(clientPageDetails.getIncludedPages());
-
+	
+	public void displayClientData(ClientPageData clientPageData){
+		display.setIncludedPages(dao.getClientPageData().getIncludedPages());
+		getSuggestions();
 	}
 
 
 	private void getSuggestions() {
-
-		// Get the page's likes
-		// filter out the included and ignored pages
-
-		// Get the included pages' likes.
-
+		dao.getSuggestions(this);
 	}
+	
+	public void setSuggestions(List<FbPage> suggestionsList) {
+		display.setSuggestedPages(suggestionsList);
+	}
+	
 
 	private void processTextBox() {
 
@@ -164,7 +139,7 @@ public class AdminPresenter implements Presenter {
 
 		graphPath += "?fields=name,id,link";
 
-		rpcService.graphCall(graphPath,  new AsyncCallback<JavaScriptObject>() {
+		dao.graphCall(graphPath,  new AsyncCallback<JavaScriptObject>() {
 			public void onSuccess(JavaScriptObject response) {
 
 				GraphPageOverlay pageDetails = response.cast();
@@ -187,9 +162,10 @@ public class AdminPresenter implements Presenter {
 
 	}
 
+	
 	public void addPage(FbPage newPage){
 
-		rpcService.addPage(newPage, new RequestCallback() {
+		dao.addPage(newPage, new RequestCallback() {
 			public void onError(Request request, Throwable exception) {
 				System.out.println("Couldn't retrieve JSON");
 			}
@@ -203,10 +179,10 @@ public class AdminPresenter implements Presenter {
 
 					FbPage page = new FbPage(pageJs);
 
-					clientPageDetails.addPage(page);
+					dao.getClientPageData().addPage(page);
 
 					// then update UI
-					displayClientData();
+					displayClientData(dao.getClientPageData());
 
 
 				} else {
@@ -216,14 +192,12 @@ public class AdminPresenter implements Presenter {
 				}
 			}
 		});
-
-
-
 	}
 
+	
 	public void ignorePage(FbPage page){
 
-		rpcService.ignorePage(page, new RequestCallback() {
+		dao.ignorePage(page, new RequestCallback() {
 			public void onError(Request request, Throwable exception) {
 				System.out.println("Couldn't retrieve JSON: ignorePage/onError");
 			}
@@ -235,10 +209,10 @@ public class AdminPresenter implements Presenter {
 
 					FbPage page = new FbPage(pageJs);
 
-					clientPageDetails.ignorePage(page);
+					dao.getClientPageData().ignorePage(page);
 					
 					// then update UI
-					displayClientData();
+					displayClientData(dao.getClientPageData());
 
 
 				} else {
@@ -253,6 +227,7 @@ public class AdminPresenter implements Presenter {
 		// UI cleanup
 		
 	}
+
 
 
 	// Display as suggestions

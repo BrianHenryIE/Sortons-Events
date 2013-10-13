@@ -62,6 +62,7 @@ public class ClientPageData {
 		return new ArrayList<FbPage>(ignoredPages);
 	}
 
+	
 
 	public boolean addPage(FbPage page) {
 		boolean added = false;
@@ -115,7 +116,15 @@ public class ClientPageData {
 		return pageIds;
 	}
 	
-	public class Overlay extends JavaScriptObject {
+	public List<String> getIgnoredPageIds() {
+		List<String> pageIds = new ArrayList<String>();
+		for(FbPage page : ignoredPages){
+			pageIds.add(page.getPageId());
+		}
+		return pageIds;
+	}
+	
+	public static class Overlay extends JavaScriptObject {
 
 		protected Overlay() {} 
 
