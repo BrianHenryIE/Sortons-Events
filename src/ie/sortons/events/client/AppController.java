@@ -16,7 +16,7 @@ import com.gwtfb.sdk.FBCore;
 
 public class AppController {
 
-
+	
 	// Courtesy of gwtfb.com
 	private FBCore fbCore = GWT.create(FBCore.class);
 
@@ -28,6 +28,7 @@ public class AppController {
 
 	private ClientDAO rpcService;
 	private SimpleEventBus eventBus;
+	
 	@SuppressWarnings("unused")
 	private HasWidgets container;
 
@@ -42,7 +43,10 @@ public class AppController {
 
 		// Initialize the Facebook API
 		fbCore.init(APPID, status, cookie, xfbml);
-		
+
+		@SuppressWarnings("unused")
+		LoginController lc = new LoginController(eventBus);
+	
 		rpcService.setGwtFb(fbCore);
 
 	}
@@ -55,12 +59,14 @@ public class AppController {
 		// Where are we?
 		if (SignedRequest.parseSignedRequest() == null) {
 			// Looks like we're operating outside Facebook
+			
 		} else if (SignedRequest.parseSignedRequest().getPage() == null) {
 			// Are we inside Facebook with no Page ID? Then we're the app... 
 
 			// Show friends events!
 
 			// TODO The dev server is caching the signedrequest variable and polluting the output for GETs. Will this happen in production?
+			// I think so... I think one the app has spun up, the values have to be cleared before they're forgotten.
 		} else if (SignedRequest.parseSignedRequest().getPage() != null) {
 			// We're inside a Page tab
 			System.out.println("Page ID: " + SignedRequest.parseSignedRequest().getPage().getId());
@@ -91,4 +97,6 @@ public class AppController {
 		}
 	}
 
+
+	
 }

@@ -41,6 +41,11 @@
 .addPageTextBox {
 	width: 450px;
 }
+
+.displayNone {
+	display: none;
+}
+
 	</ui:style>
 	<g:HTMLPanel>
 
@@ -51,7 +56,7 @@
 	    	</tr>
 	    	<tr>
 				<th>Suggestions:</th> 
-				<td><g:FlowPanel ui:field="suggestedPagesPanel"/></td> 
+				<td><g:Button ui:field="loginButton" addStyleNames="{gwtfbplus.css.blueButton} {style.displayNone}" >Login</g:Button> <g:FlowPanel ui:field="suggestedPagesPanel"/></td> 
 			</tr>
 			<tr>
 				<th>Included Pages:</th> 

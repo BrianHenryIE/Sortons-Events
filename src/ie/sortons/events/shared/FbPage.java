@@ -6,17 +6,19 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Index;
+import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
+import com.kfuntak.gwt.json.serialization.client.Serializer;
 
 
 
 @Embed
-public class FbPage implements FbPageJsonizer, Comparable<FbPage> {
+public class FbPage implements JsonSerializable, FbPageJsonizer, Comparable<FbPage> {
 
 
 	@Index
-	private String pageId;
-	private String name;
-	private String pageUrl;
+	public String pageId;
+	public String name;
+	public String pageUrl;
 
 	public String getPageId(){
 		return pageId;
@@ -30,7 +32,7 @@ public class FbPage implements FbPageJsonizer, Comparable<FbPage> {
 		return pageUrl;
 	}
 
-	protected FbPage(){
+	public FbPage(){
 	}
 
 	public FbPage(String name, String pageUrl, String pageId){
@@ -39,12 +41,6 @@ public class FbPage implements FbPageJsonizer, Comparable<FbPage> {
 		this.pageUrl = pageUrl;
 	}
 
-
-	public FbPage(FbPage.Overlay overlay) {
-		this.pageId = overlay.getPageId();
-		this.name = overlay.getName();
-		this.pageUrl = overlay.getPageUrl();
-	}
 
 	public void setPageId(String pageId) {
 		this.pageId = pageId;
@@ -103,15 +99,26 @@ public class FbPage implements FbPageJsonizer, Comparable<FbPage> {
 	}
 
 
+//
+//	public static class FBPOverlay extends JavaScriptObject {
+//		protected FBPOverlay() {}
+//
+//		public final native String getPageId() /*-{ return this.pageId; }-*/;
+//		public final native String getName() /*-{ return this.name; }-*/;
+//		public final native String getPageUrl() /*-{ return this.pageUrl; }-*/;
+//
+//	}
 
-	public static class Overlay extends JavaScriptObject {
-		protected Overlay() {}
 
-		public final native String getPageId() /*-{ return this.pageId; }-*/;
-		public final native String getName() /*-{ return this.name; }-*/;
-		public final native String getPageUrl() /*-{ return this.pageUrl; }-*/;
-
+	
+	
+	public static FbPage fromJson(String Json) {
+	        Serializer serializer = (Serializer) GWT.create(Serializer.class);
+	        return (FbPage)serializer.deSerialize(Json,"ie.sortons.events.shared.FbPage");
 	}
-
-
+	 
+	public String toJson() {
+	        Serializer serializer = (Serializer) GWT.create(Serializer.class);
+	        return serializer.serialize(this);
+	}
 }

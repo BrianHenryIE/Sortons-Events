@@ -2,14 +2,16 @@ package ie.sortons.events.client.presenter;
 
 
 import ie.sortons.events.client.ClientDAO;
+import ie.sortons.events.client.LoginController;
+import ie.sortons.events.client.appevent.PermissionsEvent;
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.FbPage;
 import ie.sortons.gwtfbplus.client.overlay.GraphPageOverlay;
 
 import java.util.List;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsonUtils;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -22,44 +24,64 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.HasText;
 import com.google.gwt.user.client.ui.HasWidgets;
 import com.google.gwt.user.client.ui.Widget;
+import com.google.web.bindery.event.shared.binder.EventBinder;
+import com.google.web.bindery.event.shared.binder.EventHandler;
 
 
 public class AdminPresenter implements Presenter {
 
+	interface MyEventBinder extends EventBinder<AdminPresenter> {}
+	private static final MyEventBinder eventBinder = GWT.create(MyEventBinder.class);
+
+
 	private final ClientDAO dao;
-	@SuppressWarnings("unused")
+
 	private final EventBus eventBus;
 	private final Display display;
-	
+
+	private String requiredAdminPermissions = "";
+
+
 	public interface Display {
 		HasText getNewPage();
-		HasClickHandlers getAddButton();
+		HasClickHandlers getAddPageButton();
+
+		HasClickHandlers getLoginButton();
+
+
 		void setIncludedPages(List<FbPage> includedList);
 		void setSuggestedPages(List<FbPage> suggestionsList);
 
 		void setPresenter(AdminPresenter presenter);
-		
+
 		Widget asWidget();
 	}
 
-	//interface MyEventBinder extends EventBinder<AdminPresenter> {}
-	//private static final MyEventBinder eventBinder = GWT.create(MyEventBinder.class);
+
 
 	public void bind() {
 
-		display.getAddButton().addClickHandler(new ClickHandler() {   
+		eventBinder.bindEventHandlers(this, eventBus);
+
+		display.getAddPageButton().addClickHandler(new ClickHandler() {   
 			public void onClick(ClickEvent event) {
 				processTextBox();
 			}
 		});
 
+		display.getLoginButton().addClickHandler(new ClickHandler() {   
+			public void onClick(ClickEvent event) {
+				LoginController.login(requiredAdminPermissions);
+			}
+		});
+
 	}
-	
 
-	public AdminPresenter(EventBus eventBus, final ClientDAO rpcService, Display view) {
-		//eventBinder.bindEventHandlers(this, eventBus);
 
-		this.dao = rpcService;
+	public AdminPresenter(EventBus eventBus, final ClientDAO dao, Display view) {
+
+
+		this.dao = dao;
 		this.eventBus = eventBus;
 		this.display = view;		
 		getClientPageData();
@@ -72,8 +94,8 @@ public class AdminPresenter implements Presenter {
 		bind();
 		container.clear();
 		container.add(display.asWidget());
-		
-	
+
+
 	}
 
 
@@ -81,7 +103,7 @@ public class AdminPresenter implements Presenter {
 		dao.refreshClientPageData(this);
 	}
 
-	
+
 	public void displayClientData(ClientPageData clientPageData){
 		display.setIncludedPages(dao.getClientPageData().getIncludedPages());
 		getSuggestions();
@@ -91,11 +113,13 @@ public class AdminPresenter implements Presenter {
 	private void getSuggestions() {
 		dao.getSuggestions(this);
 	}
-	
+
 	public void setSuggestions(List<FbPage> suggestionsList) {
-		display.setSuggestedPages(suggestionsList);
+		if(suggestionsList.size()>0){
+			display.setSuggestedPages(suggestionsList.subList(0, 10));
+		}
 	}
-	
+
 
 	private void processTextBox() {
 
@@ -147,8 +171,8 @@ public class AdminPresenter implements Presenter {
 				FbPage newPage = new FbPage(pageDetails.getName(), pageDetails.getLink(), pageDetails.getId());
 
 				addPage(newPage); 
-				
-				
+
+
 				// TODO
 				// This should only empty when it's successful
 				display.getNewPage().setText("");
@@ -162,7 +186,7 @@ public class AdminPresenter implements Presenter {
 
 	}
 
-	
+
 	public void addPage(FbPage newPage){
 
 		dao.addPage(newPage, new RequestCallback() {
@@ -173,11 +197,7 @@ public class AdminPresenter implements Presenter {
 			public void onResponseReceived(Request request, Response response) {
 				if (200 == response.getStatusCode()) {
 
-					System.out.println(response.getText());
-
-					FbPage.Overlay pageJs = JsonUtils.safeEval(response.getText()).cast();
-
-					FbPage page = new FbPage(pageJs);
+					FbPage page = FbPage.fromJson(response.getText());
 
 					dao.getClientPageData().addPage(page);
 
@@ -187,14 +207,14 @@ public class AdminPresenter implements Presenter {
 
 				} else {
 					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.addPage()");
-					//System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
-					//System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
+					System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
+					System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
 				}
 			}
 		});
 	}
 
-	
+
 	public void ignorePage(FbPage page){
 
 		dao.ignorePage(page, new RequestCallback() {
@@ -205,34 +225,43 @@ public class AdminPresenter implements Presenter {
 			public void onResponseReceived(Request request, Response response) {
 				if (200 == response.getStatusCode()) {
 
-					FbPage.Overlay pageJs = JsonUtils.safeEval(response.getText()).cast();
-
-					FbPage page = new FbPage(pageJs);
+					FbPage page = FbPage.fromJson(response.getText());
 
 					dao.getClientPageData().ignorePage(page);
-					
+
 					// then update UI
 					displayClientData(dao.getClientPageData());
 
 
 				} else {
-					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.addPage()");
+					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.ignorePage()");
+					System.out.println(response.getText());
 					//System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
 					//System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
 				}
 			}
 		});
-		
+
 		// TODO
 		// UI cleanup
-		
+
 	}
 
 
 
 	// Display as suggestions
 
+	@EventHandler
+	void onLoginEvent(PermissionsEvent event) {
 
+		if(event.getPermissionsObject().hasPermission(requiredAdminPermissions)){
+
+			// TODO
+			// Hide login button.
+
+			getSuggestions();
+		}
+	}
 
 
 }

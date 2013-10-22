@@ -1,7 +1,6 @@
 package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
-import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.DiscoveredEvent;
 
 import java.util.ArrayList;
@@ -19,7 +18,7 @@ public class UpcomingEventsEndpoint {
 
 	{
 		ObjectifyService.register(DiscoveredEvent.class);
-		ObjectifyService.register(ClientPageData.class);
+		
 	}
 
 
@@ -30,11 +29,9 @@ public class UpcomingEventsEndpoint {
 
 		Date now = new Date();
 
-		ClientPageData clientPage = ofy().load().type(ClientPageData.class).id(clientPageId).now();
-
 		upcomingEvents.clear();
-		//TODO ordering is wrong!
-		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("sourcePages.pageId in", clientPage.getIncludedPageIds()).filter("fbEvent.startTimeDate >", getHoursAgoOrToday(12)).order("fbEvent.startTimeDate").list();
+		
+		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("sourceLists", clientPageId).filter("fbEvent.startTimeDate >", getHoursAgoOrToday(12)).order("fbEvent.startTimeDate").list();
 
 		for(DiscoveredEvent datastoreEvent : dsEvents){
 

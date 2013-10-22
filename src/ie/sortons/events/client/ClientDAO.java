@@ -5,10 +5,12 @@ import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.FbPage;
 import ie.sortons.gwtfbplus.client.overlay.FqlPageOverlay;
 import ie.sortons.gwtfbplus.client.overlay.SignedRequest;
-import ie.sortons.gwtfbplus.server.fql.FqlPage;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.RandomAccess;
 
 import com.google.common.base.Joiner;
 import com.google.gwt.core.client.JavaScriptObject;
@@ -23,6 +25,7 @@ import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
+import com.google.gwt.user.client.Random;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.gwtfb.client.DataObject;
 import com.gwtfb.sdk.FBCore;
@@ -38,6 +41,9 @@ public class ClientDAO {
 
 	private ClientPageData clientPageData;
 
+
+
+
 	public ClientPageData getClientPageData() {
 		return this.clientPageData;
 	}
@@ -46,7 +52,6 @@ public class ClientDAO {
 		this.eventBus = eventBus;
 
 	}
-
 
 	public void setGwtFb(FBCore fbCore) {
 		this.fbCore = fbCore;
@@ -93,10 +98,8 @@ public class ClientDAO {
 				public void onResponseReceived(Request request, Response response) {
 					if (200 == response.getStatusCode()) {
 
-						ClientPageData.Overlay clientPageDetailsJS = JsonUtils.safeEval(response.getText()).cast();
-
-						clientPageData = new ClientPageData(clientPageDetailsJS);
-
+						clientPageData = ClientPageData.fromJson(response.getText());
+						
 						adminPresenter.displayClientData(clientPageData);
 
 					} else {
@@ -122,6 +125,8 @@ public class ClientDAO {
 
 		addPageBuilder.setHeader("Content-Type", "application/json");
 
+		clientPageData.getSuggestedPages().remove(newPage);
+
 		try {
 			@SuppressWarnings("unused")
 			Request request = addPageBuilder.sendRequest(newPage.asJsonString(), callback);
@@ -132,6 +137,8 @@ public class ClientDAO {
 	}
 
 	public void ignorePage(FbPage page, RequestCallback callback) {
+
+		clientPageData.getSuggestedPages().remove(page);
 
 		String ignorePageAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/ignorePage/"+currentPageId;
 
@@ -155,65 +162,72 @@ public class ClientDAO {
 
 	}
 
+
 	public void getSuggestions(final AdminPresenter presenter) {
 
+		if(clientPageData.getSuggestedPages() == null || clientPageData.getSuggestedPages().size() < 25){
+			String searchPages = currentPageId+","+Joiner.on(",").join(clientPageData.getIncludedPageIds());
 
-		String searchPages = currentPageId+","+Joiner.on(",").join(clientPageData.getIncludedPageIds());
+			String ignoredPages = Joiner.on(",").join(clientPageData.getIgnoredPageIds());
+			String includedPages = Joiner.on(",").join(clientPageData.getIncludedPageIds());
 
-		final Joiner joiner = Joiner.on(",").skipNulls();
+			String excludePages = "";
+			if(clientPageData.getIgnoredPageIds().size()>0 && clientPageData.getIncludedPageIds().size()>0){
+				excludePages = ignoredPages+","+includedPages;
+			} else {
+				excludePages = (clientPageData.getIgnoredPageIds().size()>0) ? ignoredPages : includedPages;
+			}
 
-		String ignoredPages = Joiner.on(",").join(clientPageData.getIgnoredPageIds());
-		String includedPages = Joiner.on(",").join(clientPageData.getIncludedPageIds());
+			String fql = "SELECT page_id, name, page_url FROM page WHERE page_id IN (SELECT page_id FROM page_fan WHERE uid IN ("+searchPages+") AND NOT (page_id IN ("+excludePages+")) LIMIT 250)";
 
-		String excludePages = "";
-		if(clientPageData.getIgnoredPageIds().size()>0 && clientPageData.getIncludedPageIds().size()>0){
-			excludePages = ignoredPages+","+includedPages;
-		} else {
-			excludePages = (clientPageData.getIgnoredPageIds().size()>0) ? ignoredPages : includedPages;
-		}
+			System.out.println(fql);
 
-		String fql = "SELECT page_id, name, page_url FROM page WHERE page_id IN (SELECT page_id FROM page_fan WHERE uid IN ("+searchPages+") AND NOT (page_id IN ("+excludePages+")) LIMIT 250)";
+			String method = "fql.query";
+			JSONObject query = new JSONObject();
+			query.put("method", new JSONString(method));
+			query.put("query", new JSONString(fql));
 
-		System.out.println(fql);
+			fbCore.api(query.getJavaScriptObject(),
+					new AsyncCallback<JavaScriptObject>() {
+				public void onSuccess(JavaScriptObject response) {
 
-		String method = "fql.query";
-		JSONObject query = new JSONObject();
-		query.put("method", new JSONString(method));
-		query.put("query", new JSONString(fql));
+					DataObject dataObject = response.cast();
 
-		fbCore.api(query.getJavaScriptObject(),
-				new AsyncCallback<JavaScriptObject>() {
-			public void onSuccess(JavaScriptObject response) {
+					// JsArray<FqlPageOverlay> likesJs = dataObject.getData().cast();
+					JsArray<FqlPageOverlay> likesJs = response.cast();
 
-				JsArray<FqlPageOverlay> likesJs;	
+					System.out.println("likes: " + likesJs.length());
 
-				DataObject dataObject = response.cast();
 
-				likesJs = dataObject.getData().cast();
+					List<FbPage> likes = new ArrayList<FbPage>();
 
-				System.out.println("likes: " + likesJs.length());
-				
-				
-				List<FbPage> likes = new ArrayList<FbPage>();
+					for(int i = 0; i < likesJs.length(); i++){
+						likes.add(new FbPage(likesJs.get(i).getName(), likesJs.get(i).getPageUrl(), likesJs.get(i).getPageId()));
+					}
 
-				for(int i = 0; i < likesJs.length(); i++){
-					likes.add(new FbPage(likesJs.get(i).getName(), likesJs.get(i).getPageUrl(), likesJs.get(i).getPageId()));
+					clientPageData.setSuggestedPages(likes); 
+
+					// Shuffle the list so it's not a bunch of similar suggestions consecutively 
+					// http://blog.jonleonard.com/2012/10/gwt-collectionsshuffle-implementation.html
+					for(int index = 0; index < clientPageData.getSuggestedPages().size(); index += 1) {  
+						Collections.swap(clientPageData.getSuggestedPages(), index, Random.nextInt(clientPageData.getSuggestedPages().size()));  
+					}  
+
+
+					presenter.setSuggestions(clientPageData.getSuggestedPages());
+
 				}
+				@Override
+				public void onFailure(Throwable caught) {
+					// TODO Auto-generated method stub
+				}
+			});	
 
-				presenter.setSuggestions(likes);
+		} else {
 
-			}
-			@Override
-			public void onFailure(Throwable caught) {
-				// TODO Auto-generated method stub
-			}
-		});	
+			presenter.setSuggestions(clientPageData.getSuggestedPages());
+		}
 	}
-
-
-
-
-
 
 
 

@@ -4,11 +4,9 @@ import ie.sortons.events.client.ClientDAO;
 import ie.sortons.events.client.view.widgets.EventWidget;
 import ie.sortons.events.shared.DiscoveredEvent;
 import ie.sortons.gwtfbplus.client.api.Canvas;
-import ie.sortons.gwtfbplus.client.overlay.DataObject;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsArray;
-import com.google.gwt.core.client.JsonUtils;
+import java.util.List;
+
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.Response;
@@ -42,8 +40,9 @@ public class PageEventsPresenter implements Presenter {
 			public void onResponseReceived(Request request, Response response) {
 				if (200 == response.getStatusCode()) {
 
-					displayEvents(JsonUtils.safeEval(response.getText()));
-					//System.out.println(response.getText());
+					
+					displayEvents( DiscoveredEvent.listFromJson(response.getText()) );
+					
 				} else {
 					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") PageEventsPresenter.getEvents");
 					//System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
@@ -54,17 +53,11 @@ public class PageEventsPresenter implements Presenter {
 	}
 
 
-	private void displayEvents(JavaScriptObject response){
-		// { "items" : [ array of EventOverlay objects
+	private void displayEvents(List<DiscoveredEvent> upcomingEvents){
 
-		DataObject dataObject = response.cast();
-
-		JsArray<DiscoveredEvent.Overlay> upcoming = dataObject.getObject("items").cast();
-
-		for (int i = 0; i < upcoming.length(); i++){
-
-			container.add(new EventWidget(upcoming.get(i)));
-
+		
+		for (DiscoveredEvent event : upcomingEvents) {
+			container.add(new EventWidget(event));
 		}
 
 		// Update the scrollbars

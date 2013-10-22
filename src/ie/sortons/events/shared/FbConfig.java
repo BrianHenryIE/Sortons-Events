@@ -4,8 +4,8 @@ public class FbConfig {
 
 	public static String getAppID() {
 		
-		// return "123069381111681"; // sortonsevents
-		return "251403644880972"; // sortonsdev
+		return "123069381111681"; // sortonsevents
+		// return "251403644880972"; // sortonsdev
 		//return "470244209665073"; // ucdevents
 				
 	}

@@ -3,33 +3,40 @@ package ie.sortons.events.shared;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsArray;
+import com.google.gwt.core.client.GWT;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Index;
+import com.kfuntak.gwt.json.serialization.client.ArrayListSerializer;
+import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
+import com.kfuntak.gwt.json.serialization.client.Serializer;
 
 
 @Entity
-public class DiscoveredEvent {
+public class DiscoveredEvent implements JsonSerializable {
 
 
 	@Id 
-	private String eid;
+	public String eid;
 
-	private FbEvent fbEvent;
+	public FbEvent fbEvent;
 
-	private List<FbPage> sourcePages = new ArrayList<FbPage>();
+	public List<FbPage> sourcePages = new ArrayList<FbPage>();
+
+	@Index
+	public List<String> sourceLists = new ArrayList<String>();
 
 
 	/**
 	 * No args constructor for Objectify
 	 */
-	protected DiscoveredEvent () {}
+	public DiscoveredEvent () {}
 
 
-	public DiscoveredEvent(FbEvent fbEvent, FbPage sourcePage) {
+	public DiscoveredEvent(FbEvent fbEvent, String clientId, FbPage sourcePage) {
 		this.eid = fbEvent.getEid();
 		this.fbEvent = fbEvent;
+		addSourceList(clientId);
 		addSourcePage(sourcePage);
 	}
 
@@ -41,10 +48,19 @@ public class DiscoveredEvent {
 	 * @param eventId
 	 * @param sourcePage
 	 */
-	public DiscoveredEvent(String eventId, FbPage sourcePage) {
+	public DiscoveredEvent(String eventId, String clientId, FbPage sourcePage) {
 		this.eid = eventId;
 		this.fbEvent = new FbEvent(eventId);
+		addSourceList(clientId);
 		addSourcePage(sourcePage);
+	}
+
+
+	public DiscoveredEvent(List<String> newSourceLists, List<FbPage> newSourcePages, FbEvent upcomingEvent) {
+		this.addSourceList(newSourceLists);
+		this.addSourcePages(newSourcePages);
+		this.fbEvent = upcomingEvent;
+		this.eid = upcomingEvent.getEid();
 	}
 
 
@@ -77,12 +93,79 @@ public class DiscoveredEvent {
 	}
 
 
-	public static class Overlay extends JavaScriptObject {
+	public List<String> getSourceLists() {
+		return sourceLists;
+	}
 
-		protected Overlay() {}
 
-		public final native FbEvent.Overlay getFbEvent() /*-{ return this.fbEvent; }-*/;
-		public final native JsArray<FbPage.Overlay> getSourcePages() /*-{ return this.sourcePages; }-*/;
+	public boolean hasSourceList(String source) {
+		return (sourceLists.contains(source));
+	}
+
+
+	public void addSourceList(String source){
+		if(!sourceLists.contains(source)){
+			sourceLists.add(source);
+		}
+	}
+
+
+	public void addSourceList(List<String> newSourceLists) {
+		for(String source : newSourceLists) {
+			addSourceList(source);
+		}
+	}
+
+	public static DiscoveredEvent fromJson(String json) {
+		Serializer serializer = (Serializer) GWT.create(Serializer.class);
+		return (DiscoveredEvent)serializer.deSerialize(json,"ie.sortons.events.shared.DiscoveredEvent");
+	}
+
+	public static List<DiscoveredEvent> oldlistFromJson(String json) {
+		ArrayListSerializer serializer = (ArrayListSerializer) GWT.create(ArrayListSerializer.class);
+		return (List<DiscoveredEvent>)serializer.deSerialize(json,"ie.sortons.events.shared.DiscoveredEvent");
 	}
 	
+	public static List<DiscoveredEvent> listFromJson(String json) {
+		ItemArray ira = ItemArray.fromJson(json);
+		return ira.getItems();
+	}
+
+	public String toJson() {
+		Serializer serializer = (Serializer) GWT.create(Serializer.class);
+		return serializer.serialize(this);
+	}
+
+	//	public static class Overlay extends JavaScriptObject {
+	//
+	//		protected Overlay() {}
+	//
+	//		public final native FbEvent.Overlay getFbEvent() /*-{ return this.fbEvent; }-*/;
+	//		public final native JsArray<FbPage.FBPOverlay> getSourcePages() /*-{ return this.sourcePages; }-*/;
+	//		public final native List<String> getSourceLists() /*-{ return this.sourceLists; }-*/;
+	//	}
+
+
+	public static class ItemArray implements JsonSerializable {
+
+		public List<DiscoveredEvent> items = new ArrayList<DiscoveredEvent>();;
+		
+		public List<DiscoveredEvent> getItems(){
+			return items;
+		}
+		
+		public ItemArray() {}
+		
+		public static ItemArray fromJson(String json) {
+			Serializer serializer = (Serializer) GWT.create(Serializer.class);
+			return (ItemArray)serializer.deSerialize(json,"ie.sortons.events.shared.DiscoveredEvent.ItemArray");
+		}
+
+		public String toJson() {
+			Serializer serializer = (Serializer) GWT.create(Serializer.class);
+			return serializer.serialize(this);
+		}
+	}
+
+
 }

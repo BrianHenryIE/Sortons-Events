@@ -41,12 +41,12 @@ public class EventWidget extends Composite {
 
 	
 	// TODO: Editor framework
-	public EventWidget(DiscoveredEvent.Overlay rowEvent) {
+	public EventWidget(DiscoveredEvent rowEvent) {
 	
 		GWT.<Resources>create(Resources.class).css().ensureInjected();
 		
 
-		FbEvent.Overlay fbEvent = rowEvent.getFbEvent();
+		FbEvent fbEvent = rowEvent.getFbEvent();
 		
 		initWidget(uiBinder.createAndBindUi(this));
 		
@@ -58,13 +58,13 @@ public class EventWidget extends Composite {
 		eventImage.getElement().getStyle().setWidth(50, Unit.PX);
 		eventPicture.add(new Link("//www.facebook.com/event.php?eid="  + fbEvent.getEid(), eventImage, "_blank"));
 		
-	    startTime.setText(fbEvent.getStartTimeString());
+	    startTime.setText(fbEvent.getFormattedStartTime());
 	    location.setText(fbEvent.getLocation());
 
 	   
 	    pages.clear();
-	    FbPage.Overlay page;
-	    while((page = rowEvent.getSourcePages().shift())!=null) {
+	    
+	    for(FbPage page : rowEvent.getSourcePages() ){
 	    	
 	    	Image pageImage = new Image("//graph.facebook.com/" + page.getPageId() + "/picture?type=square");
 	    	pageImage.setHeight("25px");

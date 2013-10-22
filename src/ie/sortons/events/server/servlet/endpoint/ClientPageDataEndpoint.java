@@ -33,6 +33,7 @@ public class ClientPageDataEndpoint {
 
 		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
 
+		// When the customer has just signed up
 		if ( clientPageData == null ) {
 
 			// FQL call pieces

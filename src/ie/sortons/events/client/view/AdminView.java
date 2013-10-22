@@ -1,5 +1,6 @@
 package ie.sortons.events.client.view;
 
+import ie.sortons.events.client.appevent.NotLoggedInEvent;
 import ie.sortons.events.client.presenter.AdminPresenter;
 import ie.sortons.events.client.view.widgets.AdminPageItem;
 import ie.sortons.events.shared.FbPage;
@@ -7,6 +8,7 @@ import ie.sortons.events.shared.FbPage;
 import java.util.List;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.Style.Display;
 import com.google.gwt.event.dom.client.HasClickHandlers;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
@@ -16,6 +18,7 @@ import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HasText;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
+import com.google.web.bindery.event.shared.binder.EventHandler;
 
 public class AdminView extends Composite implements AdminPresenter.Display {
 
@@ -41,6 +44,9 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 	Button addPageButton;
 	
 	@UiField
+	Button loginButton;
+	
+	@UiField
 	TextBox addPageTextBox;
 	
 	@UiField
@@ -51,10 +57,16 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 
 	
 	@Override
-	public HasClickHandlers getAddButton() {
+	public HasClickHandlers getAddPageButton() {
 		return addPageButton;
 	}
 
+	@Override
+	public HasClickHandlers getLoginButton() {
+		return loginButton;
+	}
+	
+	
 	@Override
 	public HasText getNewPage() {
 		return addPageTextBox;
@@ -69,6 +81,7 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 	
 	@Override
 	public void setSuggestedPages(List<FbPage> suggestionsList) {
+		loginButton.getElement().getStyle().setDisplay(Display.NONE);
 		updateList(suggestionsList, suggestedPagesPanel);
 	}
 	
@@ -91,7 +104,11 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 		}
 		
 	}
-	
+
+	@EventHandler
+	void onLoginEvent(NotLoggedInEvent event) {
+		loginButton.getElement().getStyle().setDisplay(Display.INLINE_BLOCK);
+	}
 
 
 }

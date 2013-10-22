@@ -1,44 +1,51 @@
 package ie.sortons.events.shared;
 
 
-
 import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;
+import com.google.gwt.core.shared.GWT;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
+import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
+import com.kfuntak.gwt.json.serialization.client.Serializer;
 
 @Entity
-public class ClientPageData {
+public class ClientPageData implements JsonSerializable {
 
 	// this will be either a page id or an app id or an interest list??
 	@Id @Index
-	private String clientPageId;
+	public String clientPageId;
 
-	private FbPage clientPage;
+	public FbPage clientPage;
 
-	private List<FbPage> includedPages = new ArrayList<FbPage>();
+	public List<FbPage> includedPages = new ArrayList<FbPage>();
 
-	private List<FbPage> ignoredPages = new ArrayList<FbPage>();
+	public List<FbPage> ignoredPages = new ArrayList<FbPage>();
+
+	@Ignore
+	public List<FbPage> suggestedPages = new ArrayList<FbPage>();
 
 	public ClientPageData() { }
-
-	public ClientPageData(ClientPageData.Overlay overlay) {
-		this.clientPageId = overlay.getClientPageId();
-		this.clientPage = new FbPage(overlay.getClientPage());
-
-		for (int i = 0; i < overlay.getIncludedPages().length(); ++i) {
-			includedPages.add(new FbPage(overlay.getIncludedPages().get(i)));
-		}
-
-		for (int i = 0; i < overlay.getIgnoredPages().length(); ++i) {
-			ignoredPages.add(new FbPage(overlay.getIgnoredPages().get(i)));
-		}
-
-	}
+//
+//	public ClientPageData(ClientPageData.CPDOverlay overlay) {
+//		this.clientPageId = overlay.getClientPageId();
+//		this.clientPage = new FbPage(overlay.getClientPage().getName(), overlay.getClientPage().getPageUrl(), overlay.getClientPage().getPageId());
+//
+//		for (int i = 0; i < overlay.getIncludedPages().length(); i++) {
+//			includedPages.add(new FbPage(overlay.getIncludedPages().get(i).getName(), overlay.getIncludedPages().get(i).getPageUrl(), overlay.getIncludedPages().get(i).getPageId()));
+//		}
+//
+//
+//		for (int i = 0; i < overlay.getIgnoredPages().length(); i++) {
+//			ignoredPages.add(new FbPage(overlay.getIncludedPages().get(i).getName(), overlay.getIncludedPages().get(i).getPageUrl(), overlay.getIncludedPages().get(i).getPageId()));
+//		}
+//
+//	}
 
 	public ClientPageData(FbPage clientPageDetails) {
 		this.clientPage = clientPageDetails;
@@ -54,15 +61,25 @@ public class ClientPageData {
 		return this.clientPage;
 	}
 
+
 	public List<FbPage> getIncludedPages() {
 		return new ArrayList<FbPage>(includedPages);
 	}
-
 	public List<FbPage> getIgnoredPages() {
 		return new ArrayList<FbPage>(ignoredPages);
 	}
 
-	
+
+
+	public void setSuggestedPages(List<FbPage> suggestedPages) {
+		this.suggestedPages = suggestedPages;
+	}
+
+	public List<FbPage> getSuggestedPages() {
+		return suggestedPages;
+	}
+
+
 
 	public boolean addPage(FbPage page) {
 		boolean added = false;
@@ -78,7 +95,7 @@ public class ClientPageData {
 		return added;
 	}
 
-	
+
 	// TODO
 	public boolean ignorePage(FbPage page) {
 
@@ -96,7 +113,7 @@ public class ClientPageData {
 		return excluded;
 	}
 
-	
+
 	public FbPage getPageById(String pageId){
 		FbPage thePage = null;		
 		for(FbPage page : includedPages){
@@ -107,7 +124,7 @@ public class ClientPageData {
 		return thePage;
 	}
 
-	
+
 	public List<String> getIncludedPageIds() {
 		List<String> pageIds = new ArrayList<String>();
 		for(FbPage page : includedPages){
@@ -115,7 +132,7 @@ public class ClientPageData {
 		}
 		return pageIds;
 	}
-	
+
 	public List<String> getIgnoredPageIds() {
 		List<String> pageIds = new ArrayList<String>();
 		for(FbPage page : ignoredPages){
@@ -123,18 +140,27 @@ public class ClientPageData {
 		}
 		return pageIds;
 	}
+
 	
-	public static class Overlay extends JavaScriptObject {
-
-		protected Overlay() {} 
-
-		// TODO should this line be gone? It's mainly for datastore indexing...
-		public final native String getClientPageId() /*-{ return this.clientPageId; }-*/;
-
-		public final native FbPage.Overlay getClientPage() /*-{ return this.clientPageIds; }-*/;
-
-		public final native JsArray<FbPage.Overlay> getIncludedPages() /*-{ return this.includedPages; }-*/;
-		public final native JsArray<FbPage.Overlay> getIgnoredPages() /*-{ return this.ignoredPages; }-*/;
+	
+	public static ClientPageData fromJson(String Json) {
+		Serializer serializer = (Serializer) GWT.create(Serializer.class);
+		return (ClientPageData)serializer.deSerialize(Json,"ie.sortons.events.shared.ClientPageData");
 	}
+	
+	
+//
+//	public static class CPDOverlay extends JavaScriptObject {
+//
+//		protected CPDOverlay() {} 
+//
+//		// TODO should this line be gone? It's mainly for datastore indexing...
+//		public final native String getClientPageId() /*-{ return this.clientPageId; }-*/;
+//
+//		public final native FbPage.FBPOverlay getClientPage() /*-{ return this.clientPage; }-*/;
+//
+//		public final native JsArray<FbPage.FBPOverlay> getIncludedPages() /*-{ return this.includedPages; }-*/;
+//		public final native JsArray<FbPage.FBPOverlay> getIgnoredPages() /*-{ return this.ignoredPages; }-*/;
+//	}
 
 }
