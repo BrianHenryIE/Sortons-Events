@@ -121,6 +121,7 @@ public class DiscoveredEvent implements JsonSerializable {
 		return (DiscoveredEvent)serializer.deSerialize(json,"ie.sortons.events.shared.DiscoveredEvent");
 	}
 
+	@SuppressWarnings("unchecked")
 	public static List<DiscoveredEvent> oldlistFromJson(String json) {
 		ArrayListSerializer serializer = (ArrayListSerializer) GWT.create(ArrayListSerializer.class);
 		return (List<DiscoveredEvent>)serializer.deSerialize(json,"ie.sortons.events.shared.DiscoveredEvent");

@@ -129,7 +129,7 @@ public class ClientDAO {
 
 		try {
 			@SuppressWarnings("unused")
-			Request request = addPageBuilder.sendRequest(newPage.asJsonString(), callback);
+			Request request = addPageBuilder.sendRequest(newPage.toJson(), callback);
 		} catch (RequestException e) {
 			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :addPage()");
 		}
@@ -148,7 +148,7 @@ public class ClientDAO {
 
 		try {
 			@SuppressWarnings("unused")
-			Request request = ignorePageBuilder.sendRequest(page.asJsonString(), callback);
+			Request request = ignorePageBuilder.sendRequest(page.toJson(), callback);
 		} catch (RequestException e) {
 			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :addPage()");
 		}

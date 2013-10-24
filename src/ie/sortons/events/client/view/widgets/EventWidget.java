@@ -10,6 +10,7 @@ import ie.sortons.gwtfbplus.client.widgets.popups.ToolTipPanel;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.Display;
 import com.google.gwt.dom.client.Style.Unit;
+import com.google.gwt.i18n.shared.DateTimeFormat;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Anchor;
@@ -58,7 +59,7 @@ public class EventWidget extends Composite {
 		eventImage.getElement().getStyle().setWidth(50, Unit.PX);
 		eventPicture.add(new Link("//www.facebook.com/event.php?eid="  + fbEvent.getEid(), eventImage, "_blank"));
 		
-	    startTime.setText(fbEvent.getFormattedStartTime());
+	    startTime.setText(rowEvent.getFbEvent().getStartTime().length()>10 ? DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy, 'at' k:mm").format(rowEvent.getFbEvent().getStartTimeDate()) : DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy").format(rowEvent.getFbEvent().getStartTimeDate()));
 	    location.setText(fbEvent.getLocation());
 
 	   

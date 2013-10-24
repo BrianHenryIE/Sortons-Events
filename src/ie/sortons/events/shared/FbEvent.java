@@ -52,7 +52,7 @@ public class FbEvent implements JsonSerializable {
 		this.name = name;
 		this.location = location;
 		this.startTime= startTime;
-		this.startTimeDate = parseDate(startTime);
+		this.startTimeDate = parseDate(startTime); // Time from Facebook
 		this.endTime  = endTime;
 		this.endTimeDate = parseDate(endTime);
 		this.picSquare = picSquare;
@@ -150,10 +150,10 @@ public class FbEvent implements JsonSerializable {
 //
 //	}
 	
-	
-	public final String getFormattedStartTime() { 
-		return (this.getStartTime().length()>10 ? DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy, 'at' k:mm").format(getStartTimeDate()) : DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy").format(getStartTimeDate()) ); 
-	}
+//	
+//	public final String getFormattedStartTime() { 
+//		return (this.getStartTime().length()>10 ? DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy, 'at' k:mm").format(getStartTimeDate()) : DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy").format(getStartTimeDate()) ); 
+//	}
 	
 	
 	public static FbEvent fromJson(String json) {
