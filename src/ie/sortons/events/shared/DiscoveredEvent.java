@@ -28,7 +28,7 @@ public class DiscoveredEvent implements JsonSerializable {
 
 
 	/**
-	 * No args constructor for Objectify
+	 * No args constructor for Objectify etc
 	 */
 	public DiscoveredEvent () {}
 
@@ -57,10 +57,18 @@ public class DiscoveredEvent implements JsonSerializable {
 
 
 	public DiscoveredEvent(List<String> newSourceLists, List<FbPage> newSourcePages, FbEvent upcomingEvent) {
-		this.addSourceList(newSourceLists);
+		this.addSourceLists(newSourceLists);
 		this.addSourcePages(newSourcePages);
 		this.fbEvent = upcomingEvent;
 		this.eid = upcomingEvent.getEid();
+	}
+
+
+	public DiscoveredEvent(FbEvent fbEvent, List<String> sourceLists, List<FbPage> sourcePages) {
+		this.eid = fbEvent.getEid();
+		this.fbEvent = fbEvent;
+		this.sourceLists = sourceLists;
+		this.sourcePages = sourcePages;
 	}
 
 
@@ -79,17 +87,22 @@ public class DiscoveredEvent implements JsonSerializable {
 	}
 
 
-	public void addSourcePage(FbPage sourcePage){
+	public boolean addSourcePage(FbPage sourcePage){
 		if(!sourcePages.contains(sourcePage)){
 			sourcePages.add(sourcePage);
+			return true;
 		}
+		return false;
 	}
 
 
-	public void addSourcePages(List<FbPage> newSourcePages) {
+	public boolean addSourcePages(List<FbPage> newSourcePages) {
+		boolean changed = false;
 		for(FbPage newSourcePage : newSourcePages){
-			addSourcePage(newSourcePage);
+			if(addSourcePage(newSourcePage))
+				changed = true;
 		}
+		return changed;
 	}
 
 
@@ -103,17 +116,22 @@ public class DiscoveredEvent implements JsonSerializable {
 	}
 
 
-	public void addSourceList(String source){
+	public boolean addSourceList(String source){
 		if(!sourceLists.contains(source)){
 			sourceLists.add(source);
+			return true;
 		}
+		return false;
 	}
 
 
-	public void addSourceList(List<String> newSourceLists) {
+	public boolean addSourceLists(List<String> newSourceLists) {
+		boolean changed = false;
 		for(String source : newSourceLists) {
-			addSourceList(source);
+			if(addSourceList(source))
+				changed = true;
 		}
+		return changed;
 	}
 
 	public static DiscoveredEvent fromJson(String json) {
@@ -126,7 +144,7 @@ public class DiscoveredEvent implements JsonSerializable {
 		ArrayListSerializer serializer = (ArrayListSerializer) GWT.create(ArrayListSerializer.class);
 		return (List<DiscoveredEvent>)serializer.deSerialize(json,"ie.sortons.events.shared.DiscoveredEvent");
 	}
-	
+
 	public static List<DiscoveredEvent> listFromJson(String json) {
 		ItemArray ira = ItemArray.fromJson(json);
 		return ira.getItems();
@@ -150,13 +168,13 @@ public class DiscoveredEvent implements JsonSerializable {
 	public static class ItemArray implements JsonSerializable {
 
 		public List<DiscoveredEvent> items = new ArrayList<DiscoveredEvent>();;
-		
+
 		public List<DiscoveredEvent> getItems(){
 			return items;
 		}
-		
+
 		public ItemArray() {}
-		
+
 		public static ItemArray fromJson(String json) {
 			Serializer serializer = (Serializer) GWT.create(Serializer.class);
 			return (ItemArray)serializer.deSerialize(json,"ie.sortons.events.shared.DiscoveredEvent.ItemArray");
