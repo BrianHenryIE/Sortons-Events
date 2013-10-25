@@ -89,40 +89,36 @@ public class CollectorCron extends HttpServlet {
 		out.println("<pre>");
 
 		for(ClientPageData client : clients) {
-		
-		Map<String, DiscoveredEvent> createdEvents = findEventsCreatedByIds(clients);
 
-		Map<String, DiscoveredEvent> postedEvents = findEventsPostedByIds(clients);
+			Map<String, DiscoveredEvent> createdEvents = findEventsCreatedByIds(clients);
 
-		Map<String, DiscoveredEvent> discoveredEvents = mergeEventMaps(postedEvents, createdEvents);
+			Map<String, DiscoveredEvent> postedEvents = findEventsPostedByIds(clients);
 
-		
-		
-		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("sourceLists", client.getClientPageId()).filter("fbEvent.startTimeDate >", getHoursAgoOrToday(12)).order("fbEvent.startTimeDate").list();
+			Map<String, DiscoveredEvent> discoveredEvents = mergeEventMaps(postedEvents, createdEvents);
 
-		for(DiscoveredEvent dsEvent : dsEvents){
-			
-			if( discoveredEvents.containsKey( dsEvent.getFbEvent().getEid() ) ){
-				
-				// Add the datastore info to the discovered events list
-				// if it changes resave, if it doesn't discard.
-				
-				if( !(discoveredEvents.get(dsEvent.getFbEvent().getEid()).addSourceLists(dsEvent.getSourceLists()) || discoveredEvents.get(dsEvent.getFbEvent().getEid()).addSourcePages(dsEvent.getSourcePages()) ) ){
-					discoveredEvents.remove(dsEvent.getFbEvent().getEid());
-				}
-			}			
+
+
+			List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("sourceLists", client.getClientPageId()).filter("fbEvent.startTimeDate >", getHoursAgoOrToday(12)).order("fbEvent.startTimeDate").list();
+
+			for(DiscoveredEvent dsEvent : dsEvents){
+
+				if( discoveredEvents.containsKey( dsEvent.getFbEvent().getEid() ) ){
+
+					// Add the datastore info to the discovered events list
+					// if it changes resave, if it doesn't discard.
+
+					if( !(discoveredEvents.get(dsEvent.getFbEvent().getEid()).addSourceLists(dsEvent.getSourceLists()) || discoveredEvents.get(dsEvent.getFbEvent().getEid()).addSourcePages(dsEvent.getSourcePages()) ) ){
+						discoveredEvents.remove(dsEvent.getFbEvent().getEid());
+					}
+				}			
+			}
+
+			if( discoveredEvents.size() > 0 ) {
+				Map<String, DiscoveredEvent> detailedEvents = findEventDetails(discoveredEvents);
+				saveToDatastore(detailedEvents);
+			}
 		}
-		
-		
-		Map<String, DiscoveredEvent> detailedEvents = findEventDetails(discoveredEvents);
 
-		// TODO
-		// Drop the events in the past. They're being resaved to the datastore
-		// each time.
-
-		saveToDatastore(detailedEvents);
-		}
-		
 		out.println("</pre>");
 		out.flush();
 	}
@@ -141,19 +137,19 @@ public class CollectorCron extends HttpServlet {
 		doGet(request, response);
 	}
 
-	
+
 	private DiscoveredEvent mergeDiscoveredEvents(DiscoveredEvent d1, DiscoveredEvent d2){
 		// TODO
 		// Imlpement clone() on DiscoveredEvent
-		
+
 		DiscoveredEvent newDe = new DiscoveredEvent(d1.getFbEvent(), d1.getSourceLists(), d1.getSourcePages());
 		newDe.addSourceLists(d2.getSourceLists());
 		newDe.addSourcePages(d2.getSourcePages());
-		
+
 		return newDe;
 	}
-	
-	
+
+
 	private Map<String, DiscoveredEvent> mergeEventMaps(Map<String, DiscoveredEvent> map1, Map<String, DiscoveredEvent> map2) {
 
 		if (map1 == null || map1.size() == 0)
@@ -164,7 +160,7 @@ public class CollectorCron extends HttpServlet {
 		Map<String, DiscoveredEvent> newMap = new HashMap<String, DiscoveredEvent>();
 
 		for (String key : map1.keySet()) {
-			
+
 			if (map2.containsKey(key)) {			
 				newMap.put(key, mergeDiscoveredEvents(map1.get(key), map2.get(key)));
 			} else {
@@ -175,7 +171,7 @@ public class CollectorCron extends HttpServlet {
 		return newMap;
 	}
 
-	
+
 	private List<ClientPageData> getClientPageDataFromDatastore() {
 		Query<ClientPageData> sourceClientsQuery = ofy().load().type(
 				ClientPageData.class);
@@ -213,9 +209,9 @@ public class CollectorCron extends HttpServlet {
 		for (ClientPageData client : clients) {
 			mergeEventMaps(createdEvents, findEventsCreatedByIds(client));
 		}
-		
+
 		return createdEvents;
-		
+
 	}
 
 	/**
@@ -352,7 +348,7 @@ public class CollectorCron extends HttpServlet {
 	private Map<String, DiscoveredEvent> findEventsPostedByIds(List<ClientPageData> clients) {
 
 		boolean efficientSearch = true;
-		
+
 		// System.out.println("findEventsPostedByIdsAsync()");
 
 		Map<String, DiscoveredEvent> postedEvents = null;
