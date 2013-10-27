@@ -167,8 +167,18 @@ public class ClientDAO {
 	public void getSuggestions(final AdminPresenter presenter) {
 
 		if(clientPageData.getSuggestedPages() == null || clientPageData.getSuggestedPages().size() < 25){
-			String searchPages = currentPageId+","+Joiner.on(",").join(clientPageData.getIncludedPageIds());
+			
+			List<String> searchPagesList = new ArrayList<String>();
+			for(String pageId : clientPageData.getIncludedPageIds()){
+				searchPagesList.add(pageId);
+			}
+			// http://blog.jonleonard.com/2012/10/gwt-collectionsshuffle-implementation.html
+			for(int index = 0; index < searchPagesList.size(); index += 1) {  
+				Collections.swap(searchPagesList, index, Random.nextInt(searchPagesList.size()));  
+			}  
+			String searchPages = currentPageId+","+Joiner.on(",").join(searchPagesList);
 
+			
 			String ignoredPages = Joiner.on(",").join(clientPageData.getIgnoredPageIds());
 			String includedPages = Joiner.on(",").join(clientPageData.getIncludedPageIds());
 
@@ -192,13 +202,7 @@ public class ClientDAO {
 					new AsyncCallback<JavaScriptObject>() {
 				public void onSuccess(JavaScriptObject response) {
 
-					DataObject dataObject = response.cast();
-
-					// JsArray<FqlPageOverlay> likesJs = dataObject.getData().cast();
 					JsArray<FqlPageOverlay> likesJs = response.cast();
-
-					System.out.println("likes: " + likesJs.length());
-
 
 					List<FbPage> likes = new ArrayList<FbPage>();
 
