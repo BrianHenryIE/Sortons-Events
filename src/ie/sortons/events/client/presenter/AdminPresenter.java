@@ -8,6 +8,7 @@ import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.FbPage;
 import ie.sortons.gwtfbplus.client.overlay.GraphPageOverlay;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gwt.core.client.GWT;
@@ -15,13 +16,15 @@ import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.HasClickHandlers;
+import com.google.gwt.event.dom.client.KeyUpEvent;
+import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.HasText;
 import com.google.gwt.user.client.ui.HasWidgets;
+import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.web.bindery.event.shared.binder.EventBinder;
 import com.google.web.bindery.event.shared.binder.EventHandler;
@@ -42,12 +45,9 @@ public class AdminPresenter implements Presenter {
 
 
 	public interface Display {
-		HasText getNewPage();
+		TextBox getAddPageTextBox();
 		HasClickHandlers getAddPageButton();
-
 		HasClickHandlers getLoginButton();
-
-
 		void setIncludedPages(List<FbPage> includedList);
 		void setSuggestedPages(List<FbPage> suggestionsList);
 
@@ -74,12 +74,15 @@ public class AdminPresenter implements Presenter {
 			}
 		});
 
+		display.getAddPageTextBox().addKeyUpHandler(new KeyUpHandler(){
+			public void onKeyUp(KeyUpEvent event) {
+				searchSuggestions();				
+			}});
+
 	}
 
 
 	public AdminPresenter(EventBus eventBus, final ClientDAO dao, Display view) {
-
-
 		this.dao = dao;
 		this.eventBus = eventBus;
 		this.display = view;		
@@ -93,8 +96,6 @@ public class AdminPresenter implements Presenter {
 		bind();
 		container.clear();
 		container.add(display.asWidget());
-
-
 	}
 
 
@@ -105,7 +106,12 @@ public class AdminPresenter implements Presenter {
 
 	public void displayClientData(ClientPageData clientPageData){
 		display.setIncludedPages(dao.getClientPageData().getIncludedPages());
-		getSuggestions();
+
+		if(display.getAddPageTextBox().getText().trim().length()>0){
+			searchSuggestions();
+		}else {
+			getSuggestions();
+		}
 	}
 
 
@@ -114,14 +120,28 @@ public class AdminPresenter implements Presenter {
 	}
 
 	public void setSuggestions(List<FbPage> suggestionsList) {
-		if(suggestionsList.size()>0){
-			display.setSuggestedPages(suggestionsList.subList(0, 10));
+		if(suggestionsList != null){
+			display.setSuggestedPages(suggestionsList.subList(0, Math.min(10, suggestionsList.size())));
+		}
+	}
+
+	private void searchSuggestions(){
+		String searchFor = display.getAddPageTextBox().getText().toLowerCase();
+		if(searchFor.trim().length()>0 && !searchFor.toLowerCase().contains("http:") && !searchFor.toLowerCase().contains("www.")){
+			List<FbPage> search = new ArrayList<FbPage>();
+			for(FbPage page : dao.getSuggestions()){
+				if(page.getName().toLowerCase().contains(searchFor) || page.getPageId().contains(searchFor)){
+					search.add(page);
+				}
+			}
+			setSuggestions(search);
+		} else {
+			getSuggestions();
 		}
 	}
 
 
 	private void processTextBox() {
-
 
 		// Get the text from the textbox
 		// regex it to a page_id
@@ -131,11 +151,9 @@ public class AdminPresenter implements Presenter {
 		// get the new page's likes to add to suggestions.
 
 
-		System.out.println("Button clicked");
-
 		// Get the text that has been entered and build the graph call
 
-		String textEntered = display.getNewPage().getText();
+		String textEntered = display.getAddPageTextBox().getText();
 		String graphPath = "/";
 
 		//TODO get rid of anything after ?
@@ -174,7 +192,7 @@ public class AdminPresenter implements Presenter {
 
 				// TODO
 				// This should only empty when it's successful
-				display.getNewPage().setText("");
+				display.getAddPageTextBox().setText("");
 
 			}
 			@Override
@@ -246,9 +264,6 @@ public class AdminPresenter implements Presenter {
 
 	}
 
-
-
-	// Display as suggestions
 
 	@EventHandler
 	void onLoginEvent(PermissionsEvent event) {

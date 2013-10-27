@@ -37,7 +37,7 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 	public AdminView() {
 		initWidget(uiBinder.createAndBindUi(this));
 		
-		addPageTextBox.getElement().setAttribute("placeholder", "Enter a Facebook Page URL or Page ID");
+		addPageTextBox.getElement().setAttribute("placeholder", "Enter a Facebook Page URL, Page ID or search suggestions");
 	}
 
 	@UiField
@@ -68,7 +68,7 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 	
 	
 	@Override
-	public HasText getNewPage() {
+	public TextBox getAddPageTextBox() {
 		return addPageTextBox;
 	}
 

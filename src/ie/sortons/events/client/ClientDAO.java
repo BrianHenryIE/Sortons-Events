@@ -42,8 +42,6 @@ public class ClientDAO {
 	private ClientPageData clientPageData;
 
 
-
-
 	public ClientPageData getClientPageData() {
 		return this.clientPageData;
 	}
@@ -136,6 +134,7 @@ public class ClientDAO {
 
 	}
 
+	
 	public void ignorePage(FbPage page, RequestCallback callback) {
 
 		clientPageData.getSuggestedPages().remove(page);
@@ -157,12 +156,14 @@ public class ClientDAO {
 
 
 	public void graphCall(String graphPath, AsyncCallback<JavaScriptObject> callback) {
-
 		fbCore.api(graphPath, callback);
-
 	}
 
 
+	public List<FbPage> getSuggestions() {
+		return clientPageData.getSuggestedPages();
+	}
+	
 	public void getSuggestions(final AdminPresenter presenter) {
 
 		if(clientPageData.getSuggestedPages() == null || clientPageData.getSuggestedPages().size() < 25){
