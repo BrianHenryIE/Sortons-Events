@@ -126,11 +126,17 @@ public class AdminPresenter implements Presenter {
 	}
 
 	private void searchSuggestions(){
-		String searchFor = display.getAddPageTextBox().getText().toLowerCase();
-		if(searchFor.trim().length()>0 && !searchFor.toLowerCase().contains("http:") && !searchFor.toLowerCase().contains("www.")){
+		String searchText = display.getAddPageTextBox().getText().toLowerCase();
+		if(searchText.trim().length()>0 && !searchText.toLowerCase().contains("http:") && !searchText.toLowerCase().contains("www.")){
 			List<FbPage> search = new ArrayList<FbPage>();
 			for(FbPage page : dao.getSuggestions()){
-				if(page.getName().toLowerCase().contains(searchFor) || page.getPageId().contains(searchFor)){
+				boolean add = true;
+				for(String term : searchText.split(" ")){
+					if(!page.getName().toLowerCase().contains(term)){
+						add = false;
+					}
+				}
+				if(add == true || page.getPageId().contains(searchText)){
 					search.add(page);
 				}
 			}
