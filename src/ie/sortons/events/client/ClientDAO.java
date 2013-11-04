@@ -9,13 +9,10 @@ import ie.sortons.gwtfbplus.client.overlay.SignedRequest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.RandomAccess;
 
 import com.google.common.base.Joiner;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;
-import com.google.gwt.core.client.JsonUtils;
 import com.google.gwt.event.shared.SimpleEventBus;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
@@ -27,7 +24,6 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.user.client.Random;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.gwtfb.client.DataObject;
 import com.gwtfb.sdk.FBCore;
 
 public class ClientDAO {
@@ -37,7 +33,7 @@ public class ClientDAO {
 
 	private String currentPageId = SignedRequest.parseSignedRequest().getPage().getId();
 	private FBCore fbCore;
-	private SimpleEventBus eventBus;
+//	private SimpleEventBus eventBus;
 
 	private ClientPageData clientPageData;
 
@@ -47,8 +43,7 @@ public class ClientDAO {
 	}
 
 	public ClientDAO(SimpleEventBus eventBus) {
-		this.eventBus = eventBus;
-
+		// this.eventBus = eventBus;
 	}
 
 	public void setGwtFb(FBCore fbCore) {

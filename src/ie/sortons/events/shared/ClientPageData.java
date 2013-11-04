@@ -4,8 +4,6 @@ package ie.sortons.events.shared;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.shared.GWT;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;

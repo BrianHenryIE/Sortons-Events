@@ -36,7 +36,7 @@ public class AdminPageItem extends Composite {
 
 
 	private FbPage page;
-	private AdminPresenter presenter;
+	// private AdminPresenter presenter;
 
 	public AdminPageItem(final FbPage page, final AdminPresenter presenter) {
 
