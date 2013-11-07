@@ -2,7 +2,7 @@ package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.FbConfig;
+import ie.sortons.events.shared.Config;
 import ie.sortons.events.shared.FbPage;
 import ie.sortons.gwtfbplus.server.fql.FqlPage;
 import ie.sortons.gwtfbplus.server.fql.FqlPage.FqlPageItem;
@@ -47,7 +47,7 @@ public class ClientPageDataEndpoint {
 			String json = "";
 			try {
 				// System.out.println("Getting all page events: " + fql);
-				URL url = new URL(fqlCallStub + URLEncoder.encode(fql, "UTF-8") + "&access_token=" + FbConfig.getAppAccessToken());
+				URL url = new URL(fqlCallStub + URLEncoder.encode(fql, "UTF-8") + "&access_token=" + Config.getAppAccessToken());
 				BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
 				String line;
 
@@ -63,12 +63,18 @@ public class ClientPageDataEndpoint {
 				// System.out.println("catch (IOException e)");
 				// ...
 			}
+			
+			// Doesn't work on upublished pages. :(
+			
+			System.out.println(fqlCallStub + fql + "&access_token=" + Config.getAppAccessToken());
 
 			// Convert the json string to java object
 			FqlPageItem fqlPage = gson.fromJson(json, FqlPage.class).getData()[0];
 						
 			FbPage clientPageDetails = new FbPage(fqlPage.getName(), fqlPage.getPageUrl(), clientPageId);
 
+			System.out.println("Added to new page: " + fqlPage.getName() + " " + fqlPage.getPageUrl() + " " + clientPageId);
+			
 			
 			// Add new entry
 			ClientPageData newClient = new ClientPageData(clientPageDetails);

@@ -3,7 +3,7 @@ package ie.sortons.events.client;
 import ie.sortons.events.client.presenter.AdminPresenter;
 import ie.sortons.events.client.presenter.PageEventsPresenter;
 import ie.sortons.events.client.view.AdminView;
-import ie.sortons.events.shared.FbConfig;
+import ie.sortons.events.shared.Config;
 import ie.sortons.gwtfbplus.client.newresources.Resources;
 import ie.sortons.gwtfbplus.client.overlay.SignedRequest;
 
@@ -20,7 +20,7 @@ public class AppController {
 	// Courtesy of gwtfb.com
 	private FBCore fbCore = GWT.create(FBCore.class);
 
-	public String APPID = FbConfig.getAppID();	
+	public String APPID = Config.getAppID();	
 	private boolean status = true;
 	private boolean xfbml = true;
 	private boolean cookie = true;
