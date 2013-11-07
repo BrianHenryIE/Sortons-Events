@@ -414,14 +414,17 @@ public class CollectorCron extends HttpServlet {
 		Pattern pattern = Pattern.compile("facebook.com/events/[0-9]*");
 		Matcher matcher;
 
-		FbPage sourcePage = null;
-		
+				
 		if ((wallPosts != null) && (wallPosts.getData() != null) && (wallPosts.getData().length > 0)) {
 			for (FqlStreamItem item : wallPosts.getData()) {
 				
 				if ( item.getActorId().equals(item.getSourceId()) ) {
 					
-					sourcePage = client.getPageById(item.getSourceId());
+					FbPage sourcePage = client.getPageById(item.getSourceId());
+					System.out.println(item.getSourceId());
+					System.out.println(gson.toJson(client));
+					System.out.println(sourcePage.getName());
+					
 					
 					// Read the message
 					matcher = pattern.matcher(item.getMessage());
@@ -429,12 +432,12 @@ public class CollectorCron extends HttpServlet {
 
 						// If hasn't been recorded yet
 						if (!foundEvents.containsKey(matcher.group().substring(20))) {
-							foundEvents.put( matcher.group().substring(20), new DiscoveredEvent(matcher.group().substring(20), client.getClientPage().getPageId(), client.getPageById(item.getSourceId())));
+							foundEvents.put( matcher.group().substring(20), new DiscoveredEvent(matcher.group().substring(20), client.getClientPage().getPageId(), sourcePage));
 
 							// If the event has been recorded, but doesn't have this
 							// source page
-						} else if (!foundEvents.get(matcher.group().substring(20)).hasSourcePage(client.getPageById(item.getSourceId()))) {
-							foundEvents.get(matcher.group().substring(20)).addSourcePage(client.getPageById(item.getSourceId()));
+						} else if (!foundEvents.get(matcher.group().substring(20)).hasSourcePage(sourcePage)) {
+							foundEvents.get(matcher.group().substring(20)).addSourcePage(sourcePage);
 						}
 					}
 
@@ -450,26 +453,31 @@ public class CollectorCron extends HttpServlet {
 								while (matcher.find()) {
 									// If the event doesn't have a list yet...
 									if (!foundEvents.containsKey(matcher.group().substring(20))) {
-										foundEvents.put(matcher.group().substring(20), new DiscoveredEvent(matcher.group().substring(20), client.getClientPage().getPageId(), client.getPageById(item.getSourceId())));
+										foundEvents.put(matcher.group().substring(20), new DiscoveredEvent(matcher.group().substring(20), client.getClientPage().getPageId(), sourcePage));
 
 										// If the event doesn't have this page
 										// recorded yet...
-									} else if (!foundEvents.get(matcher.group().substring(20)).hasSourcePage(client.getPageById(item.getSourceId()))) {
-										foundEvents.get(matcher.group().substring(20)).addSourcePage(client.getPageById(item.getSourceId()));
+									} else if (!foundEvents.get(matcher.group().substring(20)).hasSourcePage(sourcePage)) {
+										foundEvents.get(matcher.group().substring(20)).addSourcePage(sourcePage);
 									}
 								}
 							}
 						}
 					}
+					
+					if (foundEvents.size() > 0) {
+						out.println("Posted event  : " + sourcePage.getName() + 
+								" : " + foundEvents.size() + " : " + 
+								Joiner.on(",").join(foundEvents.keySet()));
+					} else {
+						// System.out.println("Posted event  : " + sourcePage.getName() + " : " + foundEvents.size());
+					}
+					
 				}
 			}
 		}
 
-		if (foundEvents.size() > 0) {
-			out.println("Posted event  : " + sourcePage.getName() + " : " + foundEvents.size() + " : " + Joiner.on(",").join(foundEvents.keySet()));
-		} else {
-			// System.out.println("Posted event  : " + sourcePage.getName() + " : " + foundEvents.size());
-		}
+
 
 		return foundEvents;
 	}

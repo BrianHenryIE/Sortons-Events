@@ -29,21 +29,7 @@ public class ClientPageData implements JsonSerializable {
 	public List<FbPage> suggestedPages = new ArrayList<FbPage>();
 
 	public ClientPageData() { }
-//
-//	public ClientPageData(ClientPageData.CPDOverlay overlay) {
-//		this.clientPageId = overlay.getClientPageId();
-//		this.clientPage = new FbPage(overlay.getClientPage().getName(), overlay.getClientPage().getPageUrl(), overlay.getClientPage().getPageId());
-//
-//		for (int i = 0; i < overlay.getIncludedPages().length(); i++) {
-//			includedPages.add(new FbPage(overlay.getIncludedPages().get(i).getName(), overlay.getIncludedPages().get(i).getPageUrl(), overlay.getIncludedPages().get(i).getPageId()));
-//		}
-//
-//
-//		for (int i = 0; i < overlay.getIgnoredPages().length(); i++) {
-//			ignoredPages.add(new FbPage(overlay.getIncludedPages().get(i).getName(), overlay.getIncludedPages().get(i).getPageUrl(), overlay.getIncludedPages().get(i).getPageId()));
-//		}
-//
-//	}
+
 
 	public ClientPageData(FbPage clientPageDetails) {
 		this.clientPage = clientPageDetails;
@@ -82,7 +68,6 @@ public class ClientPageData implements JsonSerializable {
 	public boolean addPage(FbPage page) {
 		boolean added = false;
 
-
 		if(!includedPages.contains(page)){
 			includedPages.add(page);
 			added = true;
@@ -114,11 +99,9 @@ public class ClientPageData implements JsonSerializable {
 
 	public FbPage getPageById(String pageId){
 		FbPage thePage = null;		
-		for(FbPage page : includedPages){
-			if(page.getPageId() == pageId){
+		for(FbPage page : includedPages)
+			if(page.getPageId().equals(pageId.trim()))
 				thePage = page;
-			}
-		}
 		return thePage;
 	}
 
@@ -146,19 +129,5 @@ public class ClientPageData implements JsonSerializable {
 		return (ClientPageData)serializer.deSerialize(Json,"ie.sortons.events.shared.ClientPageData");
 	}
 	
-	
-//
-//	public static class CPDOverlay extends JavaScriptObject {
-//
-//		protected CPDOverlay() {} 
-//
-//		// TODO should this line be gone? It's mainly for datastore indexing...
-//		public final native String getClientPageId() /*-{ return this.clientPageId; }-*/;
-//
-//		public final native FbPage.FBPOverlay getClientPage() /*-{ return this.clientPage; }-*/;
-//
-//		public final native JsArray<FbPage.FBPOverlay> getIncludedPages() /*-{ return this.includedPages; }-*/;
-//		public final native JsArray<FbPage.FBPOverlay> getIgnoredPages() /*-{ return this.ignoredPages; }-*/;
-//	}
 
 }
