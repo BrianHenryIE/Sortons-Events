@@ -38,6 +38,7 @@ public class UpcomingEventsEndpoint {
 			if((datastoreEvent.getFbEvent().getEndTimeDate()==null)||(datastoreEvent.getFbEvent().getEndTimeDate().after(now))){
 
 				upcomingEvents.add(datastoreEvent);
+				
 			}
 		}
 

@@ -90,8 +90,6 @@ public class ClientPageData implements JsonSerializable {
 		if(!ignoredPages.contains(page)){
 			ignoredPages.add(page);
 			excluded = true;
-		}else{
-			excluded = true;
 		}
 		return excluded;
 	}

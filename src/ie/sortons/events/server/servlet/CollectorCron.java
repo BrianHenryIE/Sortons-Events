@@ -138,8 +138,7 @@ public class CollectorCron extends HttpServlet {
 	 * 
 	 * In case doPost is called, somehow.
 	 */
-	public void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		doGet(request, response);
 	}
 
@@ -215,7 +214,8 @@ public class CollectorCron extends HttpServlet {
 		return sourceClientPages;
 	}
 
-
+	// TODO something with this.
+	@SuppressWarnings("unused")
 	private Map<String, DiscoveredEvent> findCreatedEventsForClients(List<ClientPageData> clients) {
 		Map<String, DiscoveredEvent> createdEvents = new HashMap<String, DiscoveredEvent>();
 
@@ -246,9 +246,9 @@ public class CollectorCron extends HttpServlet {
 		Map<String, FbPage> sourcePages = getClientsSourceIds(client);
 
 		List<String> fqlCalls = new ArrayList<String>();
-		for (String idList : getBrokenIdsLists( sourcePages.keySet() ) ) {
+		for (String idList : getBrokenIdsLists( sourcePages.keySet() ) ) 
 			fqlCalls.add("SELECT%20uid%2C%20eid%2C%20start_time%20FROM%20event_member%20WHERE%20start_time%20%3E%20now()%20AND%20uid%20IN%20(" + idList + ")"); 
-		}
+		
 
 		List<String> jsons = asyncFqlCall(fqlCalls);
 
@@ -293,7 +293,7 @@ public class CollectorCron extends HttpServlet {
 		for (String s : idSet) {
 			nextIds.add(s);
 			i++;
-			if (i == 75) {
+			if ( i % 75 == 0 ) {
 				idLists.add(Joiner.on(",").join(nextIds));
 				nextIds = new ArrayList<String>();
 			}
@@ -380,22 +380,22 @@ public class CollectorCron extends HttpServlet {
 		Map<String, FbPage> sourcePages = getClientsSourceIds(client);
 
 		List<String> fqlCalls = new ArrayList<String>();
-		
+
 		for (FbPage sourcePage : sourcePages.values())
 			fqlCalls.add(streamCallStub + sourcePage.getPageId() + "AND%20actor_id=" + sourcePage.getPageId() + efficient);
-		
+
 		List<String> jsons = asyncFqlCall(fqlCalls);
 
 		for (String json : jsons) {
 
 			FqlStream fqlStream = gson.fromJson(json, FqlStream.class);
-			
+
 			// TODO check the string for "event" before bothering to process 
 
 			if(fqlStream.getData().length>0)
 				postedEvents = mergeEventMaps(postedEvents, findEventsInStreamPosts(fqlStream, client));
 		}
-		
+
 		out.println("Posted events : " + postedEvents.size());
 		// System.out.println("Posted events : " + postedEvents.size());
 
@@ -405,8 +405,6 @@ public class CollectorCron extends HttpServlet {
 
 	private Map<String, DiscoveredEvent> findEventsInStreamPosts(FqlStream wallPosts, ClientPageData client) {
 
-		System.out.println("findEventsInStreamPosts");
-		
 		Map<String, DiscoveredEvent> foundEvents = new HashMap<String, DiscoveredEvent>();
 
 		// TODO use the simpler regex without a pattern and matcher ??
@@ -414,18 +412,15 @@ public class CollectorCron extends HttpServlet {
 		Pattern pattern = Pattern.compile("facebook.com/events/[0-9]*");
 		Matcher matcher;
 
-				
+		FbPage sourcePage = null;
+
 		if ((wallPosts != null) && (wallPosts.getData() != null) && (wallPosts.getData().length > 0)) {
 			for (FqlStreamItem item : wallPosts.getData()) {
-				
+
 				if ( item.getActorId().equals(item.getSourceId()) ) {
-					
-					FbPage sourcePage = client.getPageById(item.getSourceId());
-					System.out.println(item.getSourceId());
-					System.out.println(gson.toJson(client));
-					System.out.println(sourcePage.getName());
-					
-					
+
+					sourcePage = client.getPageById(item.getSourceId());
+
 					// Read the message
 					matcher = pattern.matcher(item.getMessage());
 					while (matcher.find()) {
@@ -464,20 +459,18 @@ public class CollectorCron extends HttpServlet {
 							}
 						}
 					}
-					
-					if (foundEvents.size() > 0) {
-						out.println("Posted event  : " + sourcePage.getName() + 
-								" : " + foundEvents.size() + " : " + 
-								Joiner.on(",").join(foundEvents.keySet()));
-					} else {
-						// System.out.println("Posted event  : " + sourcePage.getName() + " : " + foundEvents.size());
-					}
-					
+
+
 				}
 			}
 		}
 
 
+		if (sourcePage != null && foundEvents.size() > 0) {
+			out.println("Posted event  : " + sourcePage.getName() + " : " + foundEvents.size() + " : " + Joiner.on(",").join(foundEvents.keySet()));
+		} else {
+			// System.out.println("Posted event  : " + sourcePage.getName() + " : " + foundEvents.size());
+		}
 
 		return foundEvents;
 	}

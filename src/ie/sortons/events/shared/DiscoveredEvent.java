@@ -105,7 +105,7 @@ public class DiscoveredEvent implements JsonSerializable {
 		return changed;
 	}
 
-
+	// @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
 	public List<String> getSourceLists() {
 		return sourceLists;
 	}
