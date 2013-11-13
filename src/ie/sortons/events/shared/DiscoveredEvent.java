@@ -186,5 +186,13 @@ public class DiscoveredEvent implements JsonSerializable {
 		}
 	}
 
+	
+	/**
+	 * This is used to remove the source lists before transferring the data to the client
+	 */
+	public void setSourceListsNull() {
+		sourceLists = null;		
+	}
+
 
 }

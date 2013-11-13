@@ -248,7 +248,7 @@ public class CollectorCron extends HttpServlet {
 		List<String> fqlCalls = new ArrayList<String>();
 		for (String idList : getBrokenIdsLists( sourcePages.keySet() ) ) 
 			fqlCalls.add("SELECT%20uid%2C%20eid%2C%20start_time%20FROM%20event_member%20WHERE%20start_time%20%3E%20now()%20AND%20uid%20IN%20(" + idList + ")"); 
-		
+
 
 		List<String> jsons = asyncFqlCall(fqlCalls);
 
@@ -264,7 +264,7 @@ public class CollectorCron extends HttpServlet {
 		}
 
 		out.println("Created events : " + createdEvents.size());
-		System.out.println("Created events : " + createdEvents.size());
+		// System.out.println("Created events : " + createdEvents.size());
 
 		if( createdEvents.size() > 0 ){
 			for(DiscoveredEvent event : createdEvents.values()){
@@ -388,12 +388,19 @@ public class CollectorCron extends HttpServlet {
 
 		for (String json : jsons) {
 
+			// TODO check the string for "event" before bothering to process
+			
 			FqlStream fqlStream = gson.fromJson(json, FqlStream.class);
 
-			// TODO check the string for "event" before bothering to process 
+			// java.lang.NullPointerException: how>!?
 
-			if(fqlStream.getData().length>0)
-				postedEvents = mergeEventMaps(postedEvents, findEventsInStreamPosts(fqlStream, client));
+			if(fqlStream.getData()!=null){
+				if(fqlStream.getData().length>0)
+					postedEvents = mergeEventMaps(postedEvents, findEventsInStreamPosts(fqlStream, client));
+			}else{
+				log.warning("Null Pointer during fqlStream.getData(). CollectorCron 401");
+				System.out.println(json);
+			}
 		}
 
 		out.println("Posted events : " + postedEvents.size());
@@ -500,20 +507,23 @@ public class CollectorCron extends HttpServlet {
 
 		List<String> fqlCalls = new ArrayList<String>();
 		for (String idList : getBrokenIdsLists( discoveredEvents.keySet() ) ) 
-			fqlCalls.add("SELECT%20eid%2C%20name%2C%20location%2C%20start_time%2C%20end_time%20FROM%20event%20WHERE%20eid%20IN%20(" + idList + ")%20AND%20start_time%3Enow()");
+			fqlCalls.add("SELECT%20eid%2C%20name%2C%20location%2C%20venue%2C%20start_time%2C%20end_time%20FROM%20event%20WHERE%20eid%20IN%20(" + idList + ")%20AND%20start_time%3Enow()");
 
 		List<String> jsons = asyncFqlCall(fqlCalls);
 
 		for (String json : jsons) {
 
 			try {
+				// TODO Gson adapter?!
+				json = json.replace("\"venue\":[]", "\"venue\":{}");
+				
 				FqlEventItem[] eventsDetails = gson.fromJson(json, FqlEvent.class).getData();
 				out.println("Upcoming events: " + eventsDetails.length);
 
 				for (FqlEventItem ei : eventsDetails) {
 					if (discoveredEvents.containsKey(ei.getEid())) {
 
-						FbEvent upcomingEvent = new FbEvent(ei.getEid(), ei.getName(), ei.getLocation(), ei.getStart_time(), ei.getEnd_time(), ei.getPic_square());
+						FbEvent upcomingEvent = new FbEvent(ei.getEid(), ei.getName(), ei.getLocation(), ei.getStart_time(), ei.getEnd_time(), ei.getPic_square(), ei.getVenue().getLatitude(), ei.getVenue().getLongitude());
 
 						DiscoveredEvent de = new DiscoveredEvent(discoveredEvents.get(ei.getEid()).getSourceLists(), discoveredEvents.get(ei.getEid()).getSourcePages(), upcomingEvent);
 
@@ -571,6 +581,7 @@ public class CollectorCron extends HttpServlet {
 		ofy().save().entities(discoveredEvents.values()).now();
 
 		out.println("Saved/updated: " + discoveredEvents.size() + " events.");
+		System.out.println("Saved/updated: " + discoveredEvents.size() + " events.");
 
 	}
 

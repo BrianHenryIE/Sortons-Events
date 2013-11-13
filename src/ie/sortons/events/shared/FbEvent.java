@@ -1,8 +1,5 @@
 package ie.sortons.events.shared;
 
-
-
-
 import java.util.Date;
 
 import com.google.gwt.core.client.GWT;
@@ -12,8 +9,6 @@ import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Index;
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 import com.kfuntak.gwt.json.serialization.client.Serializer;
-
-
 
 @Embed
 public class FbEvent implements JsonSerializable, Comparable<FbEvent> {
@@ -35,7 +30,10 @@ public class FbEvent implements JsonSerializable, Comparable<FbEvent> {
 
 	public String picSquare;
 
-
+	public Double latitude;
+	
+	public Double longitude;
+	
 	/**
 	 * No args constructor for Objectify entity and JsonSerializable
 	 */
@@ -47,7 +45,7 @@ public class FbEvent implements JsonSerializable, Comparable<FbEvent> {
 	}
 
 
-	public FbEvent(String eid, String name, String location, String startTime, String endTime, String picSquare) {
+	public FbEvent(String eid, String name, String location, String startTime, String endTime, String picSquare, Double latitude, Double longitude) {
 		this.eid = eid;
 		this.name = name;
 		this.location = location;
@@ -56,6 +54,8 @@ public class FbEvent implements JsonSerializable, Comparable<FbEvent> {
 		this.endTime  = endTime;
 		this.endTimeDate = parseDate(endTime);
 		this.picSquare = picSquare;
+		this.latitude = latitude;
+		this.longitude = longitude;
 	}
 
 
