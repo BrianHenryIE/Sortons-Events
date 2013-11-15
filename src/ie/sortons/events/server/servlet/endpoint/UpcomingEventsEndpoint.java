@@ -37,7 +37,7 @@ public class UpcomingEventsEndpoint {
 
 			if((datastoreEvent.getFbEvent().getEndTimeDate()==null)||(datastoreEvent.getFbEvent().getEndTimeDate().after(now))){
 
-				datastoreEvent.setSourceListsNull();
+				// datastoreEvent.setSourceListsNull();
 				
 				upcomingEvents.add(datastoreEvent);
 				

@@ -3,6 +3,8 @@ package ie.sortons.events.shared;
 import java.util.ArrayList;
 import java.util.List;
 
+//import com.google.api.server.spi.config.AnnotationBoolean;
+//import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.gwt.core.client.GWT;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -21,11 +23,11 @@ public class DiscoveredEvent implements JsonSerializable {
 
 	public FbEvent fbEvent;
 
-	public List<FbPage> sourcePages = new ArrayList<FbPage>();
-
+	//@ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
 	@Index
 	public List<String> sourceLists = new ArrayList<String>();
 
+	public List<FbPage> sourcePages = new ArrayList<FbPage>();
 
 	/**
 	 * No args constructor for Objectify etc
@@ -105,14 +107,14 @@ public class DiscoveredEvent implements JsonSerializable {
 		return changed;
 	}
 
-	// @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+	
 	public List<String> getSourceLists() {
 		return sourceLists;
 	}
 
 
 	public boolean hasSourceList(String source) {
-		return (sourceLists.contains(source));
+		return sourceLists.contains(source);
 	}
 
 
@@ -134,35 +136,30 @@ public class DiscoveredEvent implements JsonSerializable {
 		return changed;
 	}
 
+	
 	public static DiscoveredEvent fromJson(String json) {
 		Serializer serializer = (Serializer) GWT.create(Serializer.class);
 		return (DiscoveredEvent)serializer.deSerialize(json,"ie.sortons.events.shared.DiscoveredEvent");
 	}
 
+	
 	@SuppressWarnings("unchecked")
 	public static List<DiscoveredEvent> oldlistFromJson(String json) {
 		ArrayListSerializer serializer = (ArrayListSerializer) GWT.create(ArrayListSerializer.class);
 		return (List<DiscoveredEvent>)serializer.deSerialize(json,"ie.sortons.events.shared.DiscoveredEvent");
 	}
 
+	
 	public static List<DiscoveredEvent> listFromJson(String json) {
 		ItemArray ira = ItemArray.fromJson(json);
 		return ira.getItems();
 	}
 
+
 	public String toJson() {
 		Serializer serializer = (Serializer) GWT.create(Serializer.class);
 		return serializer.serialize(this);
 	}
-
-	//	public static class Overlay extends JavaScriptObject {
-	//
-	//		protected Overlay() {}
-	//
-	//		public final native FbEvent.Overlay getFbEvent() /*-{ return this.fbEvent; }-*/;
-	//		public final native JsArray<FbPage.FBPOverlay> getSourcePages() /*-{ return this.sourcePages; }-*/;
-	//		public final native List<String> getSourceLists() /*-{ return this.sourceLists; }-*/;
-	//	}
 
 
 	public static class ItemArray implements JsonSerializable {
@@ -190,9 +187,9 @@ public class DiscoveredEvent implements JsonSerializable {
 	/**
 	 * This is used to remove the source lists before transferring the data to the client
 	 */
-	public void setSourceListsNull() {
-		sourceLists = null;		
-	}
+	//public void setSourceListsNull() {
+	//	sourceLists = null;		
+	//}
 
 
 }
