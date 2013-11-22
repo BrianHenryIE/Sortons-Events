@@ -58,6 +58,22 @@ public class FbEvent implements JsonSerializable, Comparable<FbEvent> {
 		this.longitude = longitude;
 	}
 
+	/**
+	 * Copy Constructor
+	 */
+	public FbEvent(FbEvent fbEvent) {
+		this.eid = fbEvent.getEid();
+		this.name = fbEvent.getName();
+		this.location = fbEvent.getLocation();
+		this.startTime= fbEvent.getStartTime();
+		this.startTimeDate = fbEvent.getStartTimeDate();
+		this.endTime = fbEvent.getEndTime();
+		this.endTimeDate = fbEvent.getEndTimeDate();
+		this.picSquare = fbEvent.getPicSquare();
+		this.latitude = fbEvent.getLatitude();
+		this.longitude = fbEvent.getLongitude();
+	}
+
 
 	public void mergeWithFbEvent(FbEvent otherEvent){
 
@@ -102,6 +118,14 @@ public class FbEvent implements JsonSerializable, Comparable<FbEvent> {
 
 	public String getPicSquare() {
 		return picSquare;
+	}
+
+	public Double getLatitude() {
+		return latitude;
+	}
+
+	public Double getLongitude() {
+		return longitude;
 	}
 
 

@@ -3,8 +3,7 @@ package ie.sortons.events.shared;
 import java.util.ArrayList;
 import java.util.List;
 
-//import com.google.api.server.spi.config.AnnotationBoolean;
-//import com.google.api.server.spi.config.ApiResourceProperty;
+import com.google.common.base.Joiner;
 import com.google.gwt.core.client.GWT;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -12,6 +11,8 @@ import com.googlecode.objectify.annotation.Index;
 import com.kfuntak.gwt.json.serialization.client.ArrayListSerializer;
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 import com.kfuntak.gwt.json.serialization.client.Serializer;
+//import com.google.api.server.spi.config.AnnotationBoolean;
+//import com.google.api.server.spi.config.ApiResourceProperty;
 
 
 @Entity
@@ -57,20 +58,24 @@ public class DiscoveredEvent implements JsonSerializable {
 		addSourcePage(sourcePage);
 	}
 
-
-	public DiscoveredEvent(List<String> newSourceLists, List<FbPage> newSourcePages, FbEvent upcomingEvent) {
-		this.addSourceLists(newSourceLists);
-		this.addSourcePages(newSourcePages);
-		this.fbEvent = upcomingEvent;
-		this.eid = upcomingEvent.getEid();
-	}
-
-
 	public DiscoveredEvent(FbEvent fbEvent, List<String> sourceLists, List<FbPage> sourcePages) {
 		this.eid = fbEvent.getEid();
 		this.fbEvent = fbEvent;
 		this.sourceLists = sourceLists;
 		this.sourcePages = sourcePages;
+	}
+
+
+	/**
+	 * Copy Constructor!
+	 * 
+	 * @param DiscoveredEvent to copy
+	 */
+	public DiscoveredEvent(DiscoveredEvent de) {
+		this.eid = de.getFbEvent().getEid();
+		this.fbEvent = new FbEvent(de.getFbEvent());
+		this.sourceLists = de.getSourceLists(); // same reference
+		this.sourcePages = de.getSourcePages(); // same reference
 	}
 
 
@@ -107,7 +112,7 @@ public class DiscoveredEvent implements JsonSerializable {
 		return changed;
 	}
 
-	
+
 	public List<String> getSourceLists() {
 		return sourceLists;
 	}
@@ -136,20 +141,20 @@ public class DiscoveredEvent implements JsonSerializable {
 		return changed;
 	}
 
-	
+
 	public static DiscoveredEvent fromJson(String json) {
 		Serializer serializer = (Serializer) GWT.create(Serializer.class);
 		return (DiscoveredEvent)serializer.deSerialize(json,"ie.sortons.events.shared.DiscoveredEvent");
 	}
 
-	
+
 	@SuppressWarnings("unchecked")
 	public static List<DiscoveredEvent> oldlistFromJson(String json) {
 		ArrayListSerializer serializer = (ArrayListSerializer) GWT.create(ArrayListSerializer.class);
 		return (List<DiscoveredEvent>)serializer.deSerialize(json,"ie.sortons.events.shared.DiscoveredEvent");
 	}
 
-	
+
 	public static List<DiscoveredEvent> listFromJson(String json) {
 		ItemArray ira = ItemArray.fromJson(json);
 		return ira.getItems();
@@ -183,13 +188,38 @@ public class DiscoveredEvent implements JsonSerializable {
 		}
 	}
 
-	
+
+	public static DiscoveredEvent merge(DiscoveredEvent d1, DiscoveredEvent d2){
+
+		if ( d1.getFbEvent().getEid().equals(d2.getFbEvent().getEid()) ) {
+
+			DiscoveredEvent newDe = new DiscoveredEvent(d1);
+			newDe.addSourceLists(d2.getSourceLists());
+			newDe.addSourcePages(d2.getSourcePages());		
+
+			return newDe;
+		}
+		return null;
+	}
+
+
 	/**
 	 * This is used to remove the source lists before transferring the data to the client
 	 */
-	//public void setSourceListsNull() {
-	//	sourceLists = null;		
-	//}
+	public void setSourceListsNull() {
+		sourceLists = null;		
+	}
 
+	
+	/**
+	 * This is used to remove the source pages that are related to other clients from the same event
+	 */
+	public void setSourcePagesToClientOnly(ClientPageData client){
+		List<FbPage> newSources = new ArrayList<FbPage>();
+		for(FbPage page : sourcePages)
+			if( client.getIncludedPages().contains(page) ) 
+				newSources.add(page);
+		sourcePages = newSources;
+	}
 
 }

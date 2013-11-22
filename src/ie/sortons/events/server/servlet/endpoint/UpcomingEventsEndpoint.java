@@ -1,6 +1,7 @@
 package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
+import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.DiscoveredEvent;
 
 import java.util.ArrayList;
@@ -32,14 +33,17 @@ public class UpcomingEventsEndpoint {
 		upcomingEvents.clear();
 		
 		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("sourceLists", clientPageId).filter("fbEvent.startTimeDate >", getHoursAgoOrToday(12)).order("fbEvent.startTimeDate").list();
-
+		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
+		
 		for(DiscoveredEvent datastoreEvent : dsEvents){
 
 			if((datastoreEvent.getFbEvent().getEndTimeDate()==null)||(datastoreEvent.getFbEvent().getEndTimeDate().after(now))){
 
-				// datastoreEvent.setSourceListsNull();
+				DiscoveredEvent de = new DiscoveredEvent(datastoreEvent);
+				de.setSourceListsNull();
+				de.setSourcePagesToClientOnly(clientPageData);
 				
-				upcomingEvents.add(datastoreEvent);
+				upcomingEvents.add(de);
 				
 			}
 		}
