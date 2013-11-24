@@ -130,11 +130,11 @@ public class CollectorCron extends HttpServlet {
 						// If adding anything to the datastore's record would change it,
 						// merge the new record and the datastore one and save it,
 						// otherwise drop it from the list to be saved
-						if( dsEvent.addSourceLists( detailedEvents.get(dsEvent.getFbEvent().getEid()).getSourceLists() )|| dsEvent.addSourcePages( detailedEvents.get(dsEvent.getFbEvent().getEid()).getSourcePages() ))  {
+						if ( dsEvent.addSourceLists( detailedEvents.get(dsEvent.getFbEvent().getEid()).getSourceLists() ) || dsEvent.addSourcePages( detailedEvents.get(dsEvent.getFbEvent().getEid()).getSourcePages() )) 
 							detailedEvents.put(dsEvent.getFbEvent().getEid(), DiscoveredEvent.merge(dsEvent, detailedEvents.get(dsEvent.getFbEvent().getEid())) );
-						} else {
+						else
 							detailedEvents.remove(dsEvent.getFbEvent().getEid());
-						}
+						
 
 					}			
 				}
