@@ -5,6 +5,7 @@ import ie.sortons.events.client.presenter.AdminPresenter;
 import ie.sortons.events.client.view.widgets.AdminPageItem;
 import ie.sortons.events.shared.FbPage;
 import ie.sortons.gwtfbplus.client.api.Canvas;
+import ie.sortons.gwtfbplus.client.widgets.buttons.BlueButton;
 
 import java.util.List;
 
@@ -40,7 +41,7 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 	}
 
 	@UiField
-	Button addPageButton;
+	BlueButton addPageButton;
 
 	@UiField
 	Button loginButton;

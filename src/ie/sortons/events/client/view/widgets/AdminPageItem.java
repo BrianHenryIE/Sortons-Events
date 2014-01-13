@@ -4,6 +4,8 @@ import ie.sortons.events.client.presenter.AdminPresenter;
 import ie.sortons.events.shared.FbPage;
 import ie.sortons.gwtfbplus.client.newresources.Resources;
 import ie.sortons.gwtfbplus.client.widgets.Link;
+import ie.sortons.gwtfbplus.client.widgets.buttons.GreyButton;
+import ie.sortons.gwtfbplus.client.widgets.buttons.XableButton;
 import ie.sortons.gwtfbplus.client.widgets.popups.ToolTipPanel;
 
 import com.google.gwt.core.client.GWT;
@@ -14,6 +16,7 @@ import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
@@ -27,13 +30,16 @@ public class AdminPageItem extends Composite {
 	}
 
 	@UiField
+	FlowPanel flowPanel;
+	
+	@UiField
 	HTMLPanel picPanel;
 
 	@UiField
-	Image addButton;
+	GreyButton addButton;
 
 	@UiField
-	Image ignoreButton;
+	XableButton ignoreButton;
 
 	@UiField
 	Anchor name;
@@ -46,14 +52,11 @@ public class AdminPageItem extends Composite {
 	// private AdminPresenter presenter;
 
 	public AdminPageItem(final FbPage page, final AdminPresenter presenter) {
-
+		
 		initWidget(uiBinder.createAndBindUi(this));
 
 		Resources.INSTANCE.css().ensureInjected();
-
-		addButton.setResource(Resources.INSTANCE.greenPlus());
-		ignoreButton.setResource(Resources.INSTANCE.redX());
-
+	
 		this.page = page;
 
 		Image pageImage = new Image("//graph.facebook.com/" + page.getPageId() + "/picture?type=square");
@@ -88,7 +91,7 @@ public class AdminPageItem extends Composite {
 				presenter.addPage(page);
 			}
 		});
-
+				
 	}
 
 	public void removeAddButton() {
