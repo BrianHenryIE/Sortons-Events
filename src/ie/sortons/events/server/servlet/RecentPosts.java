@@ -50,11 +50,11 @@ public class RecentPosts extends HttpServlet {
 	private Gson gson = new GsonBuilder().registerTypeAdapter(FqlStreamItemAttachment.class, new FqlStreamItemAttachmentAdapter()).create();
 
 	String fqlCallStub = "https://graph.facebook.com/fql?q=";
-	String streamCallStub = "SELECT%20permalink,actor_id%2C%20post_id%2C%20created_time%20FROM%20stream%20WHERE%20source_id%20%3D%20"; 
+	String streamCallStub = "SELECT%20permalink,actor_id%2C%20post_id%2C%20created_time,message,attachment.media%20FROM%20stream%20WHERE%20source_id%20%3D%20"; 
 
 	private String fqlCall(String id){
 
-		return  fqlCallStub + streamCallStub + id +"%20AND%20actor_id=source_id%20AND%20created_time%20%3E%20" + ((new DateTime().getMillis() / 1000) - 604800) + "&access_token="+Config.getAppAccessToken();
+		return  fqlCallStub + streamCallStub + id +"%20AND%20actor_id=source_id%20AND%20type!=247%20AND%20created_time%20%3E%20" + ((new DateTime().getMillis() / 1000) - 604800) + "&access_token="+Config.getAppAccessToken();
 
 	}
 
@@ -104,7 +104,7 @@ public class RecentPosts extends HttpServlet {
 				"<meta charset=\"utf-8\" />\n" +
 				"<style type=\"text/css\">\n" +
 				"  body { margin :0; padding: 0; text-align: center; }\n" +
-				"  .post-container { padding-bottom: 20px; margin-left: auto; margin-right: auto; }\n" +
+				"  .post-container { padding: 10px 0 10px; margin-left: auto; margin-right: auto; }\n" +
 				"</style>\n" +
 				"</head>\n" +
 				"<body style=\"overflow: hidden\">\n";
@@ -176,11 +176,15 @@ public class RecentPosts extends HttpServlet {
 		int count = 0;
 		String lastPoster = "";
 		for(FqlStreamItem item : feed.values())
-			if ( !item.getActorId().equals(lastPoster) && count < 30 ) {
+			if ( !item.getActorId().equals(lastPoster) 
+					&& count < 30 
+					&& !item.getMessage().contains("facebook.com/events") ) {
 				out.print(embedPost(item.getPermalink())+"\n");
 				lastPoster = item.getActorId();
 				count++;
 			}
+		
+		//		&& (item.getAttachment() != null ? !item.getAttachment().getMedia()[0].getHref().contains("facebook.com/events") : true)
 
 	}
 
@@ -194,6 +198,7 @@ public class RecentPosts extends HttpServlet {
 		List<Future<HTTPResponse>> asyncResponses = new ArrayList<Future<HTTPResponse>>();
 
 		for (String fql : fqlCalls) {
+			
 			try {
 				URL graphcall = new URL(fql);
 
@@ -204,7 +209,6 @@ public class RecentPosts extends HttpServlet {
 				e.printStackTrace();
 			}
 		}
-
 		for (Future<HTTPResponse> future : asyncResponses) {
 			try {
 				// response = future.get();

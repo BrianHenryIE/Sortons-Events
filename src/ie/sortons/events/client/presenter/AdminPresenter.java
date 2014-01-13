@@ -1,6 +1,5 @@
 package ie.sortons.events.client.presenter;
 
-
 import ie.sortons.events.client.ClientDAO;
 import ie.sortons.events.client.LoginController;
 import ie.sortons.events.client.appevent.PermissionsEvent;
@@ -29,12 +28,12 @@ import com.google.gwt.user.client.ui.Widget;
 import com.google.web.bindery.event.shared.binder.EventBinder;
 import com.google.web.bindery.event.shared.binder.EventHandler;
 
-
 public class AdminPresenter implements Presenter {
 
-	interface MyEventBinder extends EventBinder<AdminPresenter> {}
-	private static final MyEventBinder eventBinder = GWT.create(MyEventBinder.class);
+	interface MyEventBinder extends EventBinder<AdminPresenter> {
+	}
 
+	private static final MyEventBinder eventBinder = GWT.create(MyEventBinder.class);
 
 	private final ClientDAO dao;
 
@@ -43,12 +42,15 @@ public class AdminPresenter implements Presenter {
 
 	private String requiredAdminPermissions = "";
 
-
 	public interface Display {
 		TextBox getAddPageTextBox();
+
 		HasClickHandlers getAddPageButton();
+
 		HasClickHandlers getLoginButton();
+
 		void setIncludedPages(List<FbPage> includedList);
+
 		void setSuggestedPages(List<FbPage> suggestionsList);
 
 		void setPresenter(AdminPresenter presenter);
@@ -56,40 +58,37 @@ public class AdminPresenter implements Presenter {
 		Widget asWidget();
 	}
 
-
-
 	public void bind() {
 
 		eventBinder.bindEventHandlers(this, eventBus);
 
-		display.getAddPageButton().addClickHandler(new ClickHandler() {   
+		display.getAddPageButton().addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
 				processTextBox();
 			}
 		});
 
-		display.getLoginButton().addClickHandler(new ClickHandler() {   
+		display.getLoginButton().addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
 				LoginController.login(requiredAdminPermissions);
 			}
 		});
 
-		display.getAddPageTextBox().addKeyUpHandler(new KeyUpHandler(){
+		display.getAddPageTextBox().addKeyUpHandler(new KeyUpHandler() {
 			public void onKeyUp(KeyUpEvent event) {
-				searchSuggestions();				
-			}});
+				searchSuggestions();
+			}
+		});
 
 	}
-
 
 	public AdminPresenter(EventBus eventBus, final ClientDAO dao, Display view) {
 		this.dao = dao;
 		this.eventBus = eventBus;
-		this.display = view;		
+		this.display = view;
 		getClientPageData();
 		view.setPresenter(this);
 	}
-
 
 	@Override
 	public void go(HasWidgets container) {
@@ -98,45 +97,42 @@ public class AdminPresenter implements Presenter {
 		container.add(display.asWidget());
 	}
 
-
 	private void getClientPageData() {
 		dao.refreshClientPageData(this);
 	}
 
-
-	public void displayClientData(ClientPageData clientPageData){
+	public void displayClientData(ClientPageData clientPageData) {
 		display.setIncludedPages(dao.getClientPageData().getIncludedPages());
 
-		if(display.getAddPageTextBox().getText().trim().length()>0){
+		if (display.getAddPageTextBox().getText().trim().length() > 0) {
 			searchSuggestions();
-		}else {
+		} else {
 			getSuggestions();
 		}
 	}
-
 
 	private void getSuggestions() {
 		dao.getSuggestions(this);
 	}
 
 	public void setSuggestions(List<FbPage> suggestionsList) {
-		if(suggestionsList != null){
+		if (suggestionsList != null) {
 			display.setSuggestedPages(suggestionsList.subList(0, Math.min(10, suggestionsList.size())));
 		}
 	}
 
-	private void searchSuggestions(){
+	private void searchSuggestions() {
 		String searchText = display.getAddPageTextBox().getText().toLowerCase();
-		if(searchText.trim().length()>0 && !searchText.toLowerCase().contains("http:") && !searchText.toLowerCase().contains("www.")){
+		if (searchText.trim().length() > 0 && !searchText.toLowerCase().contains("http:") && !searchText.toLowerCase().contains("www.")) {
 			List<FbPage> search = new ArrayList<FbPage>();
-			for(FbPage page : dao.getSuggestions()){
+			for (FbPage page : dao.getSuggestions()) {
 				boolean add = true;
-				for(String term : searchText.split(" ")){
-					if(!page.getName().toLowerCase().contains(term)){
+				for (String term : searchText.split(" ")) {
+					if (!page.getName().toLowerCase().contains(term) && !page.getLocation().friendlyString().toLowerCase().contains(term)) {
 						add = false;
 					}
 				}
-				if(add == true || page.getPageId().contains(searchText)){
+				if (add == true || page.getPageId().contains(searchText) || page.getLocation().friendlyString().toLowerCase().contains(searchText)) {
 					search.add(page);
 				}
 			}
@@ -145,7 +141,6 @@ public class AdminPresenter implements Presenter {
 			getSuggestions();
 		}
 	}
-
 
 	private void processTextBox() {
 
@@ -156,27 +151,26 @@ public class AdminPresenter implements Presenter {
 		// add it to the included pages list
 		// get the new page's likes to add to suggestions.
 
-
 		// Get the text that has been entered and build the graph call
 
 		String textEntered = display.getAddPageTextBox().getText();
 		String graphPath = "/";
 
-		//TODO get rid of anything after ?
+		// TODO get rid of anything after ?
 		// http://www.facebook.com/ISS.UCD?ref=stream
 
-		// Sometimes http://www.facebook.com/pages/Randals-Rest-UCD/107542286070006		
-		if( textEntered.matches(".*facebook\\.com/pages/[^/]*/\\d*/?") ) {
+		// Sometimes http://www.facebook.com/pages/Randals-Rest-UCD/107542286070006
+		if (textEntered.matches(".*facebook\\.com/pages/[^/]*/\\d*/?")) {
 
 			graphPath += textEntered.split(".*facebook\\.com/pages/[^/]*/")[1].replace("/", "");
 
 			// Sometimes http://www.facebook.com/UCD.Alumni?ref=stream&hc_location=stream
-		} else if( textEntered.matches(".*facebook\\.com/[^/]*/?") ) {
+		} else if (textEntered.matches(".*facebook\\.com/[^/]*/?")) {
 
 			graphPath += textEntered.split(".*facebook\\.com/")[1].replace("/", "");
 
-			// Sometimes 107542286070006	
-		} else if( textEntered.matches("\\d*") ) {
+			// Sometimes 107542286070006
+		} else if (textEntered.matches("\\d*")) {
 
 			graphPath += textEntered;
 
@@ -186,31 +180,32 @@ public class AdminPresenter implements Presenter {
 
 		graphPath += "?fields=name,id,link";
 
-		dao.graphCall(graphPath,  new AsyncCallback<JavaScriptObject>() {
+		dao.graphCall(graphPath, new AsyncCallback<JavaScriptObject>() {
 			public void onSuccess(JavaScriptObject response) {
+
+				// FbPage.fromJson(response.getText());
 
 				GraphPageOverlay pageDetails = response.cast();
 
 				FbPage newPage = new FbPage(pageDetails.getName(), pageDetails.getLink(), pageDetails.getId());
 
-				addPage(newPage); 
-
+				addPage(newPage);
 
 				// TODO
 				// This should only empty when it's successful
 				display.getAddPageTextBox().setText("");
 
 			}
+
 			@Override
 			public void onFailure(Throwable caught) {
 				// TODO Auto-generated method stub
 			}
-		});	
+		});
 
 	}
 
-
-	public void addPage(FbPage newPage){
+	public void addPage(FbPage newPage) {
 
 		dao.addPage(newPage, new RequestCallback() {
 			public void onError(Request request, Throwable exception) {
@@ -227,7 +222,6 @@ public class AdminPresenter implements Presenter {
 					// then update UI
 					displayClientData(dao.getClientPageData());
 
-
 				} else {
 					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.addPage()");
 					System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
@@ -237,8 +231,7 @@ public class AdminPresenter implements Presenter {
 		});
 	}
 
-
-	public void ignorePage(FbPage page){
+	public void ignorePage(FbPage page) {
 
 		dao.ignorePage(page, new RequestCallback() {
 			public void onError(Request request, Throwable exception) {
@@ -255,12 +248,11 @@ public class AdminPresenter implements Presenter {
 					// then update UI
 					displayClientData(dao.getClientPageData());
 
-
 				} else {
 					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.ignorePage()");
 					System.out.println(response.getText());
-					//System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
-					//System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
+					// System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
+					// System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
 				}
 			}
 		});
@@ -270,11 +262,10 @@ public class AdminPresenter implements Presenter {
 
 	}
 
-
 	@EventHandler
 	void onLoginEvent(PermissionsEvent event) {
 
-		if(event.getPermissionsObject().hasPermission(requiredAdminPermissions)){
+		if (event.getPermissionsObject().hasPermission(requiredAdminPermissions)) {
 
 			// TODO
 			// Hide login button.
@@ -282,6 +273,5 @@ public class AdminPresenter implements Presenter {
 			getSuggestions();
 		}
 	}
-
 
 }

@@ -12,15 +12,16 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
+import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Image;
+import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.Widget;
 
 public class AdminPageItem extends Composite {
 
-	private static AdminPageItemUiBinder uiBinder = GWT
-			.create(AdminPageItemUiBinder.class);
+	private static AdminPageItemUiBinder uiBinder = GWT.create(AdminPageItemUiBinder.class);
 
 	interface AdminPageItemUiBinder extends UiBinder<Widget, AdminPageItem> {
 	}
@@ -34,15 +35,21 @@ public class AdminPageItem extends Composite {
 	@UiField
 	Image ignoreButton;
 
+	@UiField
+	Anchor name;
+
+	@UiField
+	Label location;
 
 	private FbPage page;
+
 	// private AdminPresenter presenter;
 
 	public AdminPageItem(final FbPage page, final AdminPresenter presenter) {
 
 		initWidget(uiBinder.createAndBindUi(this));
 
-		Resources.INSTANCE.css().ensureInjected(); 
+		Resources.INSTANCE.css().ensureInjected();
 
 		addButton.setResource(Resources.INSTANCE.greenPlus());
 		ignoreButton.setResource(Resources.INSTANCE.redX());
@@ -50,8 +57,15 @@ public class AdminPageItem extends Composite {
 		this.page = page;
 
 		Image pageImage = new Image("//graph.facebook.com/" + page.getPageId() + "/picture?type=square");
-		pageImage.setHeight("50px");
-		pageImage.setWidth("50px");
+		pageImage.setHeight("25px");
+		pageImage.setWidth("25px");
+
+		name.setText(page.getName());
+		name.setHref(page.getPageUrl());
+		name.setTarget("_blank");
+
+		if (page.getLocation() != null)
+			location.setText(page.getLocation().friendlyString());
 
 		ToolTipPanel pageImageToolTip = new ToolTipPanel(page.getName(), pageImage);
 		pageImageToolTip.getElement().getStyle().setDisplay(Display.INLINE_BLOCK);
@@ -61,14 +75,14 @@ public class AdminPageItem extends Composite {
 
 		picPanel.add(pageLink);
 
-		ignoreButton.addClickHandler(new ClickHandler(){
+		ignoreButton.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				presenter.ignorePage(page);
 			}
 		});
-		
-		addButton.addClickHandler(new ClickHandler(){
+
+		addButton.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				presenter.addPage(page);
@@ -85,8 +99,7 @@ public class AdminPageItem extends Composite {
 		ignoreButton.setVisible(false);
 	}
 
-
-	public FbPage getPage(){
+	public FbPage getPage() {
 		return page;
 	}
 

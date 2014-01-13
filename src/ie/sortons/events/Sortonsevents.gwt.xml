@@ -30,5 +30,6 @@
 	<source path='shared' />
 		  
 	<source path='ie.sortons.gwtfbplus' />
+	<source path='com.kfuntak.gwt.json.serialization' />
 
 </module>

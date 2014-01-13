@@ -1,9 +1,9 @@
 package ie.sortons.events.shared;
 
+
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.common.base.Joiner;
 import com.google.gwt.core.client.GWT;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;

@@ -19,7 +19,7 @@ public class UpcomingEventsEndpoint {
 
 	{
 		ObjectifyService.register(DiscoveredEvent.class);
-		
+
 	}
 
 
@@ -31,10 +31,10 @@ public class UpcomingEventsEndpoint {
 		Date now = new Date();
 
 		upcomingEvents.clear();
-		
+
 		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("sourceLists", clientPageId).filter("fbEvent.startTimeDate >", getHoursAgoOrToday(12)).order("fbEvent.startTimeDate").list();
 		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
-		
+
 		for(DiscoveredEvent datastoreEvent : dsEvents){
 
 			if((datastoreEvent.getFbEvent().getEndTimeDate()==null)||(datastoreEvent.getFbEvent().getEndTimeDate().after(now))){
@@ -42,9 +42,9 @@ public class UpcomingEventsEndpoint {
 				DiscoveredEvent de = new DiscoveredEvent(datastoreEvent);
 				de.setSourceListsNull();
 				de.setSourcePagesToClientOnly(clientPageData);
-				
+
 				upcomingEvents.add(de);
-				
+
 			}
 		}
 

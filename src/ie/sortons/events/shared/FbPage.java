@@ -1,22 +1,27 @@
 package ie.sortons.events.shared;
 
 import com.google.gwt.core.client.GWT;
+import com.googlecode.objectify.annotation.AlsoLoad;
 import com.googlecode.objectify.annotation.Embed;
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 import com.kfuntak.gwt.json.serialization.client.Serializer;
 
 
-
 @Embed 
 public class FbPage implements JsonSerializable, Comparable<FbPage> {
-	// @SerializeClassField(false)
-	public String pageId;
+	
+	@AlsoLoad("pageId") 
+	public String page_id;
+	
 	public String name;
-	public String pageUrl;
+	
+	@AlsoLoad("pageUrl") 
+	public String page_url;
 
+	public FbPageLocation location;
 
 	public String getPageId(){
-		return pageId;
+		return page_id;
 	}
 
 	public String getName(){
@@ -24,22 +29,22 @@ public class FbPage implements JsonSerializable, Comparable<FbPage> {
 	}
 
 	public String getPageUrl(){
-		return pageUrl;
+		return page_url;
+	}
+	
+	public FbPageLocation getLocation(){
+		return location;
 	}
 
 	public FbPage(){
 	}
 
 	public FbPage(String name, String pageUrl, String pageId){
-		this.pageId = pageId;
+		this.page_id = pageId;
 		this.name = name;
-		this.pageUrl = pageUrl;
+		this.page_url = pageUrl;
 	}
 
-
-	public void setPageId(String pageId) {
-		this.pageId = pageId;
-	}
 
 
 	public void setName(String name) {
@@ -48,13 +53,13 @@ public class FbPage implements JsonSerializable, Comparable<FbPage> {
 
 
 	public void setPageUrl(String pageUrl) {
-		this.pageUrl = pageUrl;
+		this.page_url = pageUrl;
 	}
 
 
 	@Override
 	public int compareTo(FbPage other) {
-		return this.pageId.compareTo(other.getPageId());
+		return this.page_id.compareTo(other.getPageId());
 	}
 
 	@Override
@@ -68,7 +73,7 @@ public class FbPage implements JsonSerializable, Comparable<FbPage> {
 
 	@Override
 	public final int hashCode() {
-		return pageId.hashCode();
+		return page_id.hashCode();
 	}
 
 
