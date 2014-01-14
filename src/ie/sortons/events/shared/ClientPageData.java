@@ -61,7 +61,7 @@ public class ClientPageData implements JsonSerializable {
 
 	public boolean addPage(FbPage page) {
 		boolean added = false;
-		if (!includedPages.contains(page)) {
+		if (page != null && !includedPages.contains(page)) {
 			includedPages.add(page);
 			added = true;
 		}
@@ -79,7 +79,7 @@ public class ClientPageData implements JsonSerializable {
 			includedPages.remove(page);
 			excluded = true;
 		}
-		if (!ignoredPages.contains(page)) {
+		if (page != null && !ignoredPages.contains(page)) {
 			ignoredPages.add(page);
 			excluded = true;
 		}
@@ -96,9 +96,9 @@ public class ClientPageData implements JsonSerializable {
 
 	public List<String> getIncludedPageIds() {
 		List<String> pageIds = new ArrayList<String>();
-		for (FbPage page : includedPages) {
-			pageIds.add(page.getPageId());
-		}
+		for (FbPage page : includedPages)
+			if (page != null)
+				pageIds.add(page.getPageId());
 		return pageIds;
 	}
 
