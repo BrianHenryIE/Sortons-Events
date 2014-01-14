@@ -35,6 +35,7 @@
 		.button {
 		display: inline-block;
 		vertical-align: middle;
+		margin-right: 3px;
 		}
 
 	</ui:style>
@@ -56,9 +57,8 @@
 
 		<g:FlowPanel addStyleNames="{style.buttons}">
 
-			<fbb:GreyButton text="Add" ui:field="addButton"
-				addStyleNames="{style.button}" />
-			<fbb:XableButton ui:field="ignoreButton" addStyleNames="{style.button} " />
+			<fbb:GreyButton text="Add" ui:field="addButton" addStyleNames="{style.button}" />
+			<fbb:XableButton ui:field="ignoreButton" addStyleNames="{style.button}" title="Remove" />
 
 		</g:FlowPanel>
 
