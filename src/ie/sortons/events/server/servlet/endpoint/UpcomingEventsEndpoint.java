@@ -42,7 +42,7 @@ public class UpcomingEventsEndpoint {
 			if ((datastoreEvent.getFbEvent().getEndTime() == null) || (datastoreEvent.getFbEvent().getEndTime().after(now))) {
 
 				DiscoveredEvent de = new DiscoveredEvent(datastoreEvent.getFbEvent(), datastoreEvent.getSourcePages());
-				de.setSourceListsNull();
+				
 				de.setSourcePagesToClientOnly(clientPageData);
 
 				upcomingEvents.add(de);

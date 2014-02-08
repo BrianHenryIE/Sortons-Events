@@ -6,6 +6,7 @@ import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.gwt.core.shared.GwtIncompatible;
 import com.googlecode.objectify.annotation.Entity;
@@ -26,7 +27,7 @@ public class DiscoveredEvent implements JsonSerializable {
 
 	public FqlEvent fbEvent;
 
-	@Index
+	@Index @GwtIncompatible @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
 	public List<Long> sourceLists = new ArrayList<Long>();
 
 	public List<FqlPage> sourcePages = new ArrayList<FqlPage>();
@@ -126,12 +127,6 @@ public class DiscoveredEvent implements JsonSerializable {
 //		return null;
 //	}
 
-	/**
-	 * This is used to remove the source lists before transferring the data to the client
-	 */
-	public void setSourceListsNull() {
-		sourceLists = null;
-	}
 
 	/**
 	 * This is used to remove the source pages that are related to other clients from the same event
