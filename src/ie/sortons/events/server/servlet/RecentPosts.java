@@ -3,14 +3,15 @@ package ie.sortons.events.server.servlet;
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.Config;
-import ie.sortons.gwtfbplus.server.SignedRequest;
-import ie.sortons.gwtfbplus.server.fql.FqlStream;
-import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItem;
-import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItemAttachment;
-import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItemAttachmentAdapter;
+import ie.sortons.gwtfbplus.shared.domain.FbResponse;
+import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachment;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachmentAdapter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -30,9 +31,9 @@ import org.joda.time.DateTime;
 import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
-import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.googlecode.objectify.ObjectifyService;
 
 public class RecentPosts extends HttpServlet {
@@ -50,34 +51,35 @@ public class RecentPosts extends HttpServlet {
 	private Gson gson = new GsonBuilder().registerTypeAdapter(FqlStreamItemAttachment.class, new FqlStreamItemAttachmentAdapter()).create();
 
 	String fqlCallStub = "https://graph.facebook.com/fql?q=";
-	String streamCallStub = "SELECT%20permalink,actor_id%2C%20post_id%2C%20created_time,message,attachment.media%20FROM%20stream%20WHERE%20source_id%20%3D%20"; 
+	String streamCallStub = "SELECT%20permalink,actor_id%2C%20post_id%2C%20created_time,message,attachment.media%20FROM%20stream%20WHERE%20source_id%20%3D%20";
 
-	private String fqlCall(String id){
+	private String fqlCall(String id) {
 
-		return  fqlCallStub + streamCallStub + id +"%20AND%20actor_id=source_id%20AND%20type!=247%20AND%20created_time%20%3E%20" + ((new DateTime().getMillis() / 1000) - 604800) + "&access_token="+Config.getAppAccessToken();
+		return fqlCallStub + streamCallStub + id + "%20AND%20actor_id=source_id%20AND%20type!=247%20AND%20type!=12%20AND%20created_time%20%3E%20"
+				+ ((new DateTime().getMillis() / 1000) - 604800) + "&access_token=" + Config.getAppAccessToken();
 
 	}
 
 	private String embedPost(String permalink) {
-		return "<div class=\"post-container\"><div class=\"fb-post\" data-href=\""+permalink+"\"></div></div>";
+		return "<div class=\"post-container\"><div class=\"fb-post\" data-href=\"" + permalink + "\"></div></div>";
 	}
 
+	private Long clientPageId;
 
-	private String clientPageId;
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		if ( request.getParameter("client") != null ) 
-			clientPageId = request.getParameter("client");
+		if (request.getParameter("client") != null)
+			clientPageId = Long.parseLong(request.getParameter("client"));
 		else
-			clientPageId = "176727859052209"; ;
+			clientPageId = Long.parseLong("176727859052209");
 
-			doCommonOutput(request, response);
+		doCommonOutput(request, response);
 
 	}
 
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 		SignedRequest signedRequest = SignedRequest.parseSignedRequest(request.getParameter("signed_request"));
-		clientPageId = signedRequest.getPage().getId();
+		clientPageId = Long.parseLong(signedRequest.getPage().getId());
 
 		doCommonOutput(request, response);
 	}
@@ -85,106 +87,75 @@ public class RecentPosts extends HttpServlet {
 	private void doCommonOutput(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// 176727859052209
 
-		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId.trim()).now();
-
-		String ids = Joiner.on(",").join(clientPageData.getIncludedPageIds());
-
-		// String ids = "176727859052209,180585223095,144085445617928,195462027143869,153597848050326,327354357259,140345306086891,142002899168824,261291960566266,427072610713452,210398799111123,509676619068377,439340592846537";
+		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
 
 		List<String> fqlCalls = new ArrayList<>();
-		for(String id : ids.split(","))
-			fqlCalls.add(fqlCall(id));
+		for (Long id : clientPageData.getIncludedPageIds())
+			fqlCalls.add(fqlCall(id.toString()));
 
 		List<String> jsons = asyncFqlCall(fqlCalls);
 
 		PrintWriter out = response.getWriter();
 
-		String startHtml = "<html>\n" +
-				"<head>\n" +
-				"<meta charset=\"utf-8\" />\n" +
-				"<style type=\"text/css\">\n" +
-				"  body { margin :0; padding: 0; text-align: center; }\n" +
-				"  .post-container { padding: 10px 0 10px; margin-left: auto; margin-right: auto; }\n" +
-				"</style>\n" +
-				"</head>\n" +
-				"<body style=\"overflow: hidden\">\n";
+		String startHtml = "<html>\n" + "<head>\n" + "<meta charset=\"utf-8\" />\n" + "<style type=\"text/css\">\n"
+				+ "  body { margin :0; padding: 0; text-align: center; }\n"
+				+ "  .post-container { padding: 10px 0 10px; margin-left: auto; margin-right: auto; }\n" + "</style>\n" + "</head>\n"
+				+ "<body style=\"overflow: hidden\">\n";
 
-		String fbRoot = "<div id=\"fb-root\"></div>\n" +
-				"<script>\n" +
-				"  window.fbAsyncInit = function() {\n" +
-				"    // init the FB JS SDK\n" +
-				"    FB.init({\n" +
-				"      appId      : 'YOUR_APP_ID',                        // App ID from the app dashboard\n" +
-				"      status     : true,                                 // Check Facebook Login status\n" +
-				"      xfbml      : true                                  // Look for social plugins on the page\n" +
-				"    });\n" +
-				"  };\n" +
-				"  // Load the SDK asynchronously\n" +
-				"  (function(){\n" +
-				"     // If we've already installed the SDK, we're done\n" +
-				"     if (document.getElementById('facebook-jssdk')) {return;}\n" +
-				"     // Get the first script element, which we'll use to find the parent node\n" +
-				"     var firstScriptElement = document.getElementsByTagName('script')[0];\n" +
-				"     // Create a new script element and set its id\n" +
-				"     var facebookJS = document.createElement('script');\n" + 
-				"     facebookJS.id = 'facebook-jssdk';\n" +
-				"     // Set the new script's source to the source of the Facebook JS SDK\n" +
-				"     facebookJS.src = '//connect.facebook.net/en_US/all.js';\n" +
-				"     // Insert the Facebook JS SDK into the DOM\n" +
-				"     firstScriptElement.parentNode.insertBefore(facebookJS, firstScriptElement);\n" +
-				"   }());\n" +
-				"</script>\n";
+		String fbRoot = "<div id=\"fb-root\"></div>\n" + "<script>\n" + "  window.fbAsyncInit = function() {\n" + "    // init the FB JS SDK\n"
+				+ "    FB.init({\n" + "      appId      : 'YOUR_APP_ID',                        // App ID from the app dashboard\n"
+				+ "      status     : true,                                 // Check Facebook Login status\n"
+				+ "      xfbml      : true                                  // Look for social plugins on the page\n" + "    });\n" + "  };\n"
+				+ "  // Load the SDK asynchronously\n" + "  (function(){\n" + "     // If we've already installed the SDK, we're done\n"
+				+ "     if (document.getElementById('facebook-jssdk')) {return;}\n"
+				+ "     // Get the first script element, which we'll use to find the parent node\n"
+				+ "     var firstScriptElement = document.getElementsByTagName('script')[0];\n"
+				+ "     // Create a new script element and set its id\n" + "     var facebookJS = document.createElement('script');\n"
+				+ "     facebookJS.id = 'facebook-jssdk';\n" + "     // Set the new script's source to the source of the Facebook JS SDK\n"
+				+ "     facebookJS.src = '//connect.facebook.net/en_US/all.js';\n" + "     // Insert the Facebook JS SDK into the DOM\n"
+				+ "     firstScriptElement.parentNode.insertBefore(facebookJS, firstScriptElement);\n" + "   }());\n" + "</script>\n";
 
-		String embedJs = "<script>(function(d, s, id) {\n" +
-				"  var js, fjs = d.getElementsByTagName(s)[0];\n" +
-				"  if (d.getElementById(id)) return;\n" +
-				"  js = d.createElement(s); js.id = id;\n" +
-				"  js.src = \"//connect.facebook.net/en_GB/all.js#xfbml=1&appId="+Config.getAppID()+"\";\n" +
-				"  fjs.parentNode.insertBefore(js, fjs);\n" +
-				"}(document, 'script', 'facebook-jssdk'));</script>\n";
+		String embedJs = "<script>(function(d, s, id) {\n" + "  var js, fjs = d.getElementsByTagName(s)[0];\n"
+				+ "  if (d.getElementById(id)) return;\n" + "  js = d.createElement(s); js.id = id;\n"
+				+ "  js.src = \"//connect.facebook.net/en_GB/all.js#xfbml=1&appId=" + Config.getAppID() + "\";\n"
+				+ "  fjs.parentNode.insertBefore(js, fjs);\n" + "}(document, 'script', 'facebook-jssdk'));</script>\n";
 
-		
-		String resizeCanvas = "	<script>\n" +
-				"	function canvasSize() {\n" +
-				"		FB.Canvas.setSize();\n" +
-				"     console.log('resizing')" +
-				"	}\n" +
-				"   (function() {\n" +
-				"	setTimeout(canvasSize, 1000)\n" +
-				"	setTimeout(canvasSize, 3000)\n" +
-				"	setTimeout(canvasSize, 6000)\n" +
-				"	setTimeout(canvasSize, 10000)\n" +
-				"	setTimeout(canvasSize, 15000)\n" +
-				"   })();\n" +
-				"	</script>\n";
-		
+		String resizeCanvas = "	<script>\n" + "	function canvasSize() {\n" + "		FB.Canvas.setSize();\n" + "     console.log('resizing')" + "	}\n"
+				+ "   (function() {\n" + "	setTimeout(canvasSize, 1000)\n" + "	setTimeout(canvasSize, 3000)\n" + "	setTimeout(canvasSize, 6000)\n"
+				+ "	setTimeout(canvasSize, 10000)\n" + "	setTimeout(canvasSize, 15000)\n" + "   })();\n" + "	</script>\n";
+
 		out.print(startHtml);
 		out.print(resizeCanvas);
 		out.print(fbRoot);
 		out.print(embedJs);
 
-		Map<Integer, FqlStreamItem> feed = new TreeMap<Integer, FqlStreamItem>();
+		Map<Integer, FqlStream> feed = new TreeMap<Integer, FqlStream>();
 
 		for (String json : jsons) {
-			FqlStream fqlStream = gson.fromJson(json, FqlStream.class);
-			if(fqlStream.getData().length>0)
-				for(FqlStreamItem item : fqlStream.getData())
-					feed.put(item.getCreatedTime()*-1, item);
+
+			Type fooType = new TypeToken<FbResponse<FqlStream>>() {
+			}.getType();
+
+			FbResponse<FqlStream> fbResponse = gson.fromJson(json, fooType);
+
+			System.out.println(json);
+			
+			if (fbResponse.getData().size() > 0)
+				for (FqlStream item : fbResponse.getData())
+					feed.put(item.getCreatedTime() * -1, item);
 		}
 
-
 		int count = 0;
-		String lastPoster = "";
-		for(FqlStreamItem item : feed.values())
-			if ( !item.getActorId().equals(lastPoster) 
-					&& count < 30 
-					&& !item.getMessage().contains("facebook.com/events") ) {
-				out.print(embedPost(item.getPermalink())+"\n");
+		Long lastPoster = (long) 0;
+		for (FqlStream item : feed.values())
+			if (!item.getActorId().equals(lastPoster) && count < 30 && !item.getMessage().contains("facebook.com/events")) {
+				out.print(embedPost(item.getPermalink()) + "\n");
 				lastPoster = item.getActorId();
 				count++;
 			}
-		
-		//		&& (item.getAttachment() != null ? !item.getAttachment().getMedia()[0].getHref().contains("facebook.com/events") : true)
+
+		// && (item.getAttachment() != null ?
+		// !item.getAttachment().getMedia()[0].getHref().contains("facebook.com/events") : true)
 
 	}
 
@@ -198,7 +169,7 @@ public class RecentPosts extends HttpServlet {
 		List<Future<HTTPResponse>> asyncResponses = new ArrayList<Future<HTTPResponse>>();
 
 		for (String fql : fqlCalls) {
-			
+
 			try {
 				URL graphcall = new URL(fql);
 

@@ -58,7 +58,7 @@
 		<g:FlowPanel addStyleNames="{style.buttons}">
 
 			<fbb:GreyButton text="Add" ui:field="addButton" addStyleNames="{style.button}" />
-			<fbb:XableButton ui:field="ignoreButton" addStyleNames="{style.button}" title="Remove" />
+			<fbb:X1Button ui:field="ignoreButton" addStyleNames="{style.button}" title="Remove" />
 
 		</g:FlowPanel>
 

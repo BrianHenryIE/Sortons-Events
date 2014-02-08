@@ -2,9 +2,7 @@ package ie.sortons.events.client;
 
 import ie.sortons.events.client.presenter.AdminPresenter;
 import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.FbPage;
-import ie.sortons.gwtfbplus.client.overlay.FqlPageOverlay;
-import ie.sortons.gwtfbplus.client.overlay.SignedRequest;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,8 +11,6 @@ import java.util.List;
 
 import com.google.common.base.Joiner;
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsArray;
-import com.google.gwt.core.client.JsonUtils;
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.event.shared.SimpleEventBus;
 import com.google.gwt.http.client.Request;
@@ -30,13 +26,17 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.gwtfb.sdk.FBCore;
 import com.kfuntak.gwt.json.serialization.client.HashMapSerializer;
 import com.kfuntak.gwt.json.serialization.client.Serializer;
+import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
 
 public class ClientDAO {
 
 	// When it comes time to refactor:
 	// https://code.google.com/p/google-apis-client-generator/wiki/TableOfContents
 
-	private String currentPageId = SignedRequest.parseSignedRequest().getPage().getId();
+	Serializer serializer = (Serializer) GWT.create(Serializer.class);
+
+	private Long currentPageId;
+	
 	private FBCore fbCore;
 	// private SimpleEventBus eventBus;
 
@@ -53,19 +53,22 @@ public class ClientDAO {
 	public void setGwtFb(FBCore fbCore) {
 		this.fbCore = fbCore;
 	}
-
-	Serializer serializer = (Serializer) GWT.create(Serializer.class);
+	
+	
+	{
+		if(SignedRequest.getSignedRequestFromHTML() != null)
+			currentPageId = Long.parseLong(((SignedRequest) serializer.deSerialize(new JSONObject(SignedRequest.getSignedRequestFromHTML()), "ie.sortons.gwtfbplus.shared.domain.SignedRequest")).getPage().getId());
+		
+	}
 
 	public void getEventsForPage(RequestCallback callback) {
 
 		// Must be https for cloud endpoints
-		String jsonUrl = "https://sortonsevents.appspot.com/_ah/api/upcomingEvents/v1/discoveredeventcollection/";
+		String jsonUrl = "https://sortonsevents.appspot.com/_ah/api/upcomingEvents/v1/discoveredeventsresponse/";
 
 		// Check for dev mode
-		if (!GWT.isProdMode() && GWT.isClient()) {
-			System.out.println("dev mode");
-			jsonUrl = "http://testbed.org.org:8888/_ah/api/upcomingEvents/v1/discoveredeventcollection/";
-		}
+		if (!GWT.isProdMode() && GWT.isClient())
+			jsonUrl = "http://testbed.org.org:8888/_ah/api/upcomingEvents/v1/discoveredeventsresponse/";
 
 		String url = jsonUrl + currentPageId;
 		url = URL.encode(url);
@@ -106,7 +109,7 @@ public class ClientDAO {
 				public void onResponseReceived(Request request, Response response) {
 					if (200 == response.getStatusCode()) {
 
-						clientPageData = (ClientPageData) serializer.deSerialize(response.getText(), "ie.sortons.events.shared.ClientPageData");
+						clientPageData = (ClientPageData) serializer.deSerialize(response.getText());
 
 						adminPresenter.displayClientData(clientPageData);
 
@@ -124,7 +127,7 @@ public class ClientDAO {
 
 	}
 
-	public void addPage(FbPage newPage, RequestCallback callback) {
+	public void addPage(FqlPage newPage, RequestCallback callback) {
 
 		String addPageAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/addPage/" + currentPageId;
 
@@ -142,14 +145,14 @@ public class ClientDAO {
 
 		try {
 			@SuppressWarnings("unused")
-			Request request = addPageBuilder.sendRequest(newPage.toJson(), callback);
+			Request request = addPageBuilder.sendRequest(serializer.serialize(newPage), callback);
 		} catch (RequestException e) {
 			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :addPage()");
 		}
 
 	}
 
-	public void ignorePage(FbPage page, RequestCallback callback) {
+	public void ignorePage(FqlPage page, RequestCallback callback) {
 
 		clientPageData.getSuggestedPages().remove(page);
 
@@ -166,7 +169,7 @@ public class ClientDAO {
 
 		try {
 			@SuppressWarnings("unused")
-			Request request = ignorePageBuilder.sendRequest(page.toJson(), callback);
+			Request request = ignorePageBuilder.sendRequest(serializer.serialize(page), callback);
 		} catch (RequestException e) {
 			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :ignorePage()");
 		}
@@ -177,7 +180,7 @@ public class ClientDAO {
 		fbCore.api(graphPath, callback);
 	}
 
-	public List<FbPage> getSuggestions() {
+	public List<FqlPage> getSuggestions() {
 		return clientPageData.getSuggestedPages();
 	}
 
@@ -185,8 +188,8 @@ public class ClientDAO {
 
 		if (clientPageData.getSuggestedPages() == null || clientPageData.getSuggestedPages().size() < 25) {
 
-			List<String> searchPagesList = new ArrayList<String>();
-			for (String pageId : clientPageData.getIncludedPageIds()) {
+			List<Long> searchPagesList = new ArrayList<Long>();
+			for (Long pageId : clientPageData.getIncludedPageIds()) {
 				searchPagesList.add(pageId);
 			}
 			// http://blog.jonleonard.com/2012/10/gwt-collectionsshuffle-implementation.html
@@ -218,28 +221,16 @@ public class ClientDAO {
 			fbCore.api(query.getJavaScriptObject(), new AsyncCallback<JavaScriptObject>() {
 				public void onSuccess(JavaScriptObject response) {
 
-					System.out.println("getSuggestions response1");
-					String json = new JSONObject(response).toString();
-					System.out.println(json);
-
-					System.out.println("getSuggestions response2");
-
 					HashMapSerializer hashMapSerializer = (HashMapSerializer) GWT.create(HashMapSerializer.class);
 
-					System.out.println("getSuggestions response3");
+					@SuppressWarnings("unchecked")
+					HashMap<String, FqlPage> map = (HashMap<String, FqlPage>) hashMapSerializer.deSerialize(new JSONObject(response),
+							"ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
 
-					HashMap<String, FbPage> map = (HashMap<String, FbPage>) hashMapSerializer.deSerialize(json, "ie.sortons.events.shared.FbPage");
-
-					System.out.println("getSuggestions response4");
-
-					ArrayList<FbPage> pages = new ArrayList<FbPage>();
-					for (FbPage page : map.values()) {
+					ArrayList<FqlPage> pages = new ArrayList<FqlPage>();
+					for (FqlPage page : map.values()) {
 						pages.add(page);
 					}
-
-					System.out.println("getSuggestions response5");
-
-					System.out.println("pages.size() " + pages.size());
 
 					clientPageData.setSuggestedPages(pages);
 

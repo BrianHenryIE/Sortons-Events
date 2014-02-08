@@ -1,11 +1,11 @@
 package ie.sortons.events.client.view.widgets;
 
 import ie.sortons.events.shared.DiscoveredEvent;
-import ie.sortons.events.shared.FbEvent;
-import ie.sortons.events.shared.FbPage;
-import ie.sortons.gwtfbplus.client.newresources.Resources;
+import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
 import ie.sortons.gwtfbplus.client.widgets.Link;
 import ie.sortons.gwtfbplus.client.widgets.popups.ToolTipPanel;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.Display;
@@ -44,10 +44,10 @@ public class EventWidget extends Composite {
 	// TODO: Editor framework
 	public EventWidget(DiscoveredEvent rowEvent) {
 	
-		GWT.<Resources>create(Resources.class).css().ensureInjected();
+		GWT.<GwtFbPlusResources>create(GwtFbPlusResources.class).css().ensureInjected();
 		
 
-		FbEvent fbEvent = rowEvent.getFbEvent();
+		FqlEvent fbEvent = rowEvent.getFbEvent();
 		
 		initWidget(uiBinder.createAndBindUi(this));
 		
@@ -59,13 +59,13 @@ public class EventWidget extends Composite {
 		eventImage.getElement().getStyle().setWidth(50, Unit.PX);
 		eventPicture.add(new Link("//www.facebook.com/event.php?eid="  + fbEvent.getEid(), eventImage, "_blank"));
 		
-	    startTime.setText(rowEvent.getFbEvent().getStartTime().length()>10 ? DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy, 'at' k:mm").format(rowEvent.getFbEvent().getStartTimeDate()) : DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy").format(rowEvent.getFbEvent().getStartTimeDate()));
+	    startTime.setText(rowEvent.getFbEvent().is_date_only ? DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy").format(rowEvent.getFbEvent().getStartTime()) : DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy, 'at' k:mm").format(rowEvent.getFbEvent().getStartTime()) );
 	    location.setText(fbEvent.getLocation());
 
 	   
 	    pages.clear();
 	    
-	    for(FbPage page : rowEvent.getSourcePages() ){
+	    for(FqlPage page : rowEvent.getSourcePages() ){
 	    	
 	    	Image pageImage = new Image("//graph.facebook.com/" + page.getPageId() + "/picture?type=square");
 	    	pageImage.setHeight("25px");

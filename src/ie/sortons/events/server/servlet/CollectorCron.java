@@ -4,23 +4,23 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.Config;
 import ie.sortons.events.shared.DiscoveredEvent;
-import ie.sortons.events.shared.FbEvent;
-import ie.sortons.events.shared.FbPage;
-import ie.sortons.gwtfbplus.server.fql.FqlEvent;
-import ie.sortons.gwtfbplus.server.fql.FqlEvent.FqlEventItem;
-import ie.sortons.gwtfbplus.server.fql.FqlEventMember;
-import ie.sortons.gwtfbplus.server.fql.FqlEventMember.FqlEventMemberItem;
-import ie.sortons.gwtfbplus.server.fql.FqlStream;
-import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItem;
-import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItemAttachment;
-import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItemAttachmentAdapter;
-import ie.sortons.gwtfbplus.server.fql.FqlStream.FqlStreamItemAttachmentMediaItem;
+import ie.sortons.gwtfbplus.shared.domain.FbResponse;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEventMember;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventDatesAdapter;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenue;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenueAdapter;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachment;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachmentAdapter;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachmentMediaItem;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -47,6 +47,7 @@ import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.googlecode.objectify.ObjectifyService;
 
 /**
@@ -77,8 +78,11 @@ public class CollectorCron extends HttpServlet {
 	// FQL call pieces
 	private String fqlcallstub = "https://graph.facebook.com/fql?q=";
 	// Adapter added because of differences in structure between when there is an attachment or not in stream items.
-	private Gson gson = new GsonBuilder().registerTypeAdapter(FqlStreamItemAttachment.class, new FqlStreamItemAttachmentAdapter()).create();
 
+	private Gson gson = new GsonBuilder().registerTypeAdapter(FqlStreamItemAttachment.class, new FqlStreamItemAttachmentAdapter()).registerTypeAdapter(FqlEventVenue.class, new FqlEventVenueAdapter()).registerTypeAdapter(Date.class, new FqlEventDatesAdapter()).create();
+
+
+	
 	// For testing/mocking
 	public void setPrintWriter(PrintWriter out) {
 		this.out = out;
@@ -94,18 +98,18 @@ public class CollectorCron extends HttpServlet {
 
 		for (ClientPageData client : clients) {
 
-			Map<String, DiscoveredEvent> createdEvents = findCreatedEventsForClient(client);
+			Map<Long, DiscoveredEvent> createdEvents = findCreatedEventsForClient(client);
+			
+			Map<Long, DiscoveredEvent> postedEvents = findPostedEventsForClient(client);
 
-			Map<String, DiscoveredEvent> postedEvents = findPostedEventsForClient(client);
-
-			Map<String, DiscoveredEvent> discoveredEvents = mergeEventMaps(postedEvents, createdEvents);
-
+			Map<Long, DiscoveredEvent> discoveredEvents = mergeEventMaps(postedEvents, createdEvents);
+			
 			if (discoveredEvents.size() > 0) {
+				
+				Map<Long, DiscoveredEvent> detailedEvents = findEventDetails(discoveredEvents);
 
-				Map<String, DiscoveredEvent> detailedEvents = findEventDetails(discoveredEvents);
-
-				List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("fbEvent.startTimeDate >", getHoursAgoOrToday(12))
-						.order("fbEvent.startTimeDate").list();
+				List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("fbEvent.start_time >", getHoursAgoOrToday(12))
+						.order("fbEvent.start_time").list();
 
 				out.println("Datastore events : " + dsEvents.size());
 
@@ -128,11 +132,11 @@ public class CollectorCron extends HttpServlet {
 						// If adding anything to the datastore's record would change it,
 						// merge the new record and the datastore one and save it,
 						// otherwise drop it from the list to be saved
-						if (dsEvent.addSourceLists(detailedEvents.get(dsEvent.getFbEvent().getEid()).getSourceLists())
-								|| dsEvent.addSourcePages(detailedEvents.get(dsEvent.getFbEvent().getEid()).getSourcePages()))
-							detailedEvents.put(dsEvent.getFbEvent().getEid(),
-									DiscoveredEvent.merge(dsEvent, detailedEvents.get(dsEvent.getFbEvent().getEid())));
-						else
+						if (dsEvent.addSourceLists(detailedEvents.get(dsEvent.getFbEvent().getEid()).getSourceLists()) || dsEvent.addSourcePages(detailedEvents.get(dsEvent.getFbEvent().getEid()).getSourcePages())) {
+							dsEvent.addSourceLists(detailedEvents.get(dsEvent.getFbEvent().getEid()).getSourceLists());
+							dsEvent.addSourcePages(detailedEvents.get(dsEvent.getFbEvent().getEid()).getSourcePages());
+							detailedEvents.put(dsEvent.getFbEvent().getEid(), dsEvent); // DiscoveredEvent.merge(dsEvent, detailedEvents.get(dsEvent.getFbEvent().getEid())));
+						} else
 							detailedEvents.remove(dsEvent.getFbEvent().getEid());
 
 					}
@@ -163,17 +167,17 @@ public class CollectorCron extends HttpServlet {
 	 * App Engine URLFetch was throwing a MalformedUrlException because the URLs were too long This method takes a full
 	 * list of ids and splits them into comma separated strings with max 100 in each.
 	 * 
-	 * @param idSet
+	 * @param set
 	 * @return
 	 */
-	public List<String> getBrokenIdsLists(Set<String> idSet) {
+	public List<String> getBrokenIdsLists(Set<Long> set) {
 		// MalformerlException was being throw when the url was too long. This
 		// is keeping it short.
 		int i = 0;
 		List<String> nextIds = new ArrayList<String>();
 		List<String> idLists = new ArrayList<String>();
-		for (String s : idSet) {
-			nextIds.add(s);
+		for (Long s : set) {
+			nextIds.add(s.toString());
 			i++;
 			if (i % 75 == 0) {
 				idLists.add(Joiner.on(",").join(nextIds));
@@ -230,8 +234,8 @@ public class CollectorCron extends HttpServlet {
 
 	// TODO something with this.
 	@SuppressWarnings("unused")
-	private Map<String, DiscoveredEvent> findCreatedEventsForClients(List<ClientPageData> clients) {
-		Map<String, DiscoveredEvent> createdEvents = new HashMap<String, DiscoveredEvent>();
+	private Map<Long, DiscoveredEvent> findCreatedEventsForClients(List<ClientPageData> clients) {
+		Map<Long, DiscoveredEvent> createdEvents = new HashMap<Long, DiscoveredEvent>();
 
 		for (ClientPageData client : clients)
 			mergeEventMaps(createdEvents, findCreatedEventsForClient(client));
@@ -250,11 +254,11 @@ public class CollectorCron extends HttpServlet {
 	 * @param ids
 	 * @return
 	 */
-	private Map<String, DiscoveredEvent> findCreatedEventsForClient(ClientPageData client) {
+	private Map<Long, DiscoveredEvent> findCreatedEventsForClient(ClientPageData client) {
 
-		Map<String, DiscoveredEvent> createdEvents = new HashMap<String, DiscoveredEvent>();
+		Map<Long, DiscoveredEvent> createdEvents = new HashMap<Long, DiscoveredEvent>();
 
-		Map<String, FbPage> sourcePages = getClientsSourceIds(client);
+		Map<Long, FqlPage> sourcePages = getClientsSourceIds(client);
 
 		List<String> fqlCalls = new ArrayList<String>();
 		for (String idList : getBrokenIdsLists(sourcePages.keySet()))
@@ -264,11 +268,17 @@ public class CollectorCron extends HttpServlet {
 		List<String> jsons = asyncFqlCall(fqlCalls);
 
 		for (String json : jsons) {
-			FqlEventMember fqlEventMember = gson.fromJson(json, FqlEventMember.class);
 
-			for (FqlEventMemberItem item : fqlEventMember.getData())
-				createdEvents.put(item.getEid(),
-						new DiscoveredEvent(item.getEid(), client.getClientPage().getPageId(), sourcePages.get(item.getUid())));
+			Type fooType = new TypeToken<FbResponse<FqlEventMember>>() {
+			}.getType();
+
+			FbResponse<FqlEventMember> response = gson.fromJson(json, fooType);
+
+			for (FqlEventMember item : response.getData()) {
+				String fakeJson = "{  \"eid\": " + item.getUid() + " }";
+				createdEvents.put(item.getEid(), new DiscoveredEvent(gson.fromJson(fakeJson, FqlEvent.class), client.getClientPage().getPageId(),
+						sourcePages.get(item.getUid())));
+			}
 		}
 
 		out.println("Created events : " + createdEvents.size());
@@ -285,7 +295,7 @@ public class CollectorCron extends HttpServlet {
 	 * @param sourcePage
 	 * @return FQL to retrieve last month of wall posts
 	 */
-	private String getFqlStreamCall(FbPage sourcePage) {
+	private String getFqlStreamCall(FqlPage sourcePage) {
 		String streamCallStub = "SELECT%20source_id%2C%20post_id%2C%20actor_id%2C%20target_id%2C%20message%2C%20attachment.media%20FROM%20stream%20WHERE%20source_id%20%3D%20"; // &access_token="+access_token;
 		return streamCallStub + sourcePage.getPageId() + "AND%20actor_id=" + sourcePage.getPageId() + "%20AND%20created_time%20%3E%20"
 				+ ((new DateTime().getMillis() / 1000) - 2592000);
@@ -302,24 +312,29 @@ public class CollectorCron extends HttpServlet {
 	 * @param ids
 	 * @see http://ikaisays.com/2010/06/29/using-asynchronous-urlfetch-on-java-app-engine/
 	 */
-	private Map<String, DiscoveredEvent> findPostedEventsForClient(ClientPageData client) {
+	private Map<Long, DiscoveredEvent> findPostedEventsForClient(ClientPageData client) {
 
-		Map<String, DiscoveredEvent> postedEvents = null;
+		Map<Long, DiscoveredEvent> postedEvents = new HashMap<Long, DiscoveredEvent>();
 
-		Map<String, FbPage> sourcePages = getClientsSourceIds(client);
+		Map<Long, FqlPage> sourcePages = getClientsSourceIds(client);
 
 		List<String> fqlCalls = new ArrayList<String>();
 
-		for (FbPage sourcePage : sourcePages.values())
+		for (FqlPage sourcePage : sourcePages.values())
 			fqlCalls.add(getFqlStreamCall(sourcePage));
 
 		List<String> jsons = asyncFqlCall(fqlCalls);
 
 		for (String json : jsons)
 			if (json.contains("event")) {
-				FqlStream fqlStream = gson.fromJson(json, FqlStream.class);
-				if (fqlStream.getData().length > 0)
-					postedEvents = mergeEventMaps(postedEvents, findEventsInStreamPosts(fqlStream, client));
+
+				Type fooType = new TypeToken<FbResponse<FqlStream>>() {
+				}.getType();
+
+				FbResponse<FqlStream> response = gson.fromJson(json, fooType);
+
+				if (response.getData().size() > 0)
+					postedEvents = mergeEventMaps(postedEvents, findEventsInStreamPosts(response.getData(), client));
 			}
 
 		out.println("Posted events : " + postedEvents.size());
@@ -327,66 +342,69 @@ public class CollectorCron extends HttpServlet {
 		return postedEvents;
 	}
 
-	public Map<String, DiscoveredEvent> findEventsInStreamPosts(FqlStream wallPosts, ClientPageData client) {
+	public Map<Long, DiscoveredEvent> findEventsInStreamPosts(ArrayList<FqlStream> stream, ClientPageData client) {
 
-		Map<String, DiscoveredEvent> foundEvents = new HashMap<String, DiscoveredEvent>();
+		Map<Long, DiscoveredEvent> foundEvents = new HashMap<Long, DiscoveredEvent>();
 
 		// Regex for extracting the url from wall posts
 		Pattern pattern = Pattern.compile("facebook.com/events/[0-9]*");
 		Matcher matcher;
 
-		FbPage sourcePage = null;
+		FqlPage sourcePage = null;
 
-		if (wallPosts != null && wallPosts.getData() != null && wallPosts.getData().length > 0) {
-			for (FqlStreamItem item : wallPosts.getData()) {
+		for (FqlStream item : stream) {
 
-				if (item.getActorId().equals(item.getSourceId())) {
+			if (item.getActorId().equals(item.getSourceId())) {
 
-					sourcePage = client.getPageById(item.getSourceId());
+				sourcePage = client.getPageById(item.getSourceId());
 
-					// Read the message
-					matcher = pattern.matcher(item.getMessage());
-					while (matcher.find()) {
+				// Read the message
+				matcher = pattern.matcher(item.getMessage());
+				while (matcher.find()) {
 
-						// If hasn't been recorded yet
-						if (!foundEvents.containsKey(matcher.group().substring(20))) {
-							foundEvents.put(matcher.group().substring(20), new DiscoveredEvent(matcher.group().substring(20), client.getClientPage()
-									.getPageId(), sourcePage));
+					// If hasn't been recorded yet
+					if (!foundEvents.containsKey(Long.parseLong(matcher.group().substring(20)))) {
 
-							// If the event has been recorded, but doesn't have this
-							// source page
-						} else if (!foundEvents.get(matcher.group().substring(20)).hasSourcePage(sourcePage)) {
-							foundEvents.get(matcher.group().substring(20)).addSourcePage(sourcePage);
-						}
+						String fakeJson = "{  \"eid\": " + matcher.group().substring(20) + " }";
+
+						foundEvents.put(Long.parseLong(matcher.group().substring(20)), new DiscoveredEvent(gson.fromJson(fakeJson, FqlEvent.class), client
+								.getClientPage().getPageId(), sourcePage));
+
+						// If the event has been recorded, but doesn't have this
+						// source page
+					} else if (!foundEvents.get(Long.parseLong(matcher.group().substring(20))).hasSourcePage(sourcePage)) {
+						foundEvents.get(Long.parseLong(matcher.group().substring(20))).addSourcePage(sourcePage);
 					}
+				}
 
-					// If we have an attachment and the attachment array is > 0...
-					if ((item.getAttachment() != null) && (item.getAttachment().getMedia().length > 0)) {
+				// If we have an attachment and the attachment array is > 0...
+				if ((item.getAttachment() != null) && (item.getAttachment().getMedia().length > 0)) {
 
-						for (FqlStreamItemAttachmentMediaItem mediaitem : item.getAttachment().getMedia()) {
+					for (FqlStreamItemAttachmentMediaItem mediaitem : item.getAttachment().getMedia()) {
 
-							if (mediaitem.getHref() != null) {
+						if (mediaitem.getHref() != null) {
 
-								matcher = pattern.matcher(mediaitem.getHref());
-								// so we've found an event
-								while (matcher.find()) {
-									// If the event doesn't have a list yet...
-									if (!foundEvents.containsKey(matcher.group().substring(20))) {
-										foundEvents.put(matcher.group().substring(20), new DiscoveredEvent(matcher.group().substring(20), client
-												.getClientPage().getPageId(), sourcePage));
+							matcher = pattern.matcher(mediaitem.getHref());
+							// so we've found an event
+							while (matcher.find()) {
+								// If the event doesn't have a list yet...
+								if (!foundEvents.containsKey(matcher.group().substring(20))) {
+									String fakeJson = "{  \"eid\": " + matcher.group().substring(20) + " }";
+									foundEvents.put(Long.parseLong(matcher.group().substring(20)), new DiscoveredEvent(gson.fromJson(fakeJson, FqlEvent.class),
+											client.getClientPage().getPageId(), sourcePage));
 
-										// If the event doesn't have this page
-										// recorded yet...
-									} else if (!foundEvents.get(matcher.group().substring(20)).hasSourcePage(sourcePage)) {
-										foundEvents.get(matcher.group().substring(20)).addSourcePage(sourcePage);
-									}
+									// If the event doesn't have this page
+									// recorded yet...
+								} else if (!foundEvents.get(Long.parseLong(matcher.group().substring(20))).hasSourcePage(sourcePage)) {
+									foundEvents.get(Long.parseLong(matcher.group().substring(20))).addSourcePage(sourcePage);
 								}
 							}
 						}
 					}
-
 				}
+
 			}
+
 		}
 
 		if (sourcePage != null && foundEvents.size() > 0)
@@ -401,32 +419,34 @@ public class CollectorCron extends HttpServlet {
 	 * @param discoveredEvents
 	 * @return
 	 */
-	private Map<String, DiscoveredEvent> findEventDetails(Map<String, DiscoveredEvent> discoveredEvents) {
+	private Map<Long, DiscoveredEvent> findEventDetails(Map<Long, DiscoveredEvent> discoveredEvents) {
 
-		Map<String, DiscoveredEvent> detailedEvents = new HashMap<String, DiscoveredEvent>();
+		Map<Long, DiscoveredEvent> detailedEvents = new HashMap<Long, DiscoveredEvent>();
 
 		List<String> fqlCalls = new ArrayList<String>();
 		for (String idList : getBrokenIdsLists(discoveredEvents.keySet()))
-			fqlCalls.add("SELECT%20eid%2C%20name%2C%20location%2C%20venue%2C%20start_time%2C%20end_time%20FROM%20event%20WHERE%20eid%20IN%20("
+			fqlCalls.add("SELECT%20eid%2C%20name%2C%20location%2C%20venue%2C%20start_time%2C%20end_time%2C%20is_date_only%20FROM%20event%20WHERE%20eid%20IN%20("
 					+ idList + ")%20AND%20start_time%3Enow()");
 
 		List<String> jsons = asyncFqlCall(fqlCalls);
 
 		for (String json : jsons) {
+				
+			// System.out.println(json);
+			
+			Type fooType = new TypeToken<FbResponse<FqlEvent>>() {
+			}.getType();
 
-			// TODO Gson adapter?!
-			json = json.replace("\"venue\":[]", "\"venue\":{}");
+			FbResponse<FqlEvent> response = gson.fromJson(json, fooType);
+			ArrayList<FqlEvent> eventsDetails = response.getData();
 
-			FqlEventItem[] eventsDetails = gson.fromJson(json, FqlEvent.class).getData();
-			out.println("Upcoming events: " + eventsDetails.length);
+			out.println("Upcoming events: " + eventsDetails.size());
 
-			for (FqlEventItem ei : eventsDetails) {
+			for (FqlEvent ei : eventsDetails) {
 				if (discoveredEvents.containsKey(ei.getEid())) {
-					FbEvent upcomingEvent = new FbEvent(ei.getEid(), ei.getName(), ei.getLocation(), ei.getStart_time(), ei.getEnd_time(),
-							ei.getPic_square(), ei.getVenue().getLatitude(), ei.getVenue().getLongitude());
-
-					DiscoveredEvent de = new DiscoveredEvent(upcomingEvent, discoveredEvents.get(ei.getEid()).getSourceLists(), discoveredEvents.get(
-							ei.getEid()).getSourcePages());
+					
+					DiscoveredEvent de = new DiscoveredEvent(ei, discoveredEvents.get(ei.getEid()).getSourceLists(), discoveredEvents
+							.get(ei.getEid()).getSourcePages());
 
 					detailedEvents.put(ei.getEid(), de);
 				}
@@ -439,13 +459,13 @@ public class CollectorCron extends HttpServlet {
 		return detailedEvents;
 	}
 
-	private Map<String, FbPage> getClientsSourceIds(ClientPageData client) {
+	private Map<Long, FqlPage> getClientsSourceIds(ClientPageData client) {
 
-		Map<String, FbPage> sourceClientPages = new HashMap<String, FbPage>();
+		Map<Long, FqlPage> sourceClientPages = new HashMap<Long, FqlPage>();
 
-		for (FbPage page : client.getIncludedPages())	
+		for (FqlPage page : client.getIncludedPages())
 			sourceClientPages.put(page.getPageId(), page);
-		
+
 		return sourceClientPages;
 	}
 
@@ -470,53 +490,39 @@ public class CollectorCron extends HttpServlet {
 	}
 
 	/**
-	 * @param discoveredEvents
+	 * @param detailedEvents
 	 */
-	private void saveToDatastore(Map<String, DiscoveredEvent> discoveredEvents) {
+	private void saveToDatastore(Map<Long, DiscoveredEvent> detailedEvents) {
 
 		// Now the discoveredEvents objects will all be merged (i.e. current)
-		ofy().save().entities(discoveredEvents.values()).now();
+		ofy().save().entities(detailedEvents.values()).now();
 
-		out.println("Saved/updated: " + discoveredEvents.size() + " events: " + Joiner.on(",").join(discoveredEvents.keySet()));
-		log.info("Saved/updated: " + discoveredEvents.size() + " events: " + Joiner.on(",").join(discoveredEvents.keySet()));
+		out.println("Saved/updated: " + detailedEvents.size() + " events: " + Joiner.on(",").join(detailedEvents.keySet()));
+		log.info("Saved/updated: " + detailedEvents.size() + " events: " + Joiner.on(",").join(detailedEvents.keySet()));
 	}
 
-	private Map<String, DiscoveredEvent> mergeEventMaps(Map<String, DiscoveredEvent> map1, Map<String, DiscoveredEvent> map2) {
+	private Map<Long, DiscoveredEvent> mergeEventMaps(Map<Long, DiscoveredEvent> map1, Map<Long, DiscoveredEvent> map2) {
 
 		if (map1 == null || map1.size() == 0)
 			return map2;
 		if (map2 == null || map2.size() == 0)
 			return map1;
 
-		Map<String, DiscoveredEvent> newMap = new HashMap<String, DiscoveredEvent>();
+		Map<Long, DiscoveredEvent> newMap = new HashMap<Long, DiscoveredEvent>();
 
-		for (String key : map1.keySet())
-			if (map2.containsKey(key))
-				newMap.put(key, DiscoveredEvent.merge(map1.get(key), map2.get(key)));
-			else
+		for (Long key : map1.keySet())
+			if (map2.containsKey(key)) {
+				map1.get(key).addSourceLists(map2.get(key).getSourceLists());
+				map1.get(key).addSourcePages(map2.get(key).getSourcePages());
+				newMap.put(key, map1.get(key));
+			} else
 				newMap.put(key, map1.get(key));
 
-		for (String key : map2.keySet())
+		for (Long key : map2.keySet())
 			if (!newMap.containsKey(key))
 				newMap.put(key, map2.get(key));
 
 		return newMap;
-	}
-
-	@SuppressWarnings("unused")
-	private String startTime() {
-		// TODO
-		// 1. Move this away because it's not being used
-		// Set date to search from to yesterday? - No, that's dealt with on the
-		// display side.
-		// Use Jodatime?
-		SimpleDateFormat ISO8601FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-		String startTime = ISO8601FORMAT.format(new Date());
-		// convert YYYYMMDDTHH:mm:ss+HH00 into YYYYMMDDTHH:mm:ss+HH:00
-		// - note the added colon for the Timezone
-		startTime = startTime.substring(0, startTime.length() - 2) + ":" + startTime.substring(startTime.length() - 2);
-
-		return startTime;
 	}
 
 }

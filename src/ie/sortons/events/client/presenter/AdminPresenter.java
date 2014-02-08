@@ -3,9 +3,10 @@ package ie.sortons.events.client.presenter;
 import ie.sortons.events.client.ClientDAO;
 import ie.sortons.events.client.LoginController;
 import ie.sortons.events.client.appevent.PermissionsEvent;
+import ie.sortons.events.client.appevent.ResponseErrorEvent;
 import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.FbPage;
-import ie.sortons.gwtfbplus.client.overlay.GraphPageOverlay;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+import ie.sortons.gwtfbplus.shared.domain.graph.GraphPage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,12 +22,14 @@ import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.Response;
+import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.HasWidgets;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.web.bindery.event.shared.binder.EventBinder;
 import com.google.web.bindery.event.shared.binder.EventHandler;
+import com.kfuntak.gwt.json.serialization.client.Serializer;
 
 public class AdminPresenter implements Presenter {
 
@@ -34,6 +37,8 @@ public class AdminPresenter implements Presenter {
 	}
 
 	private static final MyEventBinder eventBinder = GWT.create(MyEventBinder.class);
+
+	Serializer serializer = (Serializer) GWT.create(Serializer.class);
 
 	private final ClientDAO dao;
 
@@ -49,9 +54,9 @@ public class AdminPresenter implements Presenter {
 
 		HasClickHandlers getLoginButton();
 
-		void setIncludedPages(List<FbPage> includedList);
+		void setIncludedPages(List<FqlPage> includedList);
 
-		void setSuggestedPages(List<FbPage> suggestionsList);
+		void setSuggestedPages(List<FqlPage> suggestionsList);
 
 		void setPresenter(AdminPresenter presenter);
 
@@ -115,7 +120,7 @@ public class AdminPresenter implements Presenter {
 		dao.getSuggestions(this);
 	}
 
-	public void setSuggestions(List<FbPage> suggestionsList) {
+	public void setSuggestions(List<FqlPage> suggestionsList) {
 		if (suggestionsList != null) {
 			display.setSuggestedPages(suggestionsList.subList(0, Math.min(10, suggestionsList.size())));
 		}
@@ -124,15 +129,15 @@ public class AdminPresenter implements Presenter {
 	private void searchSuggestions() {
 		String searchText = display.getAddPageTextBox().getText().toLowerCase();
 		if (searchText.trim().length() > 0 && !searchText.toLowerCase().contains("http:") && !searchText.toLowerCase().contains("www.")) {
-			List<FbPage> search = new ArrayList<FbPage>();
-			for (FbPage page : dao.getSuggestions()) {
+			List<FqlPage> search = new ArrayList<FqlPage>();
+			for (FqlPage page : dao.getSuggestions()) {
 				boolean add = true;
 				for (String term : searchText.split(" ")) {
 					if (!page.getName().toLowerCase().contains(term) && !page.getLocation().friendlyString().toLowerCase().contains(term)) {
 						add = false;
 					}
 				}
-				if (add == true || page.getPageId().contains(searchText) || page.getLocation().friendlyString().toLowerCase().contains(searchText)) {
+				if (add == true || page.getPageId().toString().contains(searchText) || page.getLocation().friendlyString().toLowerCase().contains(searchText)) {
 					search.add(page);
 				}
 			}
@@ -156,8 +161,10 @@ public class AdminPresenter implements Presenter {
 		String textEntered = display.getAddPageTextBox().getText();
 		String graphPath = "/";
 
-		// TODO get rid of anything after ?
-		// http://www.facebook.com/ISS.UCD?ref=stream
+		// Get rid of anything after ?
+		// http://www.facebook.com/pages/The-Comedy-Crunch/83791357330?ref=ts&fref=ts
+		if (textEntered.contains("?"))
+			textEntered = textEntered.substring(0, textEntered.indexOf("?"));
 
 		// Sometimes http://www.facebook.com/pages/Randals-Rest-UCD/107542286070006
 		if (textEntered.matches(".*facebook\\.com/pages/[^/]*/\\d*/?")) {
@@ -174,20 +181,24 @@ public class AdminPresenter implements Presenter {
 
 			graphPath += textEntered;
 
+		} else {
+			// TODO
+			// Give feedback when it doesn't match
 		}
-		// TODO
-		// Give feedback when it doesn't match
 
 		graphPath += "?fields=name,id,link";
 
 		dao.graphCall(graphPath, new AsyncCallback<JavaScriptObject>() {
 			public void onSuccess(JavaScriptObject response) {
 
-				// FbPage.fromJson(response.getText());
+				System.out.println(new JSONObject(response).toString());
 
-				GraphPageOverlay pageDetails = response.cast();
+				GraphPage pageDetails = (GraphPage) serializer.deSerialize(new JSONObject(response).toString(),
+						"ie.sortons.gwtfbplus.shared.domain.graph.GraphPage");
 
-				FbPage newPage = new FbPage(pageDetails.getName(), pageDetails.getLink(), pageDetails.getId());
+				System.out.println("pageDetails.getName() " + pageDetails.getName());
+
+				FqlPage newPage = new FqlPage(pageDetails.getName(), pageDetails.getLink(), pageDetails.getId());
 
 				addPage(newPage);
 
@@ -200,12 +211,15 @@ public class AdminPresenter implements Presenter {
 			@Override
 			public void onFailure(Throwable caught) {
 				// TODO Auto-generated method stub
+				System.out.println("ERROR processTextBox");
 			}
 		});
 
 	}
 
-	public void addPage(FbPage newPage) {
+	public void addPage(FqlPage newPage) {
+
+		System.out.println(serializer.serialize(newPage));
 
 		dao.addPage(newPage, new RequestCallback() {
 			public void onError(Request request, Throwable exception) {
@@ -215,7 +229,7 @@ public class AdminPresenter implements Presenter {
 			public void onResponseReceived(Request request, Response response) {
 				if (200 == response.getStatusCode()) {
 
-					FbPage page = FbPage.fromJson(response.getText());
+					FqlPage page = (FqlPage) serializer.deSerialize(response.getText(), "ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
 
 					dao.getClientPageData().addPage(page);
 
@@ -226,12 +240,15 @@ public class AdminPresenter implements Presenter {
 					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.addPage()");
 					System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
 					System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
+
+					// TODO: How to know what type of error it is?
+					eventBus.fireEvent(new ResponseErrorEvent(response));
 				}
 			}
 		});
 	}
 
-	public void ignorePage(FbPage page) {
+	public void ignorePage(FqlPage page) {
 
 		dao.ignorePage(page, new RequestCallback() {
 			public void onError(Request request, Throwable exception) {
@@ -241,7 +258,7 @@ public class AdminPresenter implements Presenter {
 			public void onResponseReceived(Request request, Response response) {
 				if (200 == response.getStatusCode()) {
 
-					FbPage page = FbPage.fromJson(response.getText());
+					FqlPage page = (FqlPage) serializer.deSerialize(response.getText(), "ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
 
 					dao.getClientPageData().ignorePage(page);
 
@@ -266,9 +283,6 @@ public class AdminPresenter implements Presenter {
 	void onLoginEvent(PermissionsEvent event) {
 
 		if (event.getPermissionsObject().hasPermission(requiredAdminPermissions)) {
-
-			// TODO
-			// Hide login button.
 
 			getSuggestions();
 		}

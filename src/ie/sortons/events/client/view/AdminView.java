@@ -3,9 +3,10 @@ package ie.sortons.events.client.view;
 import ie.sortons.events.client.appevent.NotLoggedInEvent;
 import ie.sortons.events.client.presenter.AdminPresenter;
 import ie.sortons.events.client.view.widgets.AdminPageItem;
-import ie.sortons.events.shared.FbPage;
 import ie.sortons.gwtfbplus.client.api.Canvas;
 import ie.sortons.gwtfbplus.client.widgets.buttons.BlueButton;
+import ie.sortons.gwtfbplus.client.widgets.buttons.GreenButton;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import java.util.List;
 
@@ -14,7 +15,7 @@ import com.google.gwt.dom.client.Style.Display;
 import com.google.gwt.event.dom.client.HasClickHandlers;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.TextBox;
@@ -40,11 +41,19 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 		addPageTextBox.getElement().setAttribute("placeholder", "Enter a Facebook Page URL, Page ID or search suggestions");
 	}
 
+	// Update the scrollbars
+	Timer resizeCanvas = new Timer() {
+		@Override
+		public void run() {
+			Canvas.setSize();
+		}
+	};
+
 	@UiField
 	BlueButton addPageButton;
 
 	@UiField
-	Button loginButton;
+	GreenButton loginButton;
 
 	@UiField
 	TextBox addPageTextBox;
@@ -71,34 +80,32 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 	}
 
 	@Override
-	public void setIncludedPages(List<FbPage> includedPagesList) {
+	public void setIncludedPages(List<FqlPage> includedPagesList) {
 		System.out.println("view: setIncludedPages");
 		updateList(includedPagesList, includedPagesPanel);
-		Canvas.setSize();
+		resizeCanvas.schedule(500);
 	}
 
 	@Override
-	public void setSuggestedPages(List<FbPage> suggestionsList) {
+	public void setSuggestedPages(List<FqlPage> suggestionsList) {
 		loginButton.getElement().getStyle().setDisplay(Display.NONE);
 		updateList(suggestionsList, suggestedPagesPanel);
-		Canvas.setSize();
+		resizeCanvas.schedule(500);
 	}
 
-	private void updateList(List<FbPage> pagesList, FlowPanel panel) {
+	private void updateList(List<FqlPage> pagesList, FlowPanel panel) {
 
 		// TODO
 		// Don't empty it each time.
 
 		panel.clear();
 
-		for (FbPage page : pagesList) {
-
+		for (FqlPage page : pagesList) {
 			AdminPageItem api = new AdminPageItem(page, presenter);
 
-			if (panel == includedPagesPanel) {
+			if (panel == includedPagesPanel)
 				api.removeAddButton();
-			}
-
+			
 			panel.add(api);
 		}
 

@@ -1,12 +1,12 @@
 package ie.sortons.events.client.view.widgets;
 
 import ie.sortons.events.client.presenter.AdminPresenter;
-import ie.sortons.events.shared.FbPage;
-import ie.sortons.gwtfbplus.client.newresources.Resources;
+import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
 import ie.sortons.gwtfbplus.client.widgets.Link;
 import ie.sortons.gwtfbplus.client.widgets.buttons.GreyButton;
-import ie.sortons.gwtfbplus.client.widgets.buttons.XableButton;
+import ie.sortons.gwtfbplus.client.widgets.buttons.X1Button;
 import ie.sortons.gwtfbplus.client.widgets.popups.ToolTipPanel;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.Display;
@@ -39,7 +39,7 @@ public class AdminPageItem extends Composite {
 	GreyButton addButton;
 
 	@UiField
-	XableButton ignoreButton;
+	X1Button ignoreButton;
 
 	@UiField
 	Anchor name;
@@ -47,15 +47,15 @@ public class AdminPageItem extends Composite {
 	@UiField
 	Label location;
 
-	private FbPage page;
+	private FqlPage page;
 
 	// private AdminPresenter presenter;
 
-	public AdminPageItem(final FbPage page, final AdminPresenter presenter) {
+	public AdminPageItem(final FqlPage page, final AdminPresenter presenter) {
 		
 		initWidget(uiBinder.createAndBindUi(this));
 
-		Resources.INSTANCE.css().ensureInjected();
+		GwtFbPlusResources.INSTANCE.css().ensureInjected();
 	
 		this.page = page;
 
@@ -102,7 +102,7 @@ public class AdminPageItem extends Composite {
 		ignoreButton.setVisible(false);
 	}
 
-	public FbPage getPage() {
+	public FqlPage getPage() {
 		return page;
 	}
 

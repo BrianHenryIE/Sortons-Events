@@ -7,18 +7,19 @@ import com.google.gwt.user.client.ui.RootPanel;
 
 public class Sortonsevents implements EntryPoint {
 
+	SimpleEventBus eventBus = new SimpleEventBus();
+
 	public void onModuleLoad() {
 
 		System.out.println("Entrypoint");
 
-		SimpleEventBus eventBus = new SimpleEventBus();
 		ClientDAO rpcService = new ClientDAO(eventBus);
 		AppController appViewer = new AppController(rpcService, eventBus);
-		
+
 		FlowPanel fp = new FlowPanel();
 		RootPanel.get("gwt").add(fp);
 		appViewer.go(fp);
-		
+
 	}
-	
+
 }
