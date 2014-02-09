@@ -26,22 +26,20 @@ public class LandingPage extends LandingPageServlet {
 	@Override
 	protected void readWriteRequest() {
 		// Add page admins to the clientpage data
-		if (request.getParameter("signed_request") != null) {
-			SignedRequest signedRequest = SignedRequest.parseSignedRequest(request.getParameter("signed_request"));
-			if (signedRequest.getPage() != null && signedRequest.getPage().isAdmin() == true) {
 
-				ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(Long.parseLong(signedRequest.getPage().getId())).now();
-				// This is just here for the first time the page tab is loaded. Once the server side is 
-				// design patterned up, DRY, this will be taken care of TODO
-				// TODO meaning admins can't add pages until the ting has refreshed. damn NB NB NB
-				if (clientPageData != null) {
-					if (clientPageData.addPageAdmin(Long.parseLong(signedRequest.getUserId()))) {
-						ofy().clear();
-						ofy().save().entity(clientPageData).now();
-					}
+		if (signedRequest != null && signedRequest.getPage() != null && signedRequest.getPage().isAdmin() == true && signedRequest.getUserId() != null) {
+
+			ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(Long.parseLong(signedRequest.getPage().getId())).now();
+			// This is just here for the first time the page tab is loaded. Once the server side is
+			// design patterned up, DRY, this will be taken care of TODO
+			// TODO meaning admins can't add pages until the thing has refreshed. damn NB NB NB
+			if (clientPageData != null) {
+				if (clientPageData.addPageAdmin(Long.parseLong(signedRequest.getUserId()))) {
+					ofy().clear();
+					ofy().save().entity(clientPageData).now();
 				}
-
 			}
+
 		}
 
 	}

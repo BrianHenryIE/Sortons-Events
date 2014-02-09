@@ -4,76 +4,86 @@
 
 	<ui:style>
 
-		.settingsTable {
-		width: 100%;
+		.panel {
+		width:540px;
+		background: #fff;
+		-webkit-box-shadow: 0 0
+		1px rgba(0, 0, 0, .25), 0 1px 5px 3px rgba(0, 0, 0, .05), 0 5px
+		4px
+		-3px rgba(0, 0, 0, .06);
+		border-bottom: 1px solid #666;
+		border: medium
+		none;
+		box-shadow: 0 0 1px rgba(0, 0, 0, 0.25), 0 1px 5px 3px rgba(0, 0,
+		0, 0.05), 0 5px
+		4px -3px rgba(0, 0, 0, 0.06);
 
-		border-collapse: collapse;
 
-		cellspacing:0;
-
-		border-top: 1px solid #aaa;
-		border-bottom: 1px solid #aaa;
+		}
+		.heading{
+		color: #FFF;
+		background-color:
+		#6d84b4;
+		font-size: 14px;
+		font-weight:
+		bold;
+		padding:5px
+		10px;
+		margin:0;
+		}
+		.content
+		{
+		padding:5px 10px;
+		margin:0;
 		}
 
-		.settingsTable tr {
-		height: 34px;
-		border-top: 1px solid #e9e9e9;
-		}
 
-		.settingsTable tr:hover {
-		background-color: #f7f7f7;
-		}
-
-		.settingsTable th {
-		vertical-align: top;
-		padding-top: 10px;
-		font-weight: bold;
+		.closeButton{
+		position:absolute;
+		top:-40px;
+		right:0;
 		color: #333;
-		padding-left: 10px;
+		border: 1px solid
+		#999;
+		border-top: 0px;
+		background-color: white;
+		font-weight: bold;
+		padding: 2px 6px;
+		cursor:
+		pointer;
+		font-size: 11px;
 		}
 
-		.settingsTable td {
-		padding: 10px;
+		.scrollIncluded {
+		height:400px;
+		overflow-x:hidden;
 		}
 
-
-		.addPageTextBox {
-		width: 450px;
-		}
-
-		.addPageButton {
-		display: inline-block;
-		}
-
-		.displayNone {
-		display: none;
+		.bold{
+		font-weight:bold;
+		margin-bottom:5px;
 		}
 
 	</ui:style>
-	<g:HTMLPanel>
+	<g:FlowPanel addStyleNames="{style.panel}">
 
-		<table class="{style.settingsTable}">
-			<tr>
-				<th>Add Page:</th>
-				<td>
-					<g:TextBox ui:field="addPageTextBox" addStyleNames="{style.addPageTextBox}" />
-					<fbb:BlueButton text="Add Page" ui:field="addPageButton" />
-				</td>
-			</tr>
-			<tr>
-				<th>Suggestions:</th>
-				<td>
-					<fbb:GreenButton text="Login" ui:field="loginButton" addStyleNames="{style.displayNone}"/>
-					<g:FlowPanel ui:field="suggestedPagesPanel" />
-				</td>
-			</tr>
-			<tr>
-				<th>Included Pages:</th>
-				<td>
-					<g:FlowPanel ui:field="includedPagesPanel" />
-				</td>
-			</tr>
-		</table>
+		<g:Label ui:field="closeButton" addStyleNames="{style.closeButton}">Close</g:Label>
 
-	</g:HTMLPanel>
+		<g:Label addStyleNames="{style.heading}">Admin Panel</g:Label>
+
+		<g:FlowPanel addStyleNames="{style.content}">
+			<g:Label addStyleNames="{style.bold}">Add Page:</g:Label>
+
+			<g:SimplePanel ui:field="addPageInput" />
+
+			<g:InlineLabel addStyleNames="{style.bold}">Included Pages </g:InlineLabel>
+			<g:InlineLabel addStyleNames="{style.bold}" ui:field="includedCount" />
+			<g:InlineLabel addStyleNames="{style.bold}">:</g:InlineLabel>
+
+			<g:ScrollPanel addStyleNames="{style.scrollIncluded}">
+				<g:FlowPanel ui:field="includedPagesPanel" />
+
+			</g:ScrollPanel>
+		</g:FlowPanel>
+	</g:FlowPanel>
 </ui:UiBinder> 

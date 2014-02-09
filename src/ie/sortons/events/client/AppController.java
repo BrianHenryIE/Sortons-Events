@@ -4,12 +4,16 @@ import ie.sortons.events.client.appevent.ResponseErrorEvent;
 import ie.sortons.events.client.presenter.AdminPresenter;
 import ie.sortons.events.client.presenter.PageEventsPresenter;
 import ie.sortons.events.client.presenter.RecentPostsPresenter;
+import ie.sortons.events.client.resources.Resources;
 import ie.sortons.events.client.view.AdminView;
 import ie.sortons.events.client.view.RecentPostsView;
 import ie.sortons.events.shared.Config;
+import ie.sortons.gwtfbplus.client.overlay.AuthResponse;
 import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
 import ie.sortons.gwtfbplus.client.widgets.popups.ClickPopup;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
+
+import java.util.Date;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
@@ -17,10 +21,13 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.shared.SimpleEventBus;
 import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HasWidgets;
 import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.web.bindery.event.shared.binder.EventBinder;
 import com.google.web.bindery.event.shared.binder.EventHandler;
@@ -48,6 +55,7 @@ public class AppController {
 	private static final MyEventBinder eventBinder = GWT.create(MyEventBinder.class);
 
 	GwtFbPlusResources resources = GwtFbPlusResources.INSTANCE;
+	Resources res = Resources.INSTANCE;
 
 	Serializer serializer = (Serializer) GWT.create(Serializer.class);
 
@@ -58,6 +66,8 @@ public class AppController {
 
 		resources.facebookStyles().ensureInjected();
 		resources.css().ensureInjected();
+
+		res.css().ensureInjected();
 
 		// Initialize the Facebook API
 		fbCore.init(APPID, status, cookie, xfbml);
@@ -100,7 +110,7 @@ public class AppController {
 			// Which tab?!
 
 			if (Window.Location.getHref().contains("recentposts")) {
-				
+
 				System.out.println("href contains");
 				// Show the recent posts!!
 				RecentPostsPresenter rpPresenter = new RecentPostsPresenter(rpcService, new RecentPostsView());
@@ -108,23 +118,81 @@ public class AppController {
 				rpPresenter.go(recentPostsPanel);
 
 				container.add(recentPostsPanel);
-				
-			
+
 			} else {
 
 				if (sr.getPage().isAdmin() == true || sr.getUserId().equals("37302520")) {
-					// We're the page admin
-					// TODO some sort of security!
 
-					// Check we're logged in
-					// Show the login button
-
-					// Show the admin panel
-					AdminPresenter adminPresenter = new AdminPresenter(eventBus, rpcService, new AdminView());
-					SimplePanel adminPanel = new SimplePanel();
+					AdminView adminView = new AdminView();
+					AdminPresenter adminPresenter = new AdminPresenter(eventBus, rpcService, adminView);
+					final SimplePanel adminPanel = new SimplePanel();
 					adminPresenter.go(adminPanel);
 
-					container.add(adminPanel);
+					final PopupPanel adminPopup = new PopupPanel();
+					adminPopup.add(adminPanel);
+					adminPopup.setGlassEnabled(true);
+					adminPopup.setStyleName("");
+					adminPopup.setGlassStyleName(res.css().adminGlass());
+
+					adminView.getCloseButton().addClickHandler(new ClickHandler() {
+						@Override
+						public void onClick(ClickEvent event) {
+							adminPopup.hide();
+						}
+					});
+
+					Label apLink = new Label("Admin Panel");
+					apLink.setStyleName(res.css().adminPanelButton());
+					container.add(apLink);
+
+					if (sr.getOauthToken() == null) {
+						apLink.addClickHandler(new ClickHandler() {
+							@Override
+							public void onClick(ClickEvent event) {
+								fbCore.login(new AsyncCallback<JavaScriptObject>() {
+									@Override
+									public void onFailure(Throwable caught) {
+									}
+
+									@Override
+									public void onSuccess(JavaScriptObject result) {
+										System.out.println(new JSONObject(result).toString());
+										AuthResponse auth = result.cast();
+										if (auth.getStatus().equals("not_authorized")) {
+											Label authMessage = new Label("You must authorise the application in order to configure it.");
+											authMessage.setStyleName(resources.css().infoLabel());
+											final ClickPopup noAuth = new ClickPopup("App Authorisation", authMessage);
+											noAuth.getCancelButton().removeFromParent();
+											noAuth.getOkButton().addClickHandler(new ClickHandler() {
+												@Override
+												public void onClick(ClickEvent event) {
+													noAuth.hide();
+												}
+											});
+											noAuth.show();
+										} else {
+											Cookies.setCookie("accessToken", auth.getAccessToken(),
+													new Date(new Date().getTime() + auth.getExpiresIn()));
+											Cookies.setCookie("userId", auth.getUserId(), new Date(new Date().getTime() + auth.getExpiresIn()));
+											adminPopup.show();
+											adminPopup.setPopupPosition(135, 40);
+										}
+
+									}
+								});
+
+							}
+						});
+					} else {
+						apLink.addClickHandler(new ClickHandler() {
+							@Override
+							public void onClick(ClickEvent event) {
+								adminPopup.show();
+								adminPopup.setPopupPosition(135, 40);
+							}
+						});
+					}
+
 				}
 
 				PageEventsPresenter pep = new PageEventsPresenter(rpcService);

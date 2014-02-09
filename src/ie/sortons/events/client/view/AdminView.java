@@ -1,26 +1,25 @@
 package ie.sortons.events.client.view;
 
-import ie.sortons.events.client.appevent.NotLoggedInEvent;
 import ie.sortons.events.client.presenter.AdminPresenter;
 import ie.sortons.events.client.view.widgets.AdminPageItem;
-import ie.sortons.gwtfbplus.client.api.Canvas;
-import ie.sortons.gwtfbplus.client.widgets.buttons.BlueButton;
-import ie.sortons.gwtfbplus.client.widgets.buttons.GreenButton;
+import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
+import ie.sortons.gwtfbplus.client.widgets.popups.SelectedLoading;
+import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSearchable;
+import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSingleSuggestbox;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.dom.client.Style.Display;
-import com.google.gwt.event.dom.client.HasClickHandlers;
+import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.Widget;
-import com.google.web.bindery.event.shared.binder.EventHandler;
 
 public class AdminView extends Composite implements AdminPresenter.Display {
 
@@ -30,90 +29,53 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 	}
 
 	AdminPresenter presenter;
+	GwtFbPlusResources resources = GwtFbPlusResources.INSTANCE;
 
 	public void setPresenter(AdminPresenter presenter) {
 		this.presenter = presenter;
 	}
 
+	SelectedLoading selectedItem = new SelectedLoading();
+	List<FbSearchable> pages = new ArrayList<FbSearchable>();
+	FbSingleSuggestbox suggestBox = new FbSingleSuggestbox(pages, "Enter a Facebook Page URL, Page ID or search suggestions", selectedItem);
+
 	public AdminView() {
 		initWidget(uiBinder.createAndBindUi(this));
-
-		addPageTextBox.getElement().setAttribute("placeholder", "Enter a Facebook Page URL, Page ID or search suggestions");
+		resources.facebookStyles().ensureInjected();
+		suggestBox.setWidth("100%");
+		suggestBox.getElement().getStyle().setMarginBottom(10, Unit.PX);
+		addPageInput.add(suggestBox);
 	}
 
-	// Update the scrollbars
-	Timer resizeCanvas = new Timer() {
-		@Override
-		public void run() {
-			Canvas.setSize();
-		}
-	};
+	@UiField
+	SimplePanel addPageInput;
 
 	@UiField
-	BlueButton addPageButton;
-
-	@UiField
-	GreenButton loginButton;
-
-	@UiField
-	TextBox addPageTextBox;
+	Label includedCount;
 
 	@UiField
 	FlowPanel includedPagesPanel;
 
 	@UiField
-	FlowPanel suggestedPagesPanel;
-
-	@Override
-	public HasClickHandlers getAddPageButton() {
-		return addPageButton;
+	Label closeButton;
+	
+	public Label getCloseButton(){
+		return closeButton;
 	}
-
-	@Override
-	public HasClickHandlers getLoginButton() {
-		return loginButton;
-	}
-
-	@Override
-	public TextBox getAddPageTextBox() {
-		return addPageTextBox;
-	}
-
+	
 	@Override
 	public void setIncludedPages(List<FqlPage> includedPagesList) {
-		System.out.println("view: setIncludedPages");
-		updateList(includedPagesList, includedPagesPanel);
-		resizeCanvas.schedule(500);
+		includedPagesPanel.clear();
+		for (FqlPage page : includedPagesList) {
+			AdminPageItem api = new AdminPageItem(page, presenter);
+			includedPagesPanel.add(api);
+		}
+		includedCount.setText("(" + includedPagesList.size() + ")");
 	}
 
 	@Override
-	public void setSuggestedPages(List<FqlPage> suggestionsList) {
-		loginButton.getElement().getStyle().setDisplay(Display.NONE);
-		updateList(suggestionsList, suggestedPagesPanel);
-		resizeCanvas.schedule(500);
-	}
-
-	private void updateList(List<FqlPage> pagesList, FlowPanel panel) {
-
-		// TODO
-		// Don't empty it each time.
-
-		panel.clear();
-
-		for (FqlPage page : pagesList) {
-			AdminPageItem api = new AdminPageItem(page, presenter);
-
-			if (panel == includedPagesPanel)
-				api.removeAddButton();
-			
-			panel.add(api);
-		}
-
-	}
-
-	@EventHandler
-	void onLoginEvent(NotLoggedInEvent event) {
-		loginButton.getElement().getStyle().setDisplay(Display.INLINE_BLOCK);
+	public FbSingleSuggestbox getSuggestBox() {
+		return suggestBox;
 	}
 
 }

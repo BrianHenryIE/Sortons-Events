@@ -1,10 +1,13 @@
 <!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
 <ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
-	xmlns:g="urn:import:com.google.gwt.user.client.ui" 
-	xmlns:fbb="urn:import:ie.sortons.gwtfbplus.client.widgets.buttons">
+	xmlns:g="urn:import:com.google.gwt.user.client.ui" xmlns:fbb="urn:import:ie.sortons.gwtfbplus.client.widgets.buttons">
 	<ui:style>
-		.item {
+
+		.container{
 		width: 100%;
+		}
+
+		.item {
 		position: relative;
 		padding: 5px;
 		}
@@ -35,33 +38,36 @@
 		.button {
 		display: inline-block;
 		vertical-align: middle;
-		margin-right: 3px;
+		margin-right:
+		3px;
 		}
 
 	</ui:style>
 
-	<g:FlowPanel ui:field="flowPanel" addStyleNames="{style.item}">
+	<g:SimplePanel addStyleNames="{style.container}">
+		<g:FlowPanel ui:field="flowPanel" addStyleNames="{style.item}">
 
-		<g:FlowPanel addStyleNames="{style.picture}">
+			<g:FlowPanel addStyleNames="{style.picture}">
 
-			<g:HTMLPanel ui:field="picPanel" />
+				<g:HTMLPanel ui:field="picPanel" />
+
+			</g:FlowPanel>
+
+			<g:FlowPanel addStyleNames="{style.text}">
+
+				<g:Anchor ui:field="name" />
+				<g:Label ui:field="location" />
+
+			</g:FlowPanel>
+
+			<g:FlowPanel addStyleNames="{style.buttons}">
+
+				<fbb:X1Button ui:field="ignoreButton" addStyleNames="{style.button}"
+					title="Remove" />
+
+			</g:FlowPanel>
 
 		</g:FlowPanel>
-
-		<g:FlowPanel addStyleNames="{style.text}">
-
-			<g:Anchor ui:field="name" />
-			<g:Label ui:field="location" />
-
-		</g:FlowPanel>
-
-		<g:FlowPanel addStyleNames="{style.buttons}">
-
-			<fbb:GreyButton text="Add" ui:field="addButton" addStyleNames="{style.button}" />
-			<fbb:X1Button ui:field="ignoreButton" addStyleNames="{style.button}" title="Remove" />
-
-		</g:FlowPanel>
-
-	</g:FlowPanel>
+	</g:SimplePanel>
 
 </ui:UiBinder> 

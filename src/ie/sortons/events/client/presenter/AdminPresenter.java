@@ -1,10 +1,13 @@
 package ie.sortons.events.client.presenter;
 
 import ie.sortons.events.client.ClientDAO;
-import ie.sortons.events.client.LoginController;
 import ie.sortons.events.client.appevent.PermissionsEvent;
 import ie.sortons.events.client.appevent.ResponseErrorEvent;
 import ie.sortons.events.shared.ClientPageData;
+import ie.sortons.events.shared.DsFqlPage;
+import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSearchable;
+import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSingleSuggestbox;
+import ie.sortons.gwtfbplus.client.widgets.suggestbox.SelectedItem;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 import ie.sortons.gwtfbplus.shared.domain.graph.GraphPage;
 
@@ -13,19 +16,19 @@ import java.util.List;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.HasClickHandlers;
-import com.google.gwt.event.dom.client.KeyUpEvent;
-import com.google.gwt.event.dom.client.KeyUpHandler;
+import com.google.gwt.event.dom.client.KeyCodes;
+import com.google.gwt.event.dom.client.KeyDownEvent;
+import com.google.gwt.event.dom.client.KeyDownHandler;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.HasWidgets;
-import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.web.bindery.event.shared.binder.EventBinder;
 import com.google.web.bindery.event.shared.binder.EventHandler;
@@ -48,43 +51,13 @@ public class AdminPresenter implements Presenter {
 	private String requiredAdminPermissions = "";
 
 	public interface Display {
-		TextBox getAddPageTextBox();
-
-		HasClickHandlers getAddPageButton();
-
-		HasClickHandlers getLoginButton();
+		FbSingleSuggestbox getSuggestBox();
 
 		void setIncludedPages(List<FqlPage> includedList);
-
-		void setSuggestedPages(List<FqlPage> suggestionsList);
 
 		void setPresenter(AdminPresenter presenter);
 
 		Widget asWidget();
-	}
-
-	public void bind() {
-
-		eventBinder.bindEventHandlers(this, eventBus);
-
-		display.getAddPageButton().addClickHandler(new ClickHandler() {
-			public void onClick(ClickEvent event) {
-				processTextBox();
-			}
-		});
-
-		display.getLoginButton().addClickHandler(new ClickHandler() {
-			public void onClick(ClickEvent event) {
-				LoginController.login(requiredAdminPermissions);
-			}
-		});
-
-		display.getAddPageTextBox().addKeyUpHandler(new KeyUpHandler() {
-			public void onKeyUp(KeyUpEvent event) {
-				searchSuggestions();
-			}
-		});
-
 	}
 
 	public AdminPresenter(EventBus eventBus, final ClientDAO dao, Display view) {
@@ -102,53 +75,65 @@ public class AdminPresenter implements Presenter {
 		container.add(display.asWidget());
 	}
 
+	public void bind() {
+
+		eventBinder.bindEventHandlers(this, eventBus);
+
+		display.getSuggestBox().addValueChangeHandler(new ValueChangeHandler<FbSearchable>() {
+			@Override
+			public void onValueChange(ValueChangeEvent<FbSearchable> event) {
+				addPage((DsFqlPage) event.getValue());
+			}
+		});
+
+		display.getSuggestBox().addKeyDownHandler(new KeyDownHandler() {
+			@Override
+			public void onKeyDown(KeyDownEvent event) {
+				if (event.getNativeKeyCode() == KeyCodes.KEY_ENTER) {
+					// TODO Check there's no match in the oracle!
+					System.out.println("keydown");
+					Timer t = new Timer(){
+						@Override
+						public void run() {
+							if(display.getSuggestBox().getValue()==null){
+								System.out.println("asd");
+								processTextBox(display.getSuggestBox().getValueBox().getText());
+							}
+						}
+					};
+					t.schedule(250);				
+					
+				}
+			}
+		});
+	}
+
 	private void getClientPageData() {
 		dao.refreshClientPageData(this);
 	}
 
 	public void displayClientData(ClientPageData clientPageData) {
 		display.setIncludedPages(dao.getClientPageData().getIncludedPages());
-
-		if (display.getAddPageTextBox().getText().trim().length() > 0) {
-			searchSuggestions();
-		} else {
-			getSuggestions();
-		}
 	}
 
 	private void getSuggestions() {
 		dao.getSuggestions(this);
 	}
 
-	public void setSuggestions(List<FqlPage> suggestionsList) {
+	public void setSuggestions(List<DsFqlPage> suggestionsList) {
+		System.out.println("setsuggestions");
 		if (suggestionsList != null) {
-			display.setSuggestedPages(suggestionsList.subList(0, Math.min(10, suggestionsList.size())));
-		}
-	}
 
-	private void searchSuggestions() {
-		String searchText = display.getAddPageTextBox().getText().toLowerCase();
-		if (searchText.trim().length() > 0 && !searchText.toLowerCase().contains("http:") && !searchText.toLowerCase().contains("www.")) {
-			List<FqlPage> search = new ArrayList<FqlPage>();
-			for (FqlPage page : dao.getSuggestions()) {
-				boolean add = true;
-				for (String term : searchText.split(" ")) {
-					if (!page.getName().toLowerCase().contains(term) && !page.getLocation().friendlyString().toLowerCase().contains(term)) {
-						add = false;
-					}
-				}
-				if (add == true || page.getPageId().toString().contains(searchText)
-						|| page.getLocation().friendlyString().toLowerCase().contains(searchText)) {
-					search.add(page);
-				}
+			List<FbSearchable> pages = new ArrayList<FbSearchable>();
+			for (FqlPage p : suggestionsList) {
+				pages.add((FbSearchable) p);
 			}
-			setSuggestions(search);
-		} else {
-			getSuggestions();
+
+			display.getSuggestBox().setSuggestions(pages);
 		}
 	}
 
-	private void processTextBox() {
+	private void processTextBox(String textEntered) {
 
 		// Get the text from the textbox
 		// regex it to a page_id
@@ -159,7 +144,8 @@ public class AdminPresenter implements Presenter {
 
 		// Get the text that has been entered and build the graph call
 
-		String textEntered = display.getAddPageTextBox().getText();
+		System.out.println("processing text : " + textEntered);
+
 		String graphPath = "/";
 
 		// Get rid of anything after ?
@@ -199,38 +185,45 @@ public class AdminPresenter implements Presenter {
 
 				System.out.println("pageDetails.getName() " + pageDetails.getName());
 
-				FqlPage newPage = new FqlPage(pageDetails.getName(), pageDetails.getLink(), pageDetails.getId());
+				DsFqlPage newPage = new DsFqlPage();
 
-				addPage(newPage);
+				// TODO Worst case of OO in the project
+				newPage.name = pageDetails.getName();
+				newPage.page_url = pageDetails.getLink();
+				newPage.page_id = pageDetails.getId();
 
 				// TODO
 				// This should only empty when it's successful
-				display.getAddPageTextBox().setText("");
+				display.getSuggestBox().setValue(newPage, true); // This will fire the valuechangehandler
 
 			}
 
 			@Override
 			public void onFailure(Throwable caught) {
 				// TODO Auto-generated method stub
+
 				System.out.println("ERROR processTextBox");
 			}
 		});
 
 	}
 
-	public void addPage(FqlPage newPage) {
+	public void addPage(final DsFqlPage newPage) {
 
 		System.out.println(serializer.serialize(newPage));
 
 		dao.addPage(newPage, new RequestCallback() {
 			public void onError(Request request, Throwable exception) {
+
+				// Set the suggestbox item to xable
 				System.out.println("Couldn't retrieve JSON");
 			}
 
 			public void onResponseReceived(Request request, Response response) {
 				if (200 == response.getStatusCode()) {
 
-					FqlPage page = (FqlPage) serializer.deSerialize(response.getText(), "ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
+					DsFqlPage page = (DsFqlPage) serializer.deSerialize(response.getText(),
+							"ie.sortons.events.shared.FqlPageSearchable");
 
 					// TODO return a real error message
 					if (page.getPageId() != null) {
@@ -238,6 +231,10 @@ public class AdminPresenter implements Presenter {
 
 						// then update UI
 						displayClientData(dao.getClientPageData());
+
+						display.getSuggestBox().unSelectItem();
+						display.getSuggestBox().removeFromOracle(page);
+
 					} else {
 						// TODO Fire error message
 						// was page already included?
@@ -251,6 +248,8 @@ public class AdminPresenter implements Presenter {
 
 					// TODO: How to know what type of error it is?
 					eventBus.fireEvent(new ResponseErrorEvent(response));
+
+					display.getSuggestBox().addSelectedItemToDisplay(newPage, new SelectedItem());
 				}
 			}
 		});
@@ -289,9 +288,7 @@ public class AdminPresenter implements Presenter {
 
 	@EventHandler
 	void onLoginEvent(PermissionsEvent event) {
-
 		if (event.getPermissionsObject().hasPermission(requiredAdminPermissions)) {
-
 			getSuggestions();
 		}
 	}

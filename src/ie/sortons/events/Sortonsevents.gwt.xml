@@ -21,17 +21,22 @@
 
 	<inherits name="com.gwtfb.GwtFB" />
 	<inherits name="ie.sortons.gwtfbplus.GwtFbPlus" />
-     
+
 	<!-- Specify the app entry point class. -->
 	<entry-point class='ie.sortons.events.client.Sortonsevents' />
 
 	<!-- Specify the paths for translatable code -->
 	<source path='client' />
 	<source path='shared' />
-		  
+
 
 	<source path='ie.sortons.gwtfbplus' />
 	<source path='com.kfuntak.gwt.json.serialization' />
 
-	 
+
+	<add-linker name="xsiframe" />
+	<set-configuration-property name="devModeRedirectEnabled"
+		value="true" />
+	<collapse-all-properties />
+
 </module>

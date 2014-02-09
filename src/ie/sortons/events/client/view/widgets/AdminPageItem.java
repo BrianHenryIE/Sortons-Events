@@ -3,7 +3,6 @@ package ie.sortons.events.client.view.widgets;
 import ie.sortons.events.client.presenter.AdminPresenter;
 import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
 import ie.sortons.gwtfbplus.client.widgets.Link;
-import ie.sortons.gwtfbplus.client.widgets.buttons.GreyButton;
 import ie.sortons.gwtfbplus.client.widgets.buttons.X1Button;
 import ie.sortons.gwtfbplus.client.widgets.popups.ToolTipPanel;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
@@ -34,9 +33,6 @@ public class AdminPageItem extends Composite {
 	
 	@UiField
 	HTMLPanel picPanel;
-
-	@UiField
-	GreyButton addButton;
 
 	@UiField
 	X1Button ignoreButton;
@@ -83,20 +79,9 @@ public class AdminPageItem extends Composite {
 			public void onClick(ClickEvent event) {
 				presenter.ignorePage(page);
 			}
-		});
-
-		addButton.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				presenter.addPage(page);
-			}
-		});
-				
+		});				
 	}
 
-	public void removeAddButton() {
-		addButton.setVisible(false);
-	}
 
 	public void removeIgnoreButton() {
 		ignoreButton.setVisible(false);

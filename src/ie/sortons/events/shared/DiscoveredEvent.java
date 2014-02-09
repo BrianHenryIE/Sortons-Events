@@ -6,7 +6,6 @@ import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.gwt.core.shared.GwtIncompatible;
 import com.googlecode.objectify.annotation.Entity;

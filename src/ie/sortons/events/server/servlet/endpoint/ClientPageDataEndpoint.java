@@ -4,12 +4,10 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.Config;
 import ie.sortons.gwtfbplus.shared.domain.FbResponse;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventDatesAdapter;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenue;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenueAdapter;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachment;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachmentAdapter;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 import ie.sortons.gwtfbplus.shared.domain.graph.GraphUser;
 
 import java.io.BufferedReader;
@@ -108,7 +106,7 @@ public class ClientPageDataEndpoint {
 		// Moved here to make succinct
 		clientPageData = ofy().load().type(ClientPageData.class).id(clientpageid).now();
 
-		log.info("returning from ds: " + clientPageData.getPageById(jsonPage.getPageId()).getTitle());
+		log.info("returning from ds: " + clientPageData.getPageById(jsonPage.getPageId()).getName());
 
 		return clientPageData.getPageById(jsonPage.getPageId());
 	}
@@ -186,7 +184,6 @@ public class ClientPageDataEndpoint {
 
 	private boolean isPageAdmin(Long userId, Long clientPageId) {
 		ClientPageData clientPageData = getClientPageData(null, clientPageId);
-		Gson g = new Gson();
 		return clientPageData.getPageAdmins().contains(userId);
 	}
 
@@ -209,7 +206,7 @@ public class ClientPageDataEndpoint {
 	private boolean isValidAccessTokenForUser(String accessToken, Long userId) {
 		String json = "";
 		try {
-			URL url = new URL("https://graph.facebook.com/" + userId + "?access_token=" + accessToken);
+			URL url = new URL("https://graph.facebook.com/me?access_token=" + accessToken);
 			BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
 			String line;
 			while ((line = reader.readLine()) != null) {

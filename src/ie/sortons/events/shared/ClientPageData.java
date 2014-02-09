@@ -53,7 +53,7 @@ public class ClientPageData implements JsonSerializable {
 	public List<FqlPage> ignoredPages = new ArrayList<FqlPage>();
 
 	@Ignore
-	public List<FqlPage> suggestedPages = new ArrayList<FqlPage>();
+	public List<DsFqlPage> suggestedPages = new ArrayList<DsFqlPage>();
 
 	public ClientPageData() {
 	}
@@ -80,11 +80,11 @@ public class ClientPageData implements JsonSerializable {
 		return new ArrayList<FqlPage>(ignoredPages);
 	}
 
-	public void setSuggestedPages(List<FqlPage> suggestedPages) {
+	public void setSuggestedPages(List<DsFqlPage> suggestedPages) {
 		this.suggestedPages = suggestedPages;
 	}
 
-	public List<FqlPage> getSuggestedPages() {
+	public List<DsFqlPage> getSuggestedPages() {
 		return suggestedPages;
 	}
 

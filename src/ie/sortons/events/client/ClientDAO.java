@@ -2,6 +2,8 @@ package ie.sortons.events.client;
 
 import ie.sortons.events.client.presenter.AdminPresenter;
 import ie.sortons.events.shared.ClientPageData;
+import ie.sortons.events.shared.DsFqlPage;
+import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import java.util.ArrayList;
@@ -26,7 +28,6 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.gwtfb.sdk.FBCore;
 import com.kfuntak.gwt.json.serialization.client.HashMapSerializer;
 import com.kfuntak.gwt.json.serialization.client.Serializer;
-import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
 
 public class ClientDAO {
 
@@ -183,12 +184,14 @@ public class ClientDAO {
 		fbCore.api(graphPath, callback);
 	}
 
-	public List<FqlPage> getSuggestions() {
+	public List<DsFqlPage> getSuggestions() {
 		return clientPageData.getSuggestedPages();
 	}
 
 	public void getSuggestions(final AdminPresenter presenter) {
 
+		System.out.println("getSuggestions()");
+		
 		if (clientPageData.getSuggestedPages() == null || clientPageData.getSuggestedPages().size() < 25) {
 
 			List<Long> searchPagesList = new ArrayList<Long>();
@@ -221,17 +224,22 @@ public class ClientDAO {
 			query.put("method", new JSONString(method));
 			query.put("query", new JSONString(fql));
 
+			System.out.println("fire fql");
+			
 			fbCore.api(query.getJavaScriptObject(), new AsyncCallback<JavaScriptObject>() {
 				public void onSuccess(JavaScriptObject response) {
 
 					HashMapSerializer hashMapSerializer = (HashMapSerializer) GWT.create(HashMapSerializer.class);
 
+					System.out.println("deserialize");
+					
 					@SuppressWarnings("unchecked")
-					HashMap<String, FqlPage> map = (HashMap<String, FqlPage>) hashMapSerializer.deSerialize(new JSONObject(response),
-							"ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
+					HashMap<String, DsFqlPage> map = (HashMap<String, DsFqlPage>) hashMapSerializer.deSerialize(new JSONObject(response),
+							"ie.sortons.events.shared.DsFqlPage");
 
-					ArrayList<FqlPage> pages = new ArrayList<FqlPage>();
-					for (FqlPage page : map.values()) {
+					System.out.println("process");
+					ArrayList<DsFqlPage> pages = new ArrayList<DsFqlPage>();
+					for (DsFqlPage page : map.values()) {
 						pages.add(page);
 					}
 

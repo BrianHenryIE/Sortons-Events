@@ -10,6 +10,7 @@ import com.google.gwt.user.client.ui.Widget;
 
 public class RecentPostsPresenter implements Presenter {
 
+	@SuppressWarnings("unused")
 	private final ClientDAO dao;
 	
 	private final Display display;
