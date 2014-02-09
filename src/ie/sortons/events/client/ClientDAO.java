@@ -67,8 +67,11 @@ public class ClientDAO {
 		String jsonUrl = "https://sortonsevents.appspot.com/_ah/api/upcomingEvents/v1/discoveredeventsresponse/";
 
 		// Check for dev mode
-		if (!GWT.isProdMode() && GWT.isClient())
+		if (!GWT.isProdMode() && GWT.isClient()){
+			System.out.println("dev mode getevents");
 			jsonUrl = "http://testbed.org.org:8888/_ah/api/upcomingEvents/v1/discoveredeventsresponse/";
+		}
+			
 
 		String url = jsonUrl + currentPageId;
 		url = URL.encode(url);
@@ -90,7 +93,7 @@ public class ClientDAO {
 
 		// Check for dev mode
 		if (!GWT.isProdMode() && GWT.isClient()) {
-			System.out.println("dev mode");
+			System.out.println("dev mode cpd");
 			jsonUrl = "http://testbed.org.org:8888/_ah/api/clientdata/v1/clientpagedata/";
 		}
 
@@ -133,7 +136,7 @@ public class ClientDAO {
 
 		// Check for dev mode
 		if (!GWT.isProdMode() && GWT.isClient()) {
-			System.out.println("dev mode");
+			System.out.println("dev mode add page");
 			addPageAPI = "http://testbed.org.org:8888/_ah/api/clientdata/v1/addPage/" + currentPageId;
 		}
 
@@ -160,7 +163,7 @@ public class ClientDAO {
 
 		// Check for dev mode
 		if (!GWT.isProdMode() && GWT.isClient()) {
-			System.out.println("dev mode");
+			System.out.println("dev mode ignore page");
 			ignorePageAPI = "http://testbed.org.org:8888/_ah/api/clientdata/v1/ignorePage/" + currentPageId;
 		}
 

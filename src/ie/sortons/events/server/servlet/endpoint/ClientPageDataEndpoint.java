@@ -5,6 +5,12 @@ import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.Config;
 import ie.sortons.gwtfbplus.shared.domain.FbResponse;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventDatesAdapter;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenue;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenueAdapter;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachment;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachmentAdapter;
+import ie.sortons.gwtfbplus.shared.domain.graph.GraphUser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,6 +19,7 @@ import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Date;
 import java.util.logging.Logger;
 
 import javax.inject.Named;
@@ -22,6 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.googlecode.objectify.ObjectifyService;
 
@@ -35,11 +43,6 @@ public class ClientPageDataEndpoint {
 	}
 
 	public ClientPageData getClientPageData(HttpServletRequest req, @Named("clientid") Long clientPageId) {
-
-		for (Cookie c : req.getCookies()) {
-			if(c.getName().equals("accessToken"))
-				System.out.println("access token: " + c.getValue());
-		}
 
 		// TODO
 		ofy().clear();
@@ -72,7 +75,11 @@ public class ClientPageDataEndpoint {
 
 	@ApiMethod(name = "clientdata.addPage", httpMethod = "post")
 	public FqlPage addPage(HttpServletRequest req, @Named("clientpageid") Long clientpageid, FqlPage jsonPage) {
-		// TODO some sort of security
+
+		if (!isPageAdmin(req, clientpageid)) {
+			// TODO return an error
+			return new FqlPage();
+		}
 
 		log.info("addPage: " + jsonPage.getName() + " " + jsonPage.getPageId());
 
@@ -109,7 +116,11 @@ public class ClientPageDataEndpoint {
 	@ApiMethod(name = "clientdata.ignorePage", httpMethod = "post")
 	public FqlPage ignorePage(HttpServletRequest req, @Named("clientpageid") Long clientpageid, FqlPage jsonPage) {
 
-		// TODO some sort of security
+		if (!isPageAdmin(req, clientpageid)) {
+			// TODO return an error
+			return new FqlPage();
+		}
+
 
 		ClientPageData clientPageData = getClientPageData(req, clientpageid);
 
@@ -173,4 +184,56 @@ public class ClientPageDataEndpoint {
 		// TODO: return an error.
 	}
 
+	private boolean isPageAdmin(Long userId, Long clientPageId) {
+		ClientPageData clientPageData = getClientPageData(null, clientPageId);
+		Gson g = new Gson();
+		return clientPageData.getPageAdmins().contains(userId);
+	}
+
+	private boolean isPageAdmin(HttpServletRequest req, Long clientPageId) {
+		String accessToken = null;
+		Long userId = null;
+		for (Cookie c : req.getCookies()) {
+			if (c.getName().equals("accessToken"))
+				accessToken = c.getValue();
+			if (c.getName().equals("userId"))
+				userId = Long.parseLong(c.getValue());
+		}
+		if (isValidAccessTokenForUser(accessToken, userId))
+			return isPageAdmin(userId, clientPageId);
+		else
+			return false;
+
+	}
+
+	private boolean isValidAccessTokenForUser(String accessToken, Long userId) {
+		String json = "";
+		try {
+			URL url = new URL("https://graph.facebook.com/" + userId + "?access_token=" + accessToken);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+			String line;
+			while ((line = reader.readLine()) != null) {
+				json += line;
+			}
+			reader.close();
+			
+		} catch (MalformedURLException e) {
+			// TODO error
+		} catch (IOException e) {
+			// TODO error
+		}
+		if (!json.equals("")) {
+			Gson gson = new GsonBuilder().registerTypeAdapter(FqlEventVenue.class, new FqlEventVenueAdapter())
+					.registerTypeAdapter(Date.class, new FqlEventDatesAdapter()).create();
+			GraphUser user = gson.fromJson(json, GraphUser.class);
+
+			if (user.getError() != null) {
+				// error... maybe the access token has expired...
+				return false;
+			} else if (userId.equals(user.getId())) {
+				return true;
+			}
+		}
+		return false; // Shouldn't ever get here
+	}
 }

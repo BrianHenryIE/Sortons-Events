@@ -137,7 +137,8 @@ public class AdminPresenter implements Presenter {
 						add = false;
 					}
 				}
-				if (add == true || page.getPageId().toString().contains(searchText) || page.getLocation().friendlyString().toLowerCase().contains(searchText)) {
+				if (add == true || page.getPageId().toString().contains(searchText)
+						|| page.getLocation().friendlyString().toLowerCase().contains(searchText)) {
 					search.add(page);
 				}
 			}
@@ -231,10 +232,17 @@ public class AdminPresenter implements Presenter {
 
 					FqlPage page = (FqlPage) serializer.deSerialize(response.getText(), "ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
 
-					dao.getClientPageData().addPage(page);
+					// TODO return a real error message
+					if (page.getPageId() != null) {
+						dao.getClientPageData().addPage(page);
 
-					// then update UI
-					displayClientData(dao.getClientPageData());
+						// then update UI
+						displayClientData(dao.getClientPageData());
+					} else {
+						// TODO Fire error message
+						// was page already included?
+						// or serious error?
+					}
 
 				} else {
 					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.addPage()");

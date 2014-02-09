@@ -15,7 +15,8 @@ import com.googlecode.objectify.annotation.Index;
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 import com.kfuntak.gwt.json.serialization.client.SkipNullSerialization;
 
-@Entity @SkipNullSerialization
+@Entity
+@SkipNullSerialization
 public class DiscoveredEvent implements JsonSerializable {
 
 	@GwtIncompatible
@@ -27,7 +28,7 @@ public class DiscoveredEvent implements JsonSerializable {
 
 	public FqlEvent fbEvent;
 
-	@Index @GwtIncompatible @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+	@Index
 	public List<Long> sourceLists = new ArrayList<Long>();
 
 	public List<FqlPage> sourcePages = new ArrayList<FqlPage>();
@@ -45,8 +46,6 @@ public class DiscoveredEvent implements JsonSerializable {
 		addSourcePage(sourcePage);
 	}
 
-
-
 	public DiscoveredEvent(FqlEvent fbEvent, List<Long> sourceLists, List<FqlPage> sourcePages) {
 		this.eid = fbEvent.getEid();
 		this.fbEvent = fbEvent;
@@ -54,13 +53,11 @@ public class DiscoveredEvent implements JsonSerializable {
 		this.sourcePages = sourcePages;
 	}
 
-
 	public DiscoveredEvent(FqlEvent fbEvent, List<FqlPage> sourcePages) {
 		this.eid = fbEvent.getEid();
 		this.fbEvent = fbEvent;
 		this.sourcePages = sourcePages;
 	}
-
 
 	public FqlEvent getFbEvent() {
 		return this.fbEvent;
@@ -114,19 +111,6 @@ public class DiscoveredEvent implements JsonSerializable {
 				changed = true;
 		return changed;
 	}
-//
-//	public static DiscoveredEvent merge(DiscoveredEvent d1, DiscoveredEvent d2) {
-//
-//		if (d1.getFbEvent().getEid().equals(d2.getFbEvent().getEid())) {
-//
-//			d1.addSourceLists(d2.getSourceLists());
-//			d1.addSourcePages(d2.getSourcePages());
-//
-//			return d1;
-//		}
-//		return null;
-//	}
-
 
 	/**
 	 * This is used to remove the source pages that are related to other clients from the same event
@@ -137,6 +121,13 @@ public class DiscoveredEvent implements JsonSerializable {
 			if (client.getIncludedPages().contains(page))
 				newSources.add(page);
 		sourcePages = newSources;
+	}
+	
+	/**
+	 * This is used to remove the source lists before transferring the data to the client
+	 */
+	public void setSourceListsNull() {
+			sourceLists = null;
 	}
 
 }

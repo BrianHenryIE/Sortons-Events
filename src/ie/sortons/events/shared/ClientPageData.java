@@ -19,6 +19,22 @@ import com.kfuntak.gwt.json.serialization.client.SkipNullSerialization;
 public class ClientPageData implements JsonSerializable {
 
 	
+	/**
+	 * @return the pageAdmins
+	 */
+	@GwtIncompatible
+	public List<Long> getPageAdmins() {
+		return pageAdmins;
+	}
+
+	/**
+	 * @param pageAdmins the pageAdmins to set
+	 */
+	@GwtIncompatible
+	public boolean addPageAdmin(Long admin) {
+		return pageAdmins.add(admin);
+	}
+
 	@GwtIncompatible @ApiResourceProperty(name = "class")
 	public final String classname = "ie.sortons.events.shared.ClientPageData";
 
