@@ -50,10 +50,8 @@ public class ClientPageData implements JsonSerializable {
 	
 	public List<FqlPage> includedPages = new ArrayList<FqlPage>();
 
-	public List<FqlPage> ignoredPages = new ArrayList<FqlPage>();
-
 	@Ignore
-	public List<DsFqlPage> suggestedPages = new ArrayList<DsFqlPage>();
+	public List<FqlPageSearchable> suggestedPages = new ArrayList<FqlPageSearchable>();
 
 	public ClientPageData() {
 	}
@@ -76,15 +74,11 @@ public class ClientPageData implements JsonSerializable {
 		return new ArrayList<FqlPage>(includedPages);
 	}
 
-	public List<FqlPage> getIgnoredPages() {
-		return new ArrayList<FqlPage>(ignoredPages);
-	}
-
-	public void setSuggestedPages(List<DsFqlPage> suggestedPages) {
+	public void setSuggestedPages(List<FqlPageSearchable> suggestedPages) {
 		this.suggestedPages = suggestedPages;
 	}
 
-	public List<DsFqlPage> getSuggestedPages() {
+	public List<FqlPageSearchable> getSuggestedPages() {
 		return suggestedPages;
 	}
 
@@ -94,24 +88,18 @@ public class ClientPageData implements JsonSerializable {
 			includedPages.add(page);
 			added = true;
 		}
-		if (ignoredPages.contains(page)) {
-			ignoredPages.remove(page);
-		}
 		return added;
 	}
 
 	// TODO
-	public boolean ignorePage(FqlPage page) {
+	public boolean removePage(FqlPage page) {
 
 		boolean excluded = false;
 		if (includedPages.contains(page)) {
 			includedPages.remove(page);
 			excluded = true;
 		}
-		if (page != null && !ignoredPages.contains(page)) {
-			ignoredPages.add(page);
-			excluded = true;
-		}
+	
 		return excluded;
 	}
 
@@ -128,14 +116,6 @@ public class ClientPageData implements JsonSerializable {
 		for (FqlPage page : includedPages)
 			if (page != null)
 				pageIds.add(page.getPageId());
-		return pageIds;
-	}
-
-	public List<Long> getIgnoredPageIds() {
-		List<Long> pageIds = new ArrayList<Long>();
-		for (FqlPage page : ignoredPages) {
-			pageIds.add(page.getPageId());
-		}
 		return pageIds;
 	}
 

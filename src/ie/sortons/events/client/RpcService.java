@@ -1,8 +1,9 @@
 package ie.sortons.events.client;
 
-import ie.sortons.events.client.presenter.AdminPresenter;
+import ie.sortons.events.client.presenter.PageAdminPresenter;
 import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.DsFqlPage;
+import ie.sortons.events.shared.ClientPageDataResponse;
+import ie.sortons.events.shared.FqlPageSearchable;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
@@ -29,7 +30,7 @@ import com.gwtfb.sdk.FBCore;
 import com.kfuntak.gwt.json.serialization.client.HashMapSerializer;
 import com.kfuntak.gwt.json.serialization.client.Serializer;
 
-public class ClientDAO {
+public class RpcService {
 
 	// When it comes time to refactor:
 	// https://code.google.com/p/google-apis-client-generator/wiki/TableOfContents
@@ -37,7 +38,7 @@ public class ClientDAO {
 	Serializer serializer = (Serializer) GWT.create(Serializer.class);
 
 	private Long currentPageId;
-	
+
 	private FBCore fbCore;
 	// private SimpleEventBus eventBus;
 
@@ -47,19 +48,18 @@ public class ClientDAO {
 		return this.clientPageData;
 	}
 
-	public ClientDAO(SimpleEventBus eventBus) {
+	public RpcService(SimpleEventBus eventBus) {
 		// this.eventBus = eventBus;
 	}
 
 	public void setGwtFb(FBCore fbCore) {
 		this.fbCore = fbCore;
 	}
-	
-	
+
 	{
-		if(SignedRequest.getSignedRequestFromHTML() != null)
-			currentPageId = Long.parseLong(((SignedRequest) serializer.deSerialize(new JSONObject(SignedRequest.getSignedRequestFromHTML()), "ie.sortons.gwtfbplus.shared.domain.SignedRequest")).getPage().getId());
-		
+		if (SignedRequest.getSignedRequestFromHTML() != null)
+			currentPageId = Long.parseLong(((SignedRequest) serializer.deSerialize(new JSONObject(SignedRequest.getSignedRequestFromHTML()),
+					"ie.sortons.gwtfbplus.shared.domain.SignedRequest")).getPage().getId());
 	}
 
 	public void getEventsForPage(RequestCallback callback) {
@@ -68,11 +68,10 @@ public class ClientDAO {
 		String jsonUrl = "https://sortonsevents.appspot.com/_ah/api/upcomingEvents/v1/discoveredeventsresponse/";
 
 		// Check for dev mode
-		if (!GWT.isProdMode() && GWT.isClient()){
+		if (!GWT.isProdMode() && GWT.isClient()) {
 			System.out.println("dev mode getevents");
 			jsonUrl = "http://testbed.org.org:8888/_ah/api/upcomingEvents/v1/discoveredeventsresponse/";
 		}
-			
 
 		String url = jsonUrl + currentPageId;
 		url = URL.encode(url);
@@ -88,7 +87,7 @@ public class ClientDAO {
 		}
 	}
 
-	public void refreshClientPageData(final AdminPresenter adminPresenter) {
+	public void refreshClientPageData(final PageAdminPresenter adminPresenter) {
 
 		String jsonUrl = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/clientpagedata/";
 
@@ -156,7 +155,7 @@ public class ClientDAO {
 
 	}
 
-	public void ignorePage(FqlPage page, RequestCallback callback) {
+	public void removePage(FqlPage page, RequestCallback callback) {
 
 		clientPageData.getSuggestedPages().remove(page);
 
@@ -184,14 +183,16 @@ public class ClientDAO {
 		fbCore.api(graphPath, callback);
 	}
 
-	public List<DsFqlPage> getSuggestions() {
+	public List<FqlPageSearchable> getSuggestions() {
 		return clientPageData.getSuggestedPages();
 	}
 
-	public void getSuggestions(final AdminPresenter presenter) {
+	public void getSuggestions(final PageAdminPresenter presenter) {
 
-		System.out.println("getSuggestions()");
+		//TODO shouldn't included existing included pages
 		
+		System.out.println("getSuggestions()");
+
 		if (clientPageData.getSuggestedPages() == null || clientPageData.getSuggestedPages().size() < 25) {
 
 			List<Long> searchPagesList = new ArrayList<Long>();
@@ -204,18 +205,8 @@ public class ClientDAO {
 			}
 			String searchPages = currentPageId + "," + Joiner.on(",").join(searchPagesList);
 
-			String ignoredPages = Joiner.on(",").join(clientPageData.getIgnoredPageIds());
-			String includedPages = Joiner.on(",").join(clientPageData.getIncludedPageIds());
-
-			String excludePages = "";
-			if (clientPageData.getIgnoredPageIds().size() > 0 && clientPageData.getIncludedPageIds().size() > 0) {
-				excludePages = ignoredPages + "," + includedPages;
-			} else {
-				excludePages = (clientPageData.getIgnoredPageIds().size() > 0) ? ignoredPages : includedPages;
-			}
-
 			String fql = "SELECT page_id, name, page_url, location FROM page WHERE page_id IN (SELECT page_id FROM page_fan WHERE uid IN ("
-					+ searchPages + ") AND NOT (page_id IN (" + excludePages + ")) LIMIT 250)";
+					+ searchPages + ") LIMIT 250)";
 
 			System.out.println(fql);
 
@@ -225,21 +216,21 @@ public class ClientDAO {
 			query.put("query", new JSONString(fql));
 
 			System.out.println("fire fql");
-			
+
 			fbCore.api(query.getJavaScriptObject(), new AsyncCallback<JavaScriptObject>() {
 				public void onSuccess(JavaScriptObject response) {
 
 					HashMapSerializer hashMapSerializer = (HashMapSerializer) GWT.create(HashMapSerializer.class);
 
 					System.out.println("deserialize");
-					
+
 					@SuppressWarnings("unchecked")
-					HashMap<String, DsFqlPage> map = (HashMap<String, DsFqlPage>) hashMapSerializer.deSerialize(new JSONObject(response),
-							"ie.sortons.events.shared.DsFqlPage");
+					HashMap<String, FqlPageSearchable> map = (HashMap<String, FqlPageSearchable>) hashMapSerializer.deSerialize(new JSONObject(
+							response), "ie.sortons.events.shared.FqlPageSearchable");
 
 					System.out.println("process");
-					ArrayList<DsFqlPage> pages = new ArrayList<DsFqlPage>();
-					for (DsFqlPage page : map.values()) {
+					ArrayList<FqlPageSearchable> pages = new ArrayList<FqlPageSearchable>();
+					for (FqlPageSearchable page : map.values()) {
 						pages.add(page);
 					}
 
@@ -267,4 +258,52 @@ public class ClientDAO {
 		}
 	}
 
+	/**
+	 * This is for the sortonsadmin view
+	 * 
+	 * 
+	 * 
+	 * @param asyncCallback
+	 */
+	public void getAllClients(final AsyncCallback<List<ClientPageData>> asyncCallback) {
+
+		// TODO security	
+		
+		// _ah/api/clientdata/v1/clientpagedatacollection
+
+		String getAllClientsAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/clientpagedataresponse/";
+
+		// Check for dev mode
+		if (!GWT.isProdMode() && GWT.isClient()) {
+			System.out.println("dev mode ignore page");
+			getAllClientsAPI = "http://testbed.org.org:8888/_ah/api/clientdata/v1/clientpagedataresponse/";
+		}
+
+		RequestBuilder ignorePageBuilder = new RequestBuilder(RequestBuilder.GET, getAllClientsAPI);
+		ignorePageBuilder.setHeader("Content-Type", "application/json");
+
+		try {
+			ignorePageBuilder.sendRequest(null, new RequestCallback() {
+
+				@Override
+				public void onResponseReceived(Request request, Response response) {
+					System.out.println(response.getText());
+					Serializer serializer = (Serializer) GWT.create(Serializer.class);
+					
+					List<ClientPageData> clients = ((ClientPageDataResponse) serializer.deSerialize(response.getText(),
+							"ie.sortons.events.shared.ClientPageDataResponse")).getData();
+
+					asyncCallback.onSuccess(clients);
+				}
+
+				@Override
+				public void onError(Request request, Throwable exception) {
+					// TODO Auto-generated method stub
+
+				}
+			});
+		} catch (RequestException e) {
+			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :ignorePage()");
+		}
+	}
 }

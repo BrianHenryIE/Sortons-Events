@@ -2,8 +2,11 @@ package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.shared.ClientPageData;
+import ie.sortons.events.shared.ClientPageDataResponse;
 import ie.sortons.events.shared.Config;
+import ie.sortons.gwtfbplus.server.SimpleStringCipher;
 import ie.sortons.gwtfbplus.shared.domain.FbResponse;
+import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventDatesAdapter;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenue;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenueAdapter;
@@ -17,7 +20,9 @@ import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.inject.Named;
@@ -40,12 +45,50 @@ public class ClientPageDataEndpoint {
 		ObjectifyService.register(ClientPageData.class);
 	}
 
+	private String signedRequestFromCookie;
+
 	public ClientPageData getClientPageData(HttpServletRequest req, @Named("clientid") Long clientPageId) {
+
+		// TODO This method is called from the server side so shouldn't be checkign cookies itself.
 
 		// TODO
 		ofy().clear();
 
 		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
+
+		// The client will know it's an admin and ad the signed request to the cookie.
+		// It will always request the clientPageData, so now is the best time to see if the
+		// signedrequest says they're an admin and add them if they are.
+
+		SignedRequest signedRequest = null;
+
+		if (req != null && req.getCookies() != null) {
+			for (Cookie c : req.getCookies()) {
+				if (c.getName().equals("encryptedSignedRequest")) {
+					SimpleStringCipher ssc = new SimpleStringCipher(Config.getAppSecret());
+					try {
+						signedRequestFromCookie = ssc.decrypt(c.getValue());
+						signedRequest = SignedRequest.parseSignedRequest(signedRequestFromCookie);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+		if (signedRequest != null && signedRequest.getPage() != null && signedRequest.getPage().isAdmin() == true
+				&& signedRequest.getUserId() != null && signedRequest.getPage().getId().equals(Long.toString(clientPageId))) {
+
+			// This is just here for the first time the page tab is loaded. Once the server side is
+			// design patterned up, DRY, this will be taken care of TODO
+			// TODO meaning admins can't add pages until the thing has refreshed. damn NB NB NB
+			if (clientPageData != null) {
+				if (clientPageData.addPageAdmin(Long.parseLong(signedRequest.getUserId()))) {
+					ofy().clear();
+					ofy().save().entity(clientPageData).now();
+				}
+			}
+
+		}
 
 		// When the customer has just signed up
 		if (clientPageData == null) {
@@ -119,7 +162,6 @@ public class ClientPageDataEndpoint {
 			return new FqlPage();
 		}
 
-
 		ClientPageData clientPageData = getClientPageData(req, clientpageid);
 
 		FqlPage newPage;
@@ -129,12 +171,26 @@ public class ClientPageDataEndpoint {
 			newPage = jsonPage;
 		}
 
-		clientPageData.ignorePage(newPage);
+		clientPageData.removePage(newPage);
 
 		ofy().save().entity(clientPageData).now();
 
 		// TODO return an error, if appropriate
 		return newPage;
+	}
+
+	public ClientPageDataResponse getAllClients(HttpServletRequest req) {
+
+		// TODO
+
+		// Check
+		// SELECT application_id, developer_id, role FROM developer WHERE developer_id = 37302520
+
+		List<ClientPageData> clients = new ArrayList<ClientPageData>();
+		clients = ofy().load().type(ClientPageData.class).list();
+
+		return new ClientPageDataResponse(clients);
+
 	}
 
 	FqlPage getPageFromId(Long pageId) {
@@ -213,7 +269,7 @@ public class ClientPageDataEndpoint {
 				json += line;
 			}
 			reader.close();
-			
+
 		} catch (MalformedURLException e) {
 			// TODO error
 		} catch (IOException e) {

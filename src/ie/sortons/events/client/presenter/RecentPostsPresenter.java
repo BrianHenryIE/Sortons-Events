@@ -1,6 +1,6 @@
 package ie.sortons.events.client.presenter;
 
-import ie.sortons.events.client.ClientDAO;
+import ie.sortons.events.client.RpcService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +11,7 @@ import com.google.gwt.user.client.ui.Widget;
 public class RecentPostsPresenter implements Presenter {
 
 	@SuppressWarnings("unused")
-	private final ClientDAO dao;
+	private final RpcService dao;
 	
 	private final Display display;
 	
@@ -26,7 +26,7 @@ public class RecentPostsPresenter implements Presenter {
 		Widget asWidget();
 	}
 	
-	public RecentPostsPresenter(final ClientDAO dao, Display view){
+	public RecentPostsPresenter(final RpcService dao, Display view){
 		this.dao = dao;
 		this.display = view;
 		System.out.println("RecentPostsPresenter constructor");

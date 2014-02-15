@@ -1,6 +1,6 @@
 package ie.sortons.events.client.presenter;
 
-import ie.sortons.events.client.ClientDAO;
+import ie.sortons.events.client.RpcService;
 import ie.sortons.events.client.view.widgets.EventWidget;
 import ie.sortons.events.shared.DiscoveredEvent;
 import ie.sortons.events.shared.DiscoveredEventsResponse;
@@ -19,10 +19,10 @@ import com.kfuntak.gwt.json.serialization.client.Serializer;
 
 public class PageEventsPresenter implements Presenter {
 
-	private ClientDAO rpcService;
+	private RpcService rpcService;
 	private FlowPanel container;
 
-	public PageEventsPresenter(ClientDAO rpcService) {
+	public PageEventsPresenter(RpcService rpcService) {
 		this.rpcService = rpcService;
 	}
 

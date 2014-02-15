@@ -1,12 +1,14 @@
 package ie.sortons.events.client;
 
 import ie.sortons.events.client.appevent.ResponseErrorEvent;
-import ie.sortons.events.client.presenter.AdminPresenter;
+import ie.sortons.events.client.presenter.PageAdminPresenter;
 import ie.sortons.events.client.presenter.PageEventsPresenter;
 import ie.sortons.events.client.presenter.RecentPostsPresenter;
+import ie.sortons.events.client.presenter.SortonsAdminPresenter;
 import ie.sortons.events.client.resources.Resources;
-import ie.sortons.events.client.view.AdminView;
+import ie.sortons.events.client.view.PageAdminView;
 import ie.sortons.events.client.view.RecentPostsView;
+import ie.sortons.events.client.view.SortonsAdminView;
 import ie.sortons.events.shared.Config;
 import ie.sortons.gwtfbplus.client.overlay.AuthResponse;
 import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
@@ -44,7 +46,7 @@ public class AppController {
 	private boolean xfbml = true;
 	private boolean cookie = true;
 
-	private ClientDAO rpcService;
+	private RpcService rpcService;
 	private SimpleEventBus eventBus;
 
 	private HasWidgets container;
@@ -59,7 +61,7 @@ public class AppController {
 
 	Serializer serializer = (Serializer) GWT.create(Serializer.class);
 
-	public AppController(ClientDAO rpcService, SimpleEventBus eventBus) {
+	public AppController(RpcService rpcService, SimpleEventBus eventBus) {
 		this.rpcService = rpcService;
 		this.eventBus = eventBus;
 		eventBinder.bindEventHandlers(this, eventBus);
@@ -87,14 +89,24 @@ public class AppController {
 	public void go(final HasWidgets container) {
 		this.container = container;
 
-		// TODO : this crashes if not inside facebook
-		SignedRequest sr = (SignedRequest) serializer.deSerialize(new JSONObject(getSignedRequestFromHTML()),
-				"ie.sortons.gwtfbplus.shared.domain.SignedRequest");
+		SignedRequest sr = null;
+		if (getSignedRequestFromHTML() != null) {
+			sr = (SignedRequest) serializer.deSerialize(new JSONObject(getSignedRequestFromHTML()),
+					"ie.sortons.gwtfbplus.shared.domain.SignedRequest");
+		}
 
 		// Where are we?
 		if (sr == null) {
 			// Looks like we're operating outside Facebook
 
+		} else if (sr.getAppData() != null && sr.getAppData().contains("sortonsadmin") && sr.getUserId().equals("37302520")) {
+
+			SortonsAdminPresenter saPresenter = new SortonsAdminPresenter(rpcService, new SortonsAdminView());
+			SimplePanel sortonsAdminPanel = new SimplePanel();
+			saPresenter.go(sortonsAdminPanel);
+
+			container.add(sortonsAdminPanel);
+			
 		} else if (sr.getPage() == null) {
 			// Are we inside Facebook with no Page ID? Then we're the app...
 
@@ -123,8 +135,8 @@ public class AppController {
 
 				if (sr.getPage().isAdmin() == true || sr.getUserId().equals("37302520")) {
 
-					AdminView adminView = new AdminView();
-					AdminPresenter adminPresenter = new AdminPresenter(eventBus, rpcService, adminView);
+					PageAdminView adminView = new PageAdminView();
+					PageAdminPresenter adminPresenter = new PageAdminPresenter(eventBus, rpcService, adminView);
 					final SimplePanel adminPanel = new SimplePanel();
 					adminPresenter.go(adminPanel);
 

@@ -1,10 +1,10 @@
 package ie.sortons.events.client.presenter;
 
-import ie.sortons.events.client.ClientDAO;
+import ie.sortons.events.client.RpcService;
 import ie.sortons.events.client.appevent.PermissionsEvent;
 import ie.sortons.events.client.appevent.ResponseErrorEvent;
 import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.DsFqlPage;
+import ie.sortons.events.shared.FqlPageSearchable;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSearchable;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSingleSuggestbox;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.SelectedItem;
@@ -34,16 +34,16 @@ import com.google.web.bindery.event.shared.binder.EventBinder;
 import com.google.web.bindery.event.shared.binder.EventHandler;
 import com.kfuntak.gwt.json.serialization.client.Serializer;
 
-public class AdminPresenter implements Presenter {
+public class PageAdminPresenter implements Presenter {
 
-	interface MyEventBinder extends EventBinder<AdminPresenter> {
+	interface MyEventBinder extends EventBinder<PageAdminPresenter> {
 	}
 
 	private static final MyEventBinder eventBinder = GWT.create(MyEventBinder.class);
 
 	Serializer serializer = (Serializer) GWT.create(Serializer.class);
 
-	private final ClientDAO dao;
+	private final RpcService dao;
 
 	private final EventBus eventBus;
 	private final Display display;
@@ -55,12 +55,12 @@ public class AdminPresenter implements Presenter {
 
 		void setIncludedPages(List<FqlPage> includedList);
 
-		void setPresenter(AdminPresenter presenter);
+		void setPresenter(PageAdminPresenter presenter);
 
 		Widget asWidget();
 	}
 
-	public AdminPresenter(EventBus eventBus, final ClientDAO dao, Display view) {
+	public PageAdminPresenter(EventBus eventBus, final RpcService dao, Display view) {
 		this.dao = dao;
 		this.eventBus = eventBus;
 		this.display = view;
@@ -82,7 +82,7 @@ public class AdminPresenter implements Presenter {
 		display.getSuggestBox().addValueChangeHandler(new ValueChangeHandler<FbSearchable>() {
 			@Override
 			public void onValueChange(ValueChangeEvent<FbSearchable> event) {
-				addPage((DsFqlPage) event.getValue());
+				addPage((FqlPageSearchable) event.getValue());
 			}
 		});
 
@@ -120,7 +120,7 @@ public class AdminPresenter implements Presenter {
 		dao.getSuggestions(this);
 	}
 
-	public void setSuggestions(List<DsFqlPage> suggestionsList) {
+	public void setSuggestions(List<FqlPageSearchable> suggestionsList) {
 		System.out.println("setsuggestions");
 		if (suggestionsList != null) {
 
@@ -133,7 +133,8 @@ public class AdminPresenter implements Presenter {
 		}
 	}
 
-	private void processTextBox(String textEntered) {
+	
+	public void processTextBox(String textEntered) {
 
 		// Get the text from the textbox
 		// regex it to a page_id
@@ -147,28 +148,25 @@ public class AdminPresenter implements Presenter {
 		System.out.println("processing text : " + textEntered);
 
 		String graphPath = "/";
+		
+		textEntered = textEntered.replaceAll("\\?.*", "");
 
-		// Get rid of anything after ?
-		// http://www.facebook.com/pages/The-Comedy-Crunch/83791357330?ref=ts&fref=ts
-		if (textEntered.contains("?"))
-			textEntered = textEntered.substring(0, textEntered.indexOf("?"));
+		textEntered = textEntered.replaceAll(".*facebook.com/", "");
 
-		// Sometimes http://www.facebook.com/pages/Randals-Rest-UCD/107542286070006
-		if (textEntered.matches(".*facebook\\.com/pages/[^/]*/\\d*/?")) {
+		textEntered = textEntered.replaceAll("pages/.*/", "");
 
-			graphPath += textEntered.split(".*facebook\\.com/pages/[^/]*/")[1].replace("/", "");
+		// For lists from json
+		textEntered = textEntered.replaceAll("\"", "");
+	
 
-			// Sometimes http://www.facebook.com/UCD.Alumni?ref=stream&hc_location=stream
-		} else if (textEntered.matches(".*facebook\\.com/[^/]*/?")) {
-
-			graphPath += textEntered.split(".*facebook\\.com/")[1].replace("/", "");
-
-			// Sometimes 107542286070006
-		} else if (textEntered.matches("\\d*")) {
+		if (!textEntered.contains(",")) {
 
 			graphPath += textEntered;
 
 		} else {
+			
+			// We've got a list of them!
+			
 			// TODO
 			// Give feedback when it doesn't match
 		}
@@ -185,7 +183,7 @@ public class AdminPresenter implements Presenter {
 
 				System.out.println("pageDetails.getName() " + pageDetails.getName());
 
-				DsFqlPage newPage = new DsFqlPage();
+				FqlPageSearchable newPage = new FqlPageSearchable();
 
 				// TODO Worst case of OO in the project
 				newPage.name = pageDetails.getName();
@@ -208,8 +206,9 @@ public class AdminPresenter implements Presenter {
 
 	}
 
-	public void addPage(final DsFqlPage newPage) {
+	public void addPage(final FqlPageSearchable newPage) {
 
+		System.out.println("client: adminPresenter addPage");
 		System.out.println(serializer.serialize(newPage));
 
 		dao.addPage(newPage, new RequestCallback() {
@@ -222,7 +221,10 @@ public class AdminPresenter implements Presenter {
 			public void onResponseReceived(Request request, Response response) {
 				if (200 == response.getStatusCode()) {
 
-					DsFqlPage page = (DsFqlPage) serializer.deSerialize(response.getText(),
+					System.out.println("client: adminPresenter addPage response");
+					System.out.println(response.getText());
+					
+					FqlPageSearchable page = (FqlPageSearchable) serializer.deSerialize(response.getText(),
 							"ie.sortons.events.shared.FqlPageSearchable");
 
 					// TODO return a real error message
@@ -255,9 +257,9 @@ public class AdminPresenter implements Presenter {
 		});
 	}
 
-	public void ignorePage(FqlPage page) {
+	public void removePage(FqlPage page) {
 
-		dao.ignorePage(page, new RequestCallback() {
+		dao.removePage(page, new RequestCallback() {
 			public void onError(Request request, Throwable exception) {
 				System.out.println("Couldn't retrieve JSON: ignorePage/onError");
 			}
@@ -267,7 +269,7 @@ public class AdminPresenter implements Presenter {
 
 					FqlPage page = (FqlPage) serializer.deSerialize(response.getText(), "ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
 
-					dao.getClientPageData().ignorePage(page);
+					dao.getClientPageData().removePage(page);
 
 					// then update UI
 					displayClientData(dao.getClientPageData());

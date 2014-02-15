@@ -1,6 +1,6 @@
 package ie.sortons.events.client.view.widgets;
 
-import ie.sortons.events.client.presenter.AdminPresenter;
+import ie.sortons.events.client.presenter.PageAdminPresenter;
 import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
 import ie.sortons.gwtfbplus.client.widgets.Link;
 import ie.sortons.gwtfbplus.client.widgets.buttons.X1Button;
@@ -47,7 +47,7 @@ public class AdminPageItem extends Composite {
 
 	// private AdminPresenter presenter;
 
-	public AdminPageItem(final FqlPage page, final AdminPresenter presenter) {
+	public AdminPageItem(final FqlPage page, final PageAdminPresenter presenter) {
 		
 		initWidget(uiBinder.createAndBindUi(this));
 
@@ -77,7 +77,7 @@ public class AdminPageItem extends Composite {
 		ignoreButton.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				presenter.ignorePage(page);
+				presenter.removePage(page);
 			}
 		});				
 	}

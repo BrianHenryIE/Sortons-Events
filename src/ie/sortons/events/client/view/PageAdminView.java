@@ -1,6 +1,6 @@
 package ie.sortons.events.client.view;
 
-import ie.sortons.events.client.presenter.AdminPresenter;
+import ie.sortons.events.client.presenter.PageAdminPresenter;
 import ie.sortons.events.client.view.widgets.AdminPageItem;
 import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
 import ie.sortons.gwtfbplus.client.widgets.popups.SelectedLoading;
@@ -21,17 +21,17 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.Widget;
 
-public class AdminView extends Composite implements AdminPresenter.Display {
+public class PageAdminView extends Composite implements PageAdminPresenter.Display {
 
 	private static AdminViewUiBinder uiBinder = GWT.create(AdminViewUiBinder.class);
 
-	interface AdminViewUiBinder extends UiBinder<Widget, AdminView> {
+	interface AdminViewUiBinder extends UiBinder<Widget, PageAdminView> {
 	}
 
-	AdminPresenter presenter;
+	PageAdminPresenter presenter;
 	GwtFbPlusResources resources = GwtFbPlusResources.INSTANCE;
 
-	public void setPresenter(AdminPresenter presenter) {
+	public void setPresenter(PageAdminPresenter presenter) {
 		this.presenter = presenter;
 	}
 
@@ -39,7 +39,7 @@ public class AdminView extends Composite implements AdminPresenter.Display {
 	List<FbSearchable> pages = new ArrayList<FbSearchable>();
 	FbSingleSuggestbox suggestBox = new FbSingleSuggestbox(pages, "Enter a Facebook Page URL, Page ID or search suggestions", selectedItem);
 
-	public AdminView() {
+	public PageAdminView() {
 		initWidget(uiBinder.createAndBindUi(this));
 		resources.facebookStyles().ensureInjected();
 		suggestBox.setWidth("100%");

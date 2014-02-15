@@ -5,7 +5,7 @@ import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 
-public class DsFqlPage extends FqlPage implements FbSearchable, JsonSerializable {
+public class FqlPageSearchable extends FqlPage implements FbSearchable, JsonSerializable {
 
 	@Override
 	public String getTitle() {

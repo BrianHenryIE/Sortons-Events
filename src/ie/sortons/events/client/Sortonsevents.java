@@ -13,7 +13,7 @@ public class Sortonsevents implements EntryPoint {
 
 		System.out.println("Entrypoint");
 
-		ClientDAO rpcService = new ClientDAO(eventBus);
+		RpcService rpcService = new RpcService(eventBus);
 		AppController appViewer = new AppController(rpcService, eventBus);
 
 		FlowPanel fp = new FlowPanel();
