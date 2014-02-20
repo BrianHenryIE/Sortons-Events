@@ -82,7 +82,7 @@ public class LoginController {
 				eventBus.fireEvent(new LoginEvent(response));
 			}
 			public void onFailure(Throwable caught) {
-				// Print something on the screen about no response from fb.
+				// TODO Print something on the screen about no response from fb.
 				throw new RuntimeException ( caught );
 			}
 		}, requiredPermissions);

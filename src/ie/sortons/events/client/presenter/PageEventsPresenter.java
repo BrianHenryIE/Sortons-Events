@@ -62,10 +62,7 @@ public class PageEventsPresenter implements Presenter {
 				Canvas.setSize();
 			}
 		};
-
-		// Schedule the timer to run once in 1 second.
-		resizeCanvas.schedule(1500);
-		resizeCanvas.schedule(3000);
+		resizeCanvas.schedule(2000);
 
 	}
 

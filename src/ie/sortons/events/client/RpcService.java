@@ -1,9 +1,11 @@
 package ie.sortons.events.client;
 
-import ie.sortons.events.client.presenter.PageAdminPresenter;
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.ClientPageDataResponse;
 import ie.sortons.events.shared.FqlPageSearchable;
+import ie.sortons.events.shared.PageList;
+import ie.sortons.events.shared.PagesListResponse;
+import ie.sortons.gwtfbplus.shared.domain.JsFqlError;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
@@ -25,6 +27,7 @@ import com.google.gwt.http.client.URL;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.user.client.Random;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.gwtfb.sdk.FBCore;
 import com.kfuntak.gwt.json.serialization.client.HashMapSerializer;
@@ -87,7 +90,7 @@ public class RpcService {
 		}
 	}
 
-	public void refreshClientPageData(final PageAdminPresenter adminPresenter) {
+	public void refreshClientPageData(final AsyncCallback<ClientPageData> callback) {
 
 		String jsonUrl = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/clientpagedata/";
 
@@ -114,10 +117,10 @@ public class RpcService {
 
 						clientPageData = (ClientPageData) serializer.deSerialize(response.getText());
 
-						adminPresenter.displayClientData(clientPageData);
+						callback.onSuccess(clientPageData);
 
 					} else {
-						System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.getClientPageData()");
+						System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") rpcservice refreshClientPageData");
 						// System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() +
 						// ") getClientPageData");
 						// System.out.println("Couldn't retrieve JSON (" + response.getText() + ")" getClientPageData);
@@ -155,19 +158,62 @@ public class RpcService {
 
 	}
 
+	public void addPagesList(String pagesList, final AsyncCallback<List<FqlPageSearchable>> asyncCallback) {
+
+		System.out.println(pagesList);
+		String addPagesListAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/addPagesList/" + currentPageId;
+
+		// Check for dev mode
+		if (!GWT.isProdMode() && GWT.isClient()) {
+			System.out.println("dev mode addPagesList");
+			addPagesListAPI = "http://testbed.org.org:8888/_ah/api/clientdata/v1/addPagesList/" + currentPageId;
+		}
+
+		RequestBuilder addPagesListBuilder = new RequestBuilder(RequestBuilder.POST, addPagesListAPI);
+
+		addPagesListBuilder.setHeader("Content-Type", "application/json");
+
+		try {
+			@SuppressWarnings("unused")
+			Request request = addPagesListBuilder.sendRequest(serializer.serialize(new PageList(pagesList)), new RequestCallback() {
+				@Override
+				public void onResponseReceived(Request request, Response response) {
+					System.out.println(response.getText());
+					PagesListResponse addedPages = (PagesListResponse) serializer.deSerialize(response.getText(),
+							"ie.sortons.events.shared.PagesListResponse");
+					System.out.println(addedPages.getPages());
+
+					asyncCallback.onSuccess(addedPages.getPages());
+
+				}
+
+				@Override
+				public void onError(Request request, Throwable exception) {
+					// TODO Auto-generated method stub
+
+					asyncCallback.onFailure(null);
+
+				}
+			});
+		} catch (RequestException e) {
+			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :addPage()");
+		}
+
+	}
+
 	public void removePage(FqlPage page, RequestCallback callback) {
 
 		clientPageData.getSuggestedPages().remove(page);
 
-		String ignorePageAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/ignorePage/" + currentPageId;
+		String removePageAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/ignorePage/" + currentPageId;
 
 		// Check for dev mode
 		if (!GWT.isProdMode() && GWT.isClient()) {
 			System.out.println("dev mode ignore page");
-			ignorePageAPI = "http://testbed.org.org:8888/_ah/api/clientdata/v1/ignorePage/" + currentPageId;
+			removePageAPI = "http://testbed.org.org:8888/_ah/api/clientdata/v1/ignorePage/" + currentPageId;
 		}
 
-		RequestBuilder ignorePageBuilder = new RequestBuilder(RequestBuilder.POST, ignorePageAPI);
+		RequestBuilder ignorePageBuilder = new RequestBuilder(RequestBuilder.POST, removePageAPI);
 		ignorePageBuilder.setHeader("Content-Type", "application/json");
 
 		try {
@@ -183,79 +229,105 @@ public class RpcService {
 		fbCore.api(graphPath, callback);
 	}
 
-	public List<FqlPageSearchable> getSuggestions() {
-		return clientPageData.getSuggestedPages();
-	}
+	private boolean alreadyFailed = false;
 
-	public void getSuggestions(final PageAdminPresenter presenter) {
+	public void getSuggestions(final AsyncCallback<List<FqlPageSearchable>> callback) {
 
-		//TODO shouldn't included existing included pages
-		
-		System.out.println("getSuggestions()");
+		// TODO shouldn't included existing included pages
 
-		if (clientPageData.getSuggestedPages() == null || clientPageData.getSuggestedPages().size() < 25) {
+		System.out.println("getSuggestions()!");
 
-			List<Long> searchPagesList = new ArrayList<Long>();
-			for (Long pageId : clientPageData.getIncludedPageIds()) {
-				searchPagesList.add(pageId);
-			}
-			// http://blog.jonleonard.com/2012/10/gwt-collectionsshuffle-implementation.html
-			for (int index = 0; index < searchPagesList.size(); index += 1) {
-				Collections.swap(searchPagesList, index, Random.nextInt(searchPagesList.size()));
-			}
-			String searchPages = currentPageId + "," + Joiner.on(",").join(searchPagesList);
-
-			String fql = "SELECT page_id, name, page_url, location FROM page WHERE page_id IN (SELECT page_id FROM page_fan WHERE uid IN ("
-					+ searchPages + ") LIMIT 250)";
-
-			System.out.println(fql);
-
-			String method = "fql.query";
-			JSONObject query = new JSONObject();
-			query.put("method", new JSONString(method));
-			query.put("query", new JSONString(fql));
-
-			System.out.println("fire fql");
-
-			fbCore.api(query.getJavaScriptObject(), new AsyncCallback<JavaScriptObject>() {
-				public void onSuccess(JavaScriptObject response) {
-
-					HashMapSerializer hashMapSerializer = (HashMapSerializer) GWT.create(HashMapSerializer.class);
-
-					System.out.println("deserialize");
-
-					@SuppressWarnings("unchecked")
-					HashMap<String, FqlPageSearchable> map = (HashMap<String, FqlPageSearchable>) hashMapSerializer.deSerialize(new JSONObject(
-							response), "ie.sortons.events.shared.FqlPageSearchable");
-
-					System.out.println("process");
-					ArrayList<FqlPageSearchable> pages = new ArrayList<FqlPageSearchable>();
-					for (FqlPageSearchable page : map.values()) {
-						pages.add(page);
-					}
-
-					clientPageData.setSuggestedPages(pages);
-
-					// Shuffle the list so it's not a bunch of similar suggestions consecutively
-					// http://blog.jonleonard.com/2012/10/gwt-collectionsshuffle-implementation.html
-					for (int index = 0; index < clientPageData.getSuggestedPages().size(); index += 1) {
-						Collections.swap(clientPageData.getSuggestedPages(), index, Random.nextInt(clientPageData.getSuggestedPages().size()));
-					}
-
-					presenter.setSuggestions(clientPageData.getSuggestedPages());
-
-				}
-
-				@Override
-				public void onFailure(Throwable caught) {
-					// TODO Auto-generated method stub
-				}
-			});
-
-		} else {
-
-			presenter.setSuggestions(clientPageData.getSuggestedPages());
+		List<Long> searchPagesList = new ArrayList<Long>();
+		for (Long pageId : clientPageData.getIncludedPageIds()) {
+			searchPagesList.add(pageId);
 		}
+
+		System.out.println("searchPagesList " + searchPagesList.size());
+
+		// http://blog.jonleonard.com/2012/10/gwt-collectionsshuffle-implementation.html
+		for (int index = 0; index < searchPagesList.size(); index += 1) {
+			Collections.swap(searchPagesList, index, Random.nextInt(searchPagesList.size()));
+		}
+		String searchPages = currentPageId + "," + Joiner.on(",").join(searchPagesList);
+
+		System.out.println("searchPagesList shuffled");
+
+		// TODO... someday this  will get too big
+		String fql = "SELECT page_id, name, page_url, location FROM page WHERE page_id IN (SELECT page_id FROM page_fan WHERE uid IN (" + searchPages
+				+ ") ) AND NOT is_community_page = 'true'";
+		// 	TODO Remove LIMIT 250 before deploying!
+
+		System.out.println(fql);
+
+		String method = "fql.query";
+		JSONObject query = new JSONObject();
+		query.put("method", new JSONString(method));
+		query.put("query", new JSONString(fql));
+
+		System.out.println("fire fql");
+
+		fbCore.api(query.getJavaScriptObject(), new AsyncCallback<JavaScriptObject>() {
+			@SuppressWarnings("unchecked")
+			public void onSuccess(JavaScriptObject response) {
+
+				HashMapSerializer hashMapSerializer = (HashMapSerializer) GWT.create(HashMapSerializer.class);
+
+				System.out.println("deserialize");
+
+				JSONObject responseJson = new JSONObject(response);
+
+
+				HashMap<String, FqlPageSearchable> map = new HashMap<String, FqlPageSearchable>();
+				try {
+					map = (HashMap<String, FqlPageSearchable>) hashMapSerializer.deSerialize(responseJson,
+							"ie.sortons.events.shared.FqlPageSearchable");
+				} catch (Exception e) {
+
+					System.out.println(responseJson);
+					// If it's failed here, it's probably because we've tried this before the sdk has initialized with
+					// its access token
+					// JsFqlError error = (JsFqlError) serializer.deSerialize(responseJson,
+					// "ie.sortons.events.shared.JsFqlError");
+					// System.out.println(error.getErrorMsg());
+					if (!alreadyFailed) {
+						alreadyFailed = true;
+						Timer t = new Timer() {
+							@Override
+							public void run() {
+								getSuggestions(callback);
+							}
+						};
+						t.schedule(1000);
+					}
+
+				}
+				System.out.println("process");
+				ArrayList<FqlPageSearchable> pages = new ArrayList<FqlPageSearchable>();
+				for (FqlPageSearchable page : map.values()) {
+					if (!clientPageData.getIncludedPageIds().contains(page.getPageId()))
+						pages.add(page);
+				}
+
+				clientPageData.setSuggestedPages(pages);
+
+				System.out.println("pages.size() " + pages.size());
+
+				// Shuffle the list so it's not a bunch of similar suggestions consecutively
+				// http://blog.jonleonard.com/2012/10/gwt-collectionsshuffle-implementation.html
+				for (int index = 0; index < clientPageData.getSuggestedPages().size(); index += 1) {
+					Collections.swap(clientPageData.getSuggestedPages(), index, Random.nextInt(clientPageData.getSuggestedPages().size()));
+				}
+
+				callback.onSuccess(clientPageData.getSuggestedPages());
+
+			}
+
+			@Override
+			public void onFailure(Throwable caught) {
+				// TODO Auto-generated method stub
+			}
+		});
+
 	}
 
 	/**
@@ -267,8 +339,8 @@ public class RpcService {
 	 */
 	public void getAllClients(final AsyncCallback<List<ClientPageData>> asyncCallback) {
 
-		// TODO security	
-		
+		// TODO security
+
 		// _ah/api/clientdata/v1/clientpagedatacollection
 
 		String getAllClientsAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/clientpagedataresponse/";
@@ -279,17 +351,17 @@ public class RpcService {
 			getAllClientsAPI = "http://testbed.org.org:8888/_ah/api/clientdata/v1/clientpagedataresponse/";
 		}
 
-		RequestBuilder ignorePageBuilder = new RequestBuilder(RequestBuilder.GET, getAllClientsAPI);
-		ignorePageBuilder.setHeader("Content-Type", "application/json");
+		RequestBuilder getAllClientsBuilder = new RequestBuilder(RequestBuilder.GET, getAllClientsAPI);
+		getAllClientsBuilder.setHeader("Content-Type", "application/json");
 
 		try {
-			ignorePageBuilder.sendRequest(null, new RequestCallback() {
+			getAllClientsBuilder.sendRequest(null, new RequestCallback() {
 
 				@Override
 				public void onResponseReceived(Request request, Response response) {
 					System.out.println(response.getText());
 					Serializer serializer = (Serializer) GWT.create(Serializer.class);
-					
+
 					List<ClientPageData> clients = ((ClientPageDataResponse) serializer.deSerialize(response.getText(),
 							"ie.sortons.events.shared.ClientPageDataResponse")).getData();
 
@@ -306,4 +378,5 @@ public class RpcService {
 			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :ignorePage()");
 		}
 	}
+
 }

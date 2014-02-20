@@ -14,7 +14,8 @@ public class FqlPageSearchable extends FqlPage implements FbSearchable, JsonSeri
 
 	@Override
 	public String getSubTitle() {
-		return (getLocation().getCity() != null ? getLocation().getCity() : "");
+		// return (getLocation().getCity() != null ? getLocation().getCity() : "");
+		return getLocation().getFriendlyString();
 	}
 
 	@Override
@@ -23,7 +24,8 @@ public class FqlPageSearchable extends FqlPage implements FbSearchable, JsonSeri
 	}
 
 	@Override
-	public String getSearchText() {
-		return name + " " + location.getCity() + " " + location.getCountry() + " " + location.getName() + " " + location.getState() + " " + location.getStreet();
+	public String getSearchableString() {
+		return name + " " + location.getCity() + " " + location.getCountry() + " " + location.getName() + " " + location.getState() + " "
+				+ location.getStreet();
 	}
 }

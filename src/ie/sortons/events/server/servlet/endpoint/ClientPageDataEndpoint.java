@@ -4,6 +4,7 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.ClientPageDataResponse;
 import ie.sortons.events.shared.Config;
+import ie.sortons.events.shared.PageList;
 import ie.sortons.gwtfbplus.server.SimpleStringCipher;
 import ie.sortons.gwtfbplus.shared.domain.FbResponse;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
@@ -22,6 +23,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -29,14 +31,21 @@ import javax.inject.Named;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.Api;
+import com.google.api.server.spi.config.ApiAuth;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.googlecode.objectify.ObjectifyService;
 
+/**
+ * @author brianhenry
+ * 
+ */
 @Api(name = "clientdata", version = "v1")
+@ApiAuth(allowCookieAuth = AnnotationBoolean.TRUE)
 public class ClientPageDataEndpoint {
 
 	private static final Logger log = Logger.getLogger(ClientPageDataEndpoint.class.getName());
@@ -45,50 +54,24 @@ public class ClientPageDataEndpoint {
 		ObjectifyService.register(ClientPageData.class);
 	}
 
-	private String signedRequestFromCookie;
-
+	/**
+	 * @param req
+	 * @param clientPageId
+	 * @return
+	 */
 	public ClientPageData getClientPageData(HttpServletRequest req, @Named("clientid") Long clientPageId) {
+		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
+			return null;
+		// TODO return an error
+		
+		return getClientPageData(clientPageId);
+	}
 
-		// TODO This method is called from the server side so shouldn't be checkign cookies itself.
-
+	private ClientPageData getClientPageData(Long clientPageId) {
 		// TODO
 		ofy().clear();
 
 		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
-
-		// The client will know it's an admin and ad the signed request to the cookie.
-		// It will always request the clientPageData, so now is the best time to see if the
-		// signedrequest says they're an admin and add them if they are.
-
-		SignedRequest signedRequest = null;
-
-		if (req != null && req.getCookies() != null) {
-			for (Cookie c : req.getCookies()) {
-				if (c.getName().equals("encryptedSignedRequest")) {
-					SimpleStringCipher ssc = new SimpleStringCipher(Config.getAppSecret());
-					try {
-						signedRequestFromCookie = ssc.decrypt(c.getValue());
-						signedRequest = SignedRequest.parseSignedRequest(signedRequestFromCookie);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		}
-		if (signedRequest != null && signedRequest.getPage() != null && signedRequest.getPage().isAdmin() == true
-				&& signedRequest.getUserId() != null && signedRequest.getPage().getId().equals(Long.toString(clientPageId))) {
-
-			// This is just here for the first time the page tab is loaded. Once the server side is
-			// design patterned up, DRY, this will be taken care of TODO
-			// TODO meaning admins can't add pages until the thing has refreshed. damn NB NB NB
-			if (clientPageData != null) {
-				if (clientPageData.addPageAdmin(Long.parseLong(signedRequest.getUserId()))) {
-					ofy().clear();
-					ofy().save().entity(clientPageData).now();
-				}
-			}
-
-		}
 
 		// When the customer has just signed up
 		if (clientPageData == null) {
@@ -115,12 +98,10 @@ public class ClientPageDataEndpoint {
 	}
 
 	@ApiMethod(name = "clientdata.addPage", httpMethod = "post")
-	public FqlPage addPage(HttpServletRequest req, @Named("clientpageid") Long clientpageid, FqlPage jsonPage) {
-
-		if (!isPageAdmin(req, clientpageid)) {
-			// TODO return an error
-			return new FqlPage();
-		}
+	public FqlPage addPage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, FqlPage jsonPage) {
+		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
+			return null;
+		// TODO return an error
 
 		log.info("addPage: " + jsonPage.getName() + " " + jsonPage.getPageId());
 
@@ -128,7 +109,7 @@ public class ClientPageDataEndpoint {
 
 		log.info("fbdetails 2: " + newPage.getName() + " " + newPage.getPageId());
 
-		ClientPageData clientPageData = getClientPageData(req, clientpageid);
+		ClientPageData clientPageData = getClientPageData(clientPageId);
 
 		ofy().clear();
 
@@ -147,22 +128,54 @@ public class ClientPageDataEndpoint {
 		clientPageData = null;
 
 		// Moved here to make succinct
-		clientPageData = ofy().load().type(ClientPageData.class).id(clientpageid).now();
+		clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
 
 		log.info("returning from ds: " + clientPageData.getPageById(jsonPage.getPageId()).getName());
 
 		return clientPageData.getPageById(jsonPage.getPageId());
 	}
 
-	@ApiMethod(name = "clientdata.ignorePage", httpMethod = "post")
-	public FqlPage ignorePage(HttpServletRequest req, @Named("clientpageid") Long clientpageid, FqlPage jsonPage) {
+	@ApiMethod(name = "clientdata.addPagesList", httpMethod = "post")
+	public List<FqlPage> addPagesList(HttpServletRequest req, @Named("clientpageid") Long clientPageId, PageList pagesList) {
+		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
+			return null;
+		// TODO return an error
 
-		if (!isPageAdmin(req, clientpageid)) {
-			// TODO return an error
-			return new FqlPage();
+		System.out.println("cpdendpoint: " + pagesList);
+		log.info("addPagesList: " + pagesList);
+
+		ofy().clear();
+
+		ClientPageData clientPageData = getClientPageData(clientPageId);
+
+		List<FqlPage> newPages = new ArrayList<FqlPage>();
+
+		for (String pageid : pagesList.getList()) {
+			FqlPage newPage = getPageFromId(Long.parseLong(pageid));
+			if (clientPageData.addPage(newPage)) {
+				newPages.add(newPage);
+				log.info("page added: " + newPage.getName() + " " + newPage.getPageId());
+			}
 		}
 
-		ClientPageData clientPageData = getClientPageData(req, clientpageid);
+		if (newPages.size() > 0) {
+			ofy().save().entity(clientPageData).now();
+			log.info("saved");
+		}
+
+		// TODO
+		// Check for events on new pages immediately
+
+		return newPages;
+	}
+
+	@ApiMethod(name = "clientdata.ignorePage", httpMethod = "post")
+	public FqlPage ignorePage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, FqlPage jsonPage) {
+		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
+			return null;
+		// TODO return an error
+
+		ClientPageData clientPageData = getClientPageData(clientPageId);
 
 		FqlPage newPage;
 		if (jsonPage.getName() == "" || jsonPage.getPageUrl() == "") {
@@ -180,17 +193,14 @@ public class ClientPageDataEndpoint {
 	}
 
 	public ClientPageDataResponse getAllClients(HttpServletRequest req) {
-
-		// TODO
-
-		// Check
-		// SELECT application_id, developer_id, role FROM developer WHERE developer_id = 37302520
+		if (!isAppAdmin(req))
+			return null;
+		// TODO return an error
 
 		List<ClientPageData> clients = new ArrayList<ClientPageData>();
 		clients = ofy().load().type(ClientPageData.class).list();
 
 		return new ClientPageDataResponse(clients);
-
 	}
 
 	FqlPage getPageFromId(Long pageId) {
@@ -238,24 +248,46 @@ public class ClientPageDataEndpoint {
 		// TODO: return an error.
 	}
 
-	private boolean isPageAdmin(Long userId, Long clientPageId) {
-		ClientPageData clientPageData = getClientPageData(null, clientPageId);
-		return clientPageData.getPageAdmins().contains(userId);
+	private boolean isAppAdmin(HttpServletRequest req) {
+		if (req.getCookies() == null) // TODO wait for google for fix the bug and remove
+			return true;
+
+		// TODO
+		// SELECT application_id, developer_id, role FROM developer WHERE developer_id = 37302520
+
+		// The client will know it's an admin and add the signed request to the cookie.
+		// It will always request the clientPageData, so now is the best time to see if the
+		// signedrequest says they're an admin and add them if they are.
+
+		ClientCookieData c = new ClientCookieData(req);
+
+		// For now it's just me!
+		return (c.getUserId() != null ? c.getUserId() == 37302520 : false);
+
 	}
 
 	private boolean isPageAdmin(HttpServletRequest req, Long clientPageId) {
-		String accessToken = null;
-		Long userId = null;
-		for (Cookie c : req.getCookies()) {
-			if (c.getName().equals("accessToken"))
-				accessToken = c.getValue();
-			if (c.getName().equals("userId"))
-				userId = Long.parseLong(c.getValue());
+		if (req.getCookies() == null) // wait for google to fix the bug them remove
+			return true;
+		ClientCookieData c = new ClientCookieData(req);
+		ClientPageData cpd = getClientPageData(clientPageId);
+
+		// Check the encrypted signed request
+		// Add them to the admin list if possible
+		if (c.getSignedRequest() != null && c.getSignedRequest().getPage() != null && c.getSignedRequest().getPage().isAdmin() == true
+				&& c.getSignedRequest().getPage().getId().equals(Long.toString(clientPageId))) {
+			if (c.getSignedRequest().getUserId() != null && cpd.addPageAdmin(Long.parseLong(c.getSignedRequest().getUserId()))) {
+				ofy().clear();
+				ofy().save().entity(cpd).now();
+			}
+			return true;
 		}
-		if (isValidAccessTokenForUser(accessToken, userId))
-			return isPageAdmin(userId, clientPageId);
-		else
-			return false;
+
+		// Check the existing admin list
+		if (isValidAccessTokenForUser(c.getAccessToken(), c.getUserId()))
+			return cpd.getPageAdmins().contains(c.getUserId());
+
+		return false;
 
 	}
 
@@ -288,5 +320,65 @@ public class ClientPageDataEndpoint {
 			}
 		}
 		return false; // Shouldn't ever get here
+	}
+
+	class ClientCookieData {
+
+		/**
+		 * @return the signedRequest
+		 */
+		public SignedRequest getSignedRequest() {
+			return signedRequest;
+		}
+
+		/**
+		 * @return the userId
+		 */
+		public Long getUserId() {
+			return userId;
+		}
+
+		/**
+		 * @return the accessToken
+		 */
+		public String getAccessToken() {
+			return accessToken;
+		}
+
+		private SignedRequest signedRequest;
+		private Long userId;
+		private String accessToken;
+
+		public ClientCookieData(HttpServletRequest req) {
+
+			if (req.getCookies() != null) {
+				for (Cookie c : req.getCookies()) {
+					System.out.println("cookies: " + c.getName());
+					if (c.getName().equals("accessToken"))
+						accessToken = c.getValue();
+
+					if (c.getName().equals("userId"))
+						userId = Long.parseLong(c.getValue());
+
+					if (c.getName().equals("encryptedSignedRequest")) {
+						SimpleStringCipher ssc = new SimpleStringCipher(Config.getAppSecret());
+						try {
+							String signedRequestFromCookie = ssc.decrypt(c.getValue());
+							signedRequest = SignedRequest.parseSignedRequest(signedRequestFromCookie);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+
+					if ((signedRequest != null && (userId == null || accessToken == null))&&signedRequest.getUserId()!=null) {
+						
+						userId = Long.parseLong(signedRequest.getUserId());
+						accessToken = signedRequest.getOauthToken();
+					}
+				}
+			} else {
+				System.out.println("no cookies!");
+			}
+		}
 	}
 }

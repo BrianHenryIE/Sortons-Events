@@ -1,6 +1,5 @@
 package ie.sortons.events.shared;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.google.api.server.spi.config.ApiResourceProperty;

@@ -10,9 +10,6 @@ import com.google.gwt.user.client.ui.Widget;
 
 public class RecentPostsPresenter implements Presenter {
 
-	@SuppressWarnings("unused")
-	private final RpcService dao;
-	
 	private final Display display;
 	
 	List<String> posts = new ArrayList<String>();
@@ -27,7 +24,7 @@ public class RecentPostsPresenter implements Presenter {
 	}
 	
 	public RecentPostsPresenter(final RpcService dao, Display view){
-		this.dao = dao;
+		
 		this.display = view;
 		System.out.println("RecentPostsPresenter constructor");
 		view.setPresenter(this);

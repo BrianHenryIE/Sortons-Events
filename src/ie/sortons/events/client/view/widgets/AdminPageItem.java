@@ -64,7 +64,7 @@ public class AdminPageItem extends Composite {
 		name.setTarget("_blank");
 
 		if (page.getLocation() != null)
-			location.setText(page.getLocation().friendlyString());
+			location.setText(page.getLocation().getFriendlyString());
 
 		ToolTipPanel pageImageToolTip = new ToolTipPanel(page.getName(), pageImage);
 		pageImageToolTip.getElement().getStyle().setDisplay(Display.INLINE_BLOCK);

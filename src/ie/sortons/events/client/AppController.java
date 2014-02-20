@@ -1,5 +1,6 @@
 package ie.sortons.events.client;
 
+import ie.sortons.events.client.appevent.LoginAuthResponseEvent;
 import ie.sortons.events.client.appevent.ResponseErrorEvent;
 import ie.sortons.events.client.presenter.PageAdminPresenter;
 import ie.sortons.events.client.presenter.PageEventsPresenter;
@@ -15,15 +16,12 @@ import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
 import ie.sortons.gwtfbplus.client.widgets.popups.ClickPopup;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
 
-import java.util.Date;
-
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.shared.SimpleEventBus;
 import com.google.gwt.json.client.JSONObject;
-import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.FlowPanel;
@@ -106,7 +104,7 @@ public class AppController {
 			saPresenter.go(sortonsAdminPanel);
 
 			container.add(sortonsAdminPanel);
-			
+
 		} else if (sr.getPage() == null) {
 			// Are we inside Facebook with no Page ID? Then we're the app...
 
@@ -121,7 +119,7 @@ public class AppController {
 
 			// Which tab?!
 
-			if (Window.Location.getHref().contains("recentposts")) {
+			if (Window.Location.getHref().contains("recentposts") || (sr.getAppData() != null && sr.getAppData().contains("recentposts"))) {
 
 				System.out.println("href contains");
 				// Show the recent posts!!
@@ -183,9 +181,10 @@ public class AppController {
 											});
 											noAuth.show();
 										} else {
-											Cookies.setCookie("accessToken", auth.getAccessToken(),
-													new Date(new Date().getTime() + auth.getExpiresIn()));
-											Cookies.setCookie("userId", auth.getUserId(), new Date(new Date().getTime() + auth.getExpiresIn()));
+											eventBus.fireEvent(new LoginAuthResponseEvent(result));
+											//Cookies.setCookie("accessToken", auth.getAccessToken(),new Date(new Date().getTime() + auth.getExpiresIn()));
+											//Cookies.setCookie("userId", auth.getUserId(), new Date(new Date().getTime() + auth.getExpiresIn()));
+											System.out.println("show popup");
 											adminPopup.show();
 											adminPopup.setPopupPosition(135, 40);
 										}

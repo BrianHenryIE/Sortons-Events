@@ -9,7 +9,8 @@
 
 		.item {
 		position: relative;
-		padding: 5px;
+		padding:
+		5px;
 		}
 
 		.item:hover {
@@ -18,14 +19,18 @@
 		}
 
 		.picture {
-		position: relative;
+		position:
+		relative;
 		display: inline-block;
 		margin-right: 7px;
 		}
 
 		.text {
-		display: inline-block;
+		display:
+		inline-block;
 		vertical-align: top;
+		width: 440px;
+		overflow-x: hidden;
 		}
 
 		.buttons {
@@ -37,7 +42,8 @@
 
 		.button {
 		display: inline-block;
-		vertical-align: middle;
+		vertical-align:
+		middle;
 		margin-right:
 		3px;
 		}
