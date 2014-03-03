@@ -12,26 +12,28 @@ import java.util.List;
 
 import javax.inject.Named;
 
+import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.Api;
+import com.google.api.server.spi.config.ApiAuth;
 import com.googlecode.objectify.ObjectifyService;
 
 @Api(name = "upcomingEvents", version = "v1")
+@ApiAuth(allowCookieAuth = AnnotationBoolean.TRUE)
+
 public class UpcomingEventsEndpoint {
 
 	static {
 		ObjectifyService.register(DiscoveredEvent.class);
 	}
 
-	public ArrayList<DiscoveredEvent> upcomingEvents = new ArrayList<DiscoveredEvent>();
-
-	// public List<DiscoveredEvent> getList(@Named("id") String clientPageId) {
+	
 	public DiscoveredEventsResponse getList(@Named("id") Long clientPageId) {
-
+		
+		List<DiscoveredEvent> upcomingEvents = new ArrayList<DiscoveredEvent>();
+		
 		Date now = new Date();
 
 		DiscoveredEventsResponse dto = new DiscoveredEventsResponse();
-
-		upcomingEvents.clear();
 
 		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("sourceLists", clientPageId).filter("fbEvent.start_time >", getHoursAgoOrToday(12)).order("fbEvent.start_time").list();
 		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
@@ -53,7 +55,7 @@ public class UpcomingEventsEndpoint {
 		return dto;
 		// return upcomingEvents;
 	}
-
+	
 	private Date getHoursAgoOrToday(int hours) {
 
 		Calendar calvar = Calendar.getInstance();

@@ -4,14 +4,15 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.Config;
 import ie.sortons.events.shared.DiscoveredEvent;
+import ie.sortons.events.shared.WallPost;
 import ie.sortons.gwtfbplus.shared.domain.FbResponse;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlEventMember;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventDatesAdapter;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenue;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenueAdapter;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEventMember;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachment;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachmentAdapter;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachmentMediaItem;
@@ -67,6 +68,7 @@ public class CollectorCron extends HttpServlet {
 	static {
 		ObjectifyService.register(ClientPageData.class);
 		ObjectifyService.register(DiscoveredEvent.class);
+		ObjectifyService.register(WallPost.class);
 	}
 
 	// For logging
@@ -87,6 +89,8 @@ public class CollectorCron extends HttpServlet {
 	public void setPrintWriter(PrintWriter out) {
 		this.out = out;
 	}
+
+	private List<WallPost> wallPosts = new ArrayList<WallPost>();
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
@@ -148,6 +152,11 @@ public class CollectorCron extends HttpServlet {
 					saveToDatastore(detailedEvents);
 			}
 		}
+
+		ofy().save().entities(wallPosts).now();
+		out.print("wall posts: " + wallPosts.size());
+		wallPosts = null;
+		wallPosts = new ArrayList<WallPost>();
 
 		out.println("</pre>");
 		out.flush();
@@ -298,7 +307,7 @@ public class CollectorCron extends HttpServlet {
 	 * @return FQL to retrieve last month of wall posts
 	 */
 	private String getFqlStreamCall(FqlPage sourcePage) {
-		String streamCallStub = "SELECT%20source_id%2C%20post_id%2C%20permalink%2C%20actor_id%2C%20target_id%2C%20message%2C%20attachment.media%2C%20created_time%20FROM%20stream%20WHERE%20source_id%20%3D%20"; // &access_token="+access_token;
+		String streamCallStub = "SELECT%20source_id%2C%20post_id%2C%20permalink%2C%20actor_id%2C%20target_id%2C%20message%2C%20attachment.media%2C%20created_time%2C%20type%20FROM%20stream%20WHERE%20source_id%20%3D%20"; // &access_token="+access_token;
 		return streamCallStub + sourcePage.getPageId() + "AND%20actor_id=" + sourcePage.getPageId() + "%20AND%20created_time%20%3E%20"
 				+ ((new DateTime().getMillis() / 1000) - 2592000);
 	}
@@ -355,6 +364,12 @@ public class CollectorCron extends HttpServlet {
 		for (FqlStream item : stream) {
 
 			if (item.getActorId().equals(item.getSourceId())) {
+
+				// Save any posts made in the last 15 minutes
+				// TODO but really, figure out what happens when we save with the same id...
+				if ((item.getType() == 46 || item.getType() == 66 || item.getType() == 80)
+						&& item.getCreatedTime() > (((new Date().getTime()) / 1000) - (60 * 16)) && item.getActorId() != client.getClientPageId())
+					wallPosts.add(new WallPost(client.getClientPageId(), item.getPostId(), item.getCreatedTime(), item.getPermalink()));
 
 				sourcePage = client.getPageById(item.getSourceId());
 
@@ -500,6 +515,7 @@ public class CollectorCron extends HttpServlet {
 
 		out.println("Saved/updated: " + detailedEvents.size() + " events: " + Joiner.on(",").join(detailedEvents.keySet()));
 		log.info("Saved/updated: " + detailedEvents.size() + " events: " + Joiner.on(",").join(detailedEvents.keySet()));
+
 	}
 
 	private Map<Long, DiscoveredEvent> mergeEventMaps(Map<Long, DiscoveredEvent> map1, Map<Long, DiscoveredEvent> map2) {

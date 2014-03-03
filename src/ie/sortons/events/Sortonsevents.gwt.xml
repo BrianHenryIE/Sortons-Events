@@ -21,7 +21,7 @@
 
 	<inherits name="com.gwtfb.GwtFB" />
 	<inherits name="ie.sortons.gwtfbplus.GwtFbPlus" />
-
+	<inherits name="ie.brianhenry.gwtbingmaps.GwtBingMaps" />
 	<!-- Specify the app entry point class. -->
 	<entry-point class='ie.sortons.events.client.Sortonsevents' />
 
@@ -33,5 +33,7 @@
 	<source path='ie.sortons.gwtfbplus' />
 	<source path='com.kfuntak.gwt.json.serialization' />
 
+
+	<script src='//ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0&amp;s=1' />
 
 </module>

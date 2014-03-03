@@ -6,22 +6,22 @@ import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.gwt.core.shared.GwtIncompatible;
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 
-public class DiscoveredEventsResponse implements JsonSerializable {
+public class RecentPostsResponse implements JsonSerializable {
 
 	@GwtIncompatible @ApiResourceProperty(name = "class")
-	public String classname = "ie.sortons.events.shared.DiscoveredEventsResponse";
+	public String classname = "ie.sortons.events.shared.RecentPostsResponse";
 
-	public List<DiscoveredEvent> data;
+	public List<WallPost> data;
 
 	/**
-	 * @param upcomingEvents
+	 * @param dsRecentPosts
 	 *            the data to set
 	 */
-	public void setData(List<DiscoveredEvent> upcomingEvents) {
-		this.data = upcomingEvents;
+	public void setData(List<WallPost> dsRecentPosts) {
+		this.data = dsRecentPosts;
 	}
 
-	public List<DiscoveredEvent> getData() {
+	public List<WallPost> getData() {
 		return data;
 	}
 /*

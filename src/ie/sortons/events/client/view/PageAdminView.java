@@ -3,9 +3,9 @@ package ie.sortons.events.client.view;
 import ie.sortons.events.client.presenter.PageAdminPresenter;
 import ie.sortons.events.client.view.widgets.AdminPageItem;
 import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
-import ie.sortons.gwtfbplus.client.widgets.popups.SelectedLoading;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSearchable;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSingleSuggestbox;
+import ie.sortons.gwtfbplus.client.widgets.suggestbox.SelectedLoading;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import java.util.ArrayList;

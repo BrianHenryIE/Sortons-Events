@@ -5,7 +5,8 @@ import ie.sortons.events.shared.ClientPageDataResponse;
 import ie.sortons.events.shared.FqlPageSearchable;
 import ie.sortons.events.shared.PageList;
 import ie.sortons.events.shared.PagesListResponse;
-import ie.sortons.gwtfbplus.shared.domain.JsFqlError;
+import ie.sortons.events.shared.RecentPostsResponse;
+import ie.sortons.events.shared.WallPost;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
@@ -40,6 +41,9 @@ public class RpcService {
 
 	Serializer serializer = (Serializer) GWT.create(Serializer.class);
 
+	// Must be https for cloud endpoints
+	private String apiBase = "https://sortonsevents.appspot.com/_ah/api/";
+
 	private Long currentPageId;
 
 	private FBCore fbCore;
@@ -52,6 +56,10 @@ public class RpcService {
 	}
 
 	public RpcService(SimpleEventBus eventBus) {
+		// Check for dev mode
+		if (!GWT.isProdMode() && GWT.isClient())
+			apiBase = "http://testbed.org.org:8888/_ah/api/";
+
 		// this.eventBus = eventBus;
 	}
 
@@ -68,13 +76,7 @@ public class RpcService {
 	public void getEventsForPage(RequestCallback callback) {
 
 		// Must be https for cloud endpoints
-		String jsonUrl = "https://sortonsevents.appspot.com/_ah/api/upcomingEvents/v1/discoveredeventsresponse/";
-
-		// Check for dev mode
-		if (!GWT.isProdMode() && GWT.isClient()) {
-			System.out.println("dev mode getevents");
-			jsonUrl = "http://testbed.org.org:8888/_ah/api/upcomingEvents/v1/discoveredeventsresponse/";
-		}
+		String jsonUrl = apiBase + "upcomingEvents/v1/discoveredeventsresponse/";
 
 		String url = jsonUrl + currentPageId;
 		url = URL.encode(url);
@@ -90,15 +92,46 @@ public class RpcService {
 		}
 	}
 
+	public void getWallPostsForPage(final AsyncCallback<List<WallPost>> callback) {
+
+		// Must be https for cloud endpoints
+		String jsonUrl = apiBase + "recentPosts/v1/recentpostsresponse/";
+
+		String url = jsonUrl + currentPageId;
+		url = URL.encode(url);
+
+		System.out.println(url);
+
+		// Send request to server and catch any errors.
+		RequestBuilder builder = new RequestBuilder(RequestBuilder.GET, url);
+
+		try {
+			builder.sendRequest(null, new RequestCallback() {
+
+				@Override
+				public void onResponseReceived(Request request, Response response) {
+
+					System.out.println("response: " + response.getText());
+
+					RecentPostsResponse deResponse = (RecentPostsResponse) serializer.deSerialize(response.getText(),
+							"ie.sortons.events.shared.RecentPostsResponse");
+					callback.onSuccess(deResponse.getData());
+				}
+
+				@Override
+				public void onError(Request request, Throwable exception) {
+					// TODO Auto-generated method stub
+
+				}
+			});
+		} catch (RequestException e) {
+			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :getEventsForPage()");
+		}
+	}
+
 	public void refreshClientPageData(final AsyncCallback<ClientPageData> callback) {
 
-		String jsonUrl = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/clientpagedata/";
-
-		// Check for dev mode
-		if (!GWT.isProdMode() && GWT.isClient()) {
-			System.out.println("dev mode cpd");
-			jsonUrl = "http://testbed.org.org:8888/_ah/api/clientdata/v1/clientpagedata/";
-		}
+		String jsonUrl = apiBase + "clientdata/v1/clientpagedata/";
 
 		String url = URL.encode(jsonUrl + currentPageId);
 
@@ -135,13 +168,7 @@ public class RpcService {
 
 	public void addPage(FqlPage newPage, RequestCallback callback) {
 
-		String addPageAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/addPage/" + currentPageId;
-
-		// Check for dev mode
-		if (!GWT.isProdMode() && GWT.isClient()) {
-			System.out.println("dev mode add page");
-			addPageAPI = "http://testbed.org.org:8888/_ah/api/clientdata/v1/addPage/" + currentPageId;
-		}
+		String addPageAPI = apiBase + "clientdata/v1/addPage/" + currentPageId;
 
 		RequestBuilder addPageBuilder = new RequestBuilder(RequestBuilder.POST, addPageAPI);
 
@@ -161,13 +188,7 @@ public class RpcService {
 	public void addPagesList(String pagesList, final AsyncCallback<List<FqlPageSearchable>> asyncCallback) {
 
 		System.out.println(pagesList);
-		String addPagesListAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/addPagesList/" + currentPageId;
-
-		// Check for dev mode
-		if (!GWT.isProdMode() && GWT.isClient()) {
-			System.out.println("dev mode addPagesList");
-			addPagesListAPI = "http://testbed.org.org:8888/_ah/api/clientdata/v1/addPagesList/" + currentPageId;
-		}
+		String addPagesListAPI = apiBase + "clientdata/v1/addPagesList/" + currentPageId;
 
 		RequestBuilder addPagesListBuilder = new RequestBuilder(RequestBuilder.POST, addPagesListAPI);
 
@@ -205,13 +226,7 @@ public class RpcService {
 
 		clientPageData.getSuggestedPages().remove(page);
 
-		String removePageAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/ignorePage/" + currentPageId;
-
-		// Check for dev mode
-		if (!GWT.isProdMode() && GWT.isClient()) {
-			System.out.println("dev mode ignore page");
-			removePageAPI = "http://testbed.org.org:8888/_ah/api/clientdata/v1/ignorePage/" + currentPageId;
-		}
+		String removePageAPI = apiBase + "clientdata/v1/ignorePage/" + currentPageId;
 
 		RequestBuilder ignorePageBuilder = new RequestBuilder(RequestBuilder.POST, removePageAPI);
 		ignorePageBuilder.setHeader("Content-Type", "application/json");
@@ -238,10 +253,9 @@ public class RpcService {
 		System.out.println("getSuggestions()!");
 
 		List<Long> searchPagesList = new ArrayList<Long>();
-		for (Long pageId : clientPageData.getIncludedPageIds()) {
+		for (Long pageId : clientPageData.getIncludedPageIds())
 			searchPagesList.add(pageId);
-		}
-
+		
 		System.out.println("searchPagesList " + searchPagesList.size());
 
 		// http://blog.jonleonard.com/2012/10/gwt-collectionsshuffle-implementation.html
@@ -252,10 +266,10 @@ public class RpcService {
 
 		System.out.println("searchPagesList shuffled");
 
-		// TODO... someday this  will get too big
+		// TODO... someday (soon) this will get too big
 		String fql = "SELECT page_id, name, page_url, location FROM page WHERE page_id IN (SELECT page_id FROM page_fan WHERE uid IN (" + searchPages
 				+ ") ) AND NOT is_community_page = 'true'";
-		// 	TODO Remove LIMIT 250 before deploying!
+		// TODO Remove LIMIT 250 before deploying!
 
 		System.out.println(fql);
 
@@ -276,7 +290,7 @@ public class RpcService {
 
 				JSONObject responseJson = new JSONObject(response);
 
-
+				// TODO check how slow this is compared to overlays
 				HashMap<String, FqlPageSearchable> map = new HashMap<String, FqlPageSearchable>();
 				try {
 					map = (HashMap<String, FqlPageSearchable>) hashMapSerializer.deSerialize(responseJson,
@@ -284,7 +298,7 @@ public class RpcService {
 				} catch (Exception e) {
 
 					System.out.println(responseJson);
-					// If it's failed here, it's probably because we've tried this before the sdk has initialized with
+					// If it's failed here, it's possibly because we've tried this before the sdk has initialized with
 					// its access token
 					// JsFqlError error = (JsFqlError) serializer.deSerialize(responseJson,
 					// "ie.sortons.events.shared.JsFqlError");
@@ -339,17 +353,8 @@ public class RpcService {
 	 */
 	public void getAllClients(final AsyncCallback<List<ClientPageData>> asyncCallback) {
 
-		// TODO security
 
-		// _ah/api/clientdata/v1/clientpagedatacollection
-
-		String getAllClientsAPI = "https://sortonsevents.appspot.com/_ah/api/clientdata/v1/clientpagedataresponse/";
-
-		// Check for dev mode
-		if (!GWT.isProdMode() && GWT.isClient()) {
-			System.out.println("dev mode ignore page");
-			getAllClientsAPI = "http://testbed.org.org:8888/_ah/api/clientdata/v1/clientpagedataresponse/";
-		}
+		String getAllClientsAPI = apiBase + "clientdata/v1/clientpagedataresponse/";
 
 		RequestBuilder getAllClientsBuilder = new RequestBuilder(RequestBuilder.GET, getAllClientsAPI);
 		getAllClientsBuilder.setHeader("Content-Type", "application/json");

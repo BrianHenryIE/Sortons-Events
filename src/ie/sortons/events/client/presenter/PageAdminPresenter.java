@@ -279,7 +279,7 @@ public class PageAdminPresenter implements Presenter {
 						getClientPageData();
 
 						display.getSuggestBox().unSelectItem();
-						display.getSuggestBox().removeFromOracle(page);
+						display.getSuggestBox().removeFromOracle(newPage);
 
 					} else {
 						// TODO Fire error message
