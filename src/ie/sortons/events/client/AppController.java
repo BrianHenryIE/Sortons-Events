@@ -2,11 +2,13 @@ package ie.sortons.events.client;
 
 import ie.sortons.events.client.appevent.LoginAuthResponseEvent;
 import ie.sortons.events.client.appevent.ResponseErrorEvent;
+import ie.sortons.events.client.presenter.DirectoryPresenter;
 import ie.sortons.events.client.presenter.PageAdminPresenter;
 import ie.sortons.events.client.presenter.PageEventsPresenter;
 import ie.sortons.events.client.presenter.RecentPostsPresenter;
 import ie.sortons.events.client.presenter.SortonsAdminPresenter;
 import ie.sortons.events.client.resources.Resources;
+import ie.sortons.events.client.view.DirectoryView;
 import ie.sortons.events.client.view.PageAdminView;
 import ie.sortons.events.client.view.RecentPostsView;
 import ie.sortons.events.client.view.SortonsAdminView;
@@ -72,6 +74,7 @@ public class AppController {
 		// Initialize the Facebook API
 		fbCore.init(APPID, status, cookie, xfbml);
 
+		// TODO Move to isadmin()
 		@SuppressWarnings("unused")
 		LoginController lc = new LoginController(eventBus);
 
@@ -128,6 +131,16 @@ public class AppController {
 				rpPresenter.go(recentPostsPanel);
 
 				container.add(recentPostsPanel);
+
+			} else if (Window.Location.getHref().contains("directory") || (sr.getAppData() != null && sr.getAppData().contains("directory"))) {
+
+				System.out.println("directory");
+			
+				DirectoryPresenter dPresenter = new DirectoryPresenter(rpcService, new DirectoryView());
+				SimplePanel dPanel = new SimplePanel();
+				dPresenter.go(dPanel);
+
+				container.add(dPanel);
 
 			} else {
 

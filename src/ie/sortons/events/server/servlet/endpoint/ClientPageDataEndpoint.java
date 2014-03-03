@@ -23,7 +23,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -60,8 +59,8 @@ public class ClientPageDataEndpoint {
 	 * @return
 	 */
 	public ClientPageData getClientPageData(HttpServletRequest req, @Named("clientid") Long clientPageId) {
-		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
-			return null;
+//		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req))) // Don't need to be a page admin to get the data for using with the map
+//			return null;
 		// TODO return an error
 		
 		return getClientPageData(clientPageId);
@@ -70,7 +69,7 @@ public class ClientPageDataEndpoint {
 	private ClientPageData getClientPageData(Long clientPageId) {
 		// TODO
 		ofy().clear();
-
+		
 		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
 
 		// When the customer has just signed up
@@ -92,6 +91,8 @@ public class ClientPageDataEndpoint {
 
 		} else {
 
+			System.out.println(clientPageData.getClientPage().getName());
+			
 			return clientPageData;
 
 		}
@@ -206,7 +207,7 @@ public class ClientPageDataEndpoint {
 	FqlPage getPageFromId(Long pageId) {
 		// FQL call pieces
 		String fqlcallstub = "https://graph.facebook.com/fql?q=";
-		String fql = "SELECT page_id, name, page_url, location FROM page WHERE page_id = " + pageId;
+		String fql = "SELECT page_id, name, page_url, location, about, phone FROM page WHERE page_id = " + pageId;
 		String access_token = Config.getAppAccessToken();
 
 		String json = "";
@@ -267,8 +268,10 @@ public class ClientPageDataEndpoint {
 	}
 
 	private boolean isPageAdmin(HttpServletRequest req, Long clientPageId) {
-		if (req.getCookies() == null) // wait for google to fix the bug them remove
+		if (req.getCookies() == null) { // wait for google to fix the bug them remove
+			// System.out.println("still no cookies");
 			return true;
+		}
 		ClientCookieData c = new ClientCookieData(req);
 		ClientPageData cpd = getClientPageData(clientPageId);
 

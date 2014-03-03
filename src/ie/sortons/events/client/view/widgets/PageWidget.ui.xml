@@ -1,0 +1,80 @@
+<!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
+	xmlns:g="urn:import:com.google.gwt.user.client.ui">
+	<ui:style>
+
+		a {
+		color: #3B5998;
+		cursor: pointer;
+		text-decoration: none;
+		}
+
+
+		a:visited {
+		color: #3B5998;
+		}
+
+		a:hover {
+		color: #3B5998;
+		text-decoration:
+		underline;
+		}
+
+		.theWidget {
+		width: 400px;
+		padding: 5px;
+		margin-bottom: 10px;
+		}
+
+		.picture {
+		width:
+		50px;
+		height: 50px;
+		}
+
+		.details {
+		margin-left: 10px;
+		}
+
+		.link {
+		font-weight:
+		bold;
+		font-size : 13px;
+		}
+
+		.contact {
+		color: gray;
+		font-size: 11px;
+		}
+
+		.about {
+		color: #333;
+		margin-bottom:5px;
+
+		}
+
+	</ui:style>
+
+	<g:SimplePanel>
+
+		<g:HorizontalPanel addStyleNames="{style.theWidget}">
+
+			<g:cell width="50px">
+				<g:Image addStyleNames="{style.picture}" ui:field="picture" />
+			</g:cell>
+
+			<g:VerticalPanel addStyleNames="{style.details}">
+
+				<g:Anchor addStyleNames="{style.link}" ui:field="title" />
+
+				<g:Label addStyleNames="{style.about}" ui:field="about" />
+
+				<g:Label addStyleNames="{style.contact}" ui:field="contact" />
+
+			</g:VerticalPanel>
+
+		</g:HorizontalPanel>
+
+	</g:SimplePanel>
+
+</ui:UiBinder> 
