@@ -12,7 +12,7 @@ import ie.sortons.events.client.presenter.DirectoryPresenter;
 import ie.sortons.events.client.view.widgets.MapPageWidget;
 import ie.sortons.events.client.view.widgets.PageWidget;
 import ie.sortons.gwtfbplus.client.api.Canvas;
-import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
+import ie.sortons.gwtfbplus.client.resources.map.MapResources;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import java.util.List;
@@ -54,7 +54,7 @@ public class DirectoryView extends Composite implements DirectoryPresenter.Displ
 		// Figure out what zoomed out is for people who don't have their current location set
 		Location center = Location.newLocation(53.3433567, -6.2441148);
 		String mapTypeId = "fb";
-		int zoom = 12;
+		double zoom = 13;
 
 		ViewOptions viewOptions = ViewOptions.newViewOptions(null, center, null, null, mapTypeId, null, zoom);
 
@@ -105,7 +105,7 @@ public class DirectoryView extends Composite implements DirectoryPresenter.Displ
 						.getInnerHTML());
 				Infobox itemInfobox = Infobox.getInfobox(location, infoboxOptions);
 
-				PushpinOptions options = PushpinOptions.setPushPinOptions(25, 28, GwtFbPlusResources.INSTANCE.mapPushPin().getSafeUri().asString(),
+				PushpinOptions options = PushpinOptions.setPushPinOptions(25, 28, MapResources.INSTANCE.mapPushPin().getSafeUri().asString(),
 						false, null, null, null);
 				Pushpin pushpin = Pushpin.getPushpin(location, options);
 
