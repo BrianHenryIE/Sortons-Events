@@ -68,7 +68,7 @@ public class ClientPageDataEndpoint {
 
 	private ClientPageData getClientPageData(Long clientPageId) {
 		// TODO
-		ofy().clear();
+		
 		
 		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
 
@@ -112,8 +112,7 @@ public class ClientPageDataEndpoint {
 
 		ClientPageData clientPageData = getClientPageData(clientPageId);
 
-		ofy().clear();
-
+		
 		if (clientPageData.addPage(newPage)) {
 			ofy().save().entity(clientPageData).now();
 			log.info("saved");
@@ -123,7 +122,7 @@ public class ClientPageDataEndpoint {
 		// Check for events on this page immediately
 
 		// TODO Understand and remove troubleshooting
-		ofy().clear();
+		
 
 		// TODO return an error, if appropriate
 		clientPageData = null;
@@ -145,7 +144,7 @@ public class ClientPageDataEndpoint {
 		System.out.println("cpdendpoint: " + pagesList);
 		log.info("addPagesList: " + pagesList);
 
-		ofy().clear();
+		
 
 		ClientPageData clientPageData = getClientPageData(clientPageId);
 
@@ -280,7 +279,7 @@ public class ClientPageDataEndpoint {
 		if (c.getSignedRequest() != null && c.getSignedRequest().getPage() != null && c.getSignedRequest().getPage().isAdmin() == true
 				&& c.getSignedRequest().getPage().getId().equals(Long.toString(clientPageId))) {
 			if (c.getSignedRequest().getUserId() != null && cpd.addPageAdmin(Long.parseLong(c.getSignedRequest().getUserId()))) {
-				ofy().clear();
+				
 				ofy().save().entity(cpd).now();
 			}
 			return true;

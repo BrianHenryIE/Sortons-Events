@@ -46,7 +46,20 @@ public class PageWidget extends Composite {
 
 			String address = page.getLocation().getFriendlyString();
 			
+			if(address.matches("Dublin, \\d{1,2}"))
+				address = address.replace("Dublin, ", "Dublin ");
+		
+			address = address.replace("Dublin, Ireland", "");
 			address = address.replace(", Ireland", "");
+			address = address.replace(", Dublin,", ",");
+			
+			
+			if(address.endsWith(","))
+				address = address.substring(0,address.length()-1);
+			
+			if(address.equals("Dublin"))
+				address = null;
+			
 			// this deletes the , Dublin from , Dublin 2
 			// address = address.replace(", Dublin", "");
 			

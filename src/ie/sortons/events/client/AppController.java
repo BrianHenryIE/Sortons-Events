@@ -120,6 +120,82 @@ public class AppController {
 			// We're inside a Page tab
 			System.out.println("Page ID: " + sr.getPage().getId());
 
+			if (sr.getPage().isAdmin() == true || sr.getUserId().equals("37302520")) {
+
+				PageAdminView adminView = new PageAdminView();
+				PageAdminPresenter adminPresenter = new PageAdminPresenter(eventBus, rpcService, adminView);
+				final SimplePanel adminPanel = new SimplePanel();
+				adminPresenter.go(adminPanel);
+
+				final PopupPanel adminPopup = new PopupPanel();
+				adminPopup.add(adminPanel);
+				adminPopup.setGlassEnabled(true);
+				adminPopup.setStyleName("");
+				adminPopup.setGlassStyleName(res.css().adminGlass());
+
+				adminView.getCloseButton().addClickHandler(new ClickHandler() {
+					@Override
+					public void onClick(ClickEvent event) {
+						adminPopup.hide();
+					}
+				});
+
+				Label apLink = new Label("Admin Panel");
+				apLink.setStyleName(res.css().adminPanelButton());
+				container.add(apLink);
+
+				if (sr.getOauthToken() == null) {
+					apLink.addClickHandler(new ClickHandler() {
+						@Override
+						public void onClick(ClickEvent event) {
+							fbCore.login(new AsyncCallback<JavaScriptObject>() {
+								@Override
+								public void onFailure(Throwable caught) {
+								}
+
+								@Override
+								public void onSuccess(JavaScriptObject result) {
+									System.out.println(new JSONObject(result).toString());
+									AuthResponse auth = result.cast();
+									if (auth.getStatus().equals("not_authorized")) {
+										Label authMessage = new Label("You must authorise the application in order to configure it.");
+										authMessage.setStyleName(resources.css().infoLabel());
+										final ClickPopup noAuth = new ClickPopup("App Authorisation", authMessage);
+										noAuth.getCancelButton().removeFromParent();
+										noAuth.getOkButton().addClickHandler(new ClickHandler() {
+											@Override
+											public void onClick(ClickEvent event) {
+												noAuth.hide();
+											}
+										});
+										noAuth.show();
+									} else {
+										eventBus.fireEvent(new LoginAuthResponseEvent(result));
+										//Cookies.setCookie("accessToken", auth.getAccessToken(),new Date(new Date().getTime() + auth.getExpiresIn()));
+										//Cookies.setCookie("userId", auth.getUserId(), new Date(new Date().getTime() + auth.getExpiresIn()));
+										System.out.println("show popup");
+										adminPopup.show();
+										adminPopup.setPopupPosition(135, 40);
+									}
+
+								}
+							});
+
+						}
+					});
+				} else {
+					apLink.addClickHandler(new ClickHandler() {
+						@Override
+						public void onClick(ClickEvent event) {
+							adminPopup.show();
+							adminPopup.setPopupPosition(135, 40);
+						}
+					});
+				}
+
+			}
+			
+			
 			// Which tab?!
 
 			if (Window.Location.getHref().contains("recentposts") || (sr.getAppData() != null && sr.getAppData().contains("recentposts"))) {
@@ -144,80 +220,7 @@ public class AppController {
 
 			} else {
 
-				if (sr.getPage().isAdmin() == true || sr.getUserId().equals("37302520")) {
-
-					PageAdminView adminView = new PageAdminView();
-					PageAdminPresenter adminPresenter = new PageAdminPresenter(eventBus, rpcService, adminView);
-					final SimplePanel adminPanel = new SimplePanel();
-					adminPresenter.go(adminPanel);
-
-					final PopupPanel adminPopup = new PopupPanel();
-					adminPopup.add(adminPanel);
-					adminPopup.setGlassEnabled(true);
-					adminPopup.setStyleName("");
-					adminPopup.setGlassStyleName(res.css().adminGlass());
-
-					adminView.getCloseButton().addClickHandler(new ClickHandler() {
-						@Override
-						public void onClick(ClickEvent event) {
-							adminPopup.hide();
-						}
-					});
-
-					Label apLink = new Label("Admin Panel");
-					apLink.setStyleName(res.css().adminPanelButton());
-					container.add(apLink);
-
-					if (sr.getOauthToken() == null) {
-						apLink.addClickHandler(new ClickHandler() {
-							@Override
-							public void onClick(ClickEvent event) {
-								fbCore.login(new AsyncCallback<JavaScriptObject>() {
-									@Override
-									public void onFailure(Throwable caught) {
-									}
-
-									@Override
-									public void onSuccess(JavaScriptObject result) {
-										System.out.println(new JSONObject(result).toString());
-										AuthResponse auth = result.cast();
-										if (auth.getStatus().equals("not_authorized")) {
-											Label authMessage = new Label("You must authorise the application in order to configure it.");
-											authMessage.setStyleName(resources.css().infoLabel());
-											final ClickPopup noAuth = new ClickPopup("App Authorisation", authMessage);
-											noAuth.getCancelButton().removeFromParent();
-											noAuth.getOkButton().addClickHandler(new ClickHandler() {
-												@Override
-												public void onClick(ClickEvent event) {
-													noAuth.hide();
-												}
-											});
-											noAuth.show();
-										} else {
-											eventBus.fireEvent(new LoginAuthResponseEvent(result));
-											//Cookies.setCookie("accessToken", auth.getAccessToken(),new Date(new Date().getTime() + auth.getExpiresIn()));
-											//Cookies.setCookie("userId", auth.getUserId(), new Date(new Date().getTime() + auth.getExpiresIn()));
-											System.out.println("show popup");
-											adminPopup.show();
-											adminPopup.setPopupPosition(135, 40);
-										}
-
-									}
-								});
-
-							}
-						});
-					} else {
-						apLink.addClickHandler(new ClickHandler() {
-							@Override
-							public void onClick(ClickEvent event) {
-								adminPopup.show();
-								adminPopup.setPopupPosition(135, 40);
-							}
-						});
-					}
-
-				}
+			
 
 				PageEventsPresenter pep = new PageEventsPresenter(rpcService);
 

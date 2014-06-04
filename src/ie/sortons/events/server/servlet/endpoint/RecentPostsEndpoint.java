@@ -22,7 +22,7 @@ public class RecentPostsEndpoint {
 
 		RecentPostsResponse dto = new RecentPostsResponse();
 
-		List<WallPost> dsRecentPosts = ofy().load().type(WallPost.class).filter("sourceList", clientPageId).order("-date").limit(250).list();
+		List<WallPost> dsRecentPosts = ofy().load().type(WallPost.class).filter("sourceList", clientPageId).order("-date").limit(100).list();
 		
 		dto.setData(dsRecentPosts);
 		

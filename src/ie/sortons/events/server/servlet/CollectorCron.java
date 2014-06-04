@@ -342,7 +342,8 @@ public class CollectorCron extends HttpServlet {
 
 			FbResponse<FqlStream> response = gson.fromJson(json, fooType);
 
-			if (response.getData().size() > 0)
+			// TODO make it never be null here.
+			if (response != null && response.getData() != null && response.getData().size() > 0)
 				postedEvents = mergeEventMaps(postedEvents, findEventsInStreamPosts(response.getData(), client));
 		}
 
