@@ -1,0 +1,10 @@
+/bin/
+/target/
+gwt-unitCache
+.settings
+.project
+.classpath
+*.cache.js
+WEB-INF
+*.devmode.js
+*.nocache.js

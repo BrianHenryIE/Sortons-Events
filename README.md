@@ -7,17 +7,4 @@ App to be added as a Facebook page tab and a list of other Facebook pages be spe
 
 This app has been written in Java (Google Web Toolkit) to run on Google App Engine and uses Google Cloud Endpoints.
 
-Dependencies:
--------------
-
-• [GSON](https://code.google.com/p/google-gson/) (v2.2.4) for server-side JSON parsing 
-
-• [Objectify](https://code.google.com/p/objectify-appengine/) for datastore operations
-
-• [Guava](https://code.google.com/p/guava-libraries/) for its string utilities
-
-• [Joda-Time](http://www.joda.org/joda-time/) for server-side times/dates
-
-• [GwtFB](https://github.com/olams/gwtfb) for client-side Facebook API calls
-
-• [GwtFB+](https://github.com/BrianHenryIE/GwtFBplus) for Facebook helpers and widgets
+You'll also have pull [GwtFB+](https://github.com/BrianHenryIE/GwtFBplus) and add it to your local Maven repository.
