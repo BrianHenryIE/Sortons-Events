@@ -1,4 +1,4 @@
-package ie.sortons.events.shared;
+	package ie.sortons.events.shared;
 
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
@@ -8,6 +8,7 @@ import java.util.List;
 import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.gwt.core.shared.GwtIncompatible;
+import com.googlecode.objectify.annotation.Cache;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
@@ -15,7 +16,7 @@ import com.googlecode.objectify.annotation.Index;
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 import com.kfuntak.gwt.json.serialization.client.SkipNullSerialization;
 
-@Entity @SkipNullSerialization
+@Cache @Entity @SkipNullSerialization
 public class ClientPageData implements JsonSerializable {
 
 	

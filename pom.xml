@@ -13,7 +13,7 @@
 		<gwt.version>2.7.0</gwt.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<app.name>sortonsevents</app.name>
-		<gae.application.version>test</gae.application.version>
+		<gae.application.version>5</gae.application.version>
 		<!-- <webappDirectory>${project.build.directory}/${project.build.finalName}</webappDirectory> -->
 		<webappDirectory>src/main/webapp</webappDirectory>
 	</properties>
@@ -71,39 +71,45 @@
 			<groupId>com.google.gwt</groupId>
 			<artifactId>gwt-user</artifactId>
 			<version>${gwt.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.gwt</groupId>
 			<artifactId>gwt-servlet</artifactId>
 			<version>${gwt.version}</version>
-			<scope>compile</scope>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava-gwt</artifactId>
 			<version>18.0</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.gwt.eventbinder</groupId>
 			<artifactId>eventbinder</artifactId>
 			<version>1.1.0</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>ie.sortons</groupId>
 			<artifactId>gwtfbplus</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>ie.brianhenry</groupId>
 			<artifactId>gwtbingmaps</artifactId>
 			<version>0.0.2-SNAPSHOT</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<!-- Like Jackson on the client side -->
 			<groupId>com.kfuntak.gwt.json</groupId>
 			<artifactId>gwtprojsonserializer</artifactId>
 			<version>1.0.7-SNAPSHOT</version>
+			<scope>provided</scope>
 		</dependency>
 
 
@@ -134,43 +140,86 @@
 	</dependencies>
 
 
-	<build>
-		<!-- Generate compiled stuff in the folder used for developing mode -->
-		<outputDirectory>${webappDirectory}/WEB-INF/classes</outputDirectory>
+	<profiles>
 
-		<plugins>
-
-			<!-- GWT Maven Plugin -->
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>gwt-maven-plugin</artifactId>
-				<version>${gwt.version}</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>compile</goal>
-							<goal>test</goal>
-						</goals>
+		<profile>
+			<id>server</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>com.google.appengine</groupId>
+						<artifactId>appengine-maven-plugin</artifactId>
+						<version>1.9.4</version>
 						<configuration>
-							<style>PRETTY</style>
-							<module>ie.sortons.events.Sortonsevents</module>
+							<!-- Generate compiled stuff in the folder used for developing mode -->
+							<outputDirectory>${webappDirectory}/WEB-INF/classes</outputDirectory>
+
+							<enableJarClasses>false</enableJarClasses>
+							<!-- Comment in the below snippet to bind to all IPs instead of just 
+								localhost -->
+							<!-- address>0.0.0.0</address> <port>8080</port -->
+							<!-- Comment in the below snippet to enable local debugging with a 
+								remove debugger like those included with Eclipse or IntelliJ -->
+							<!-- jvmFlags> <jvmFlag>-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n</jvmFlag> 
+								</jvmFlags -->
 						</configuration>
-					</execution>
-				</executions>
-				<configuration>
-					<runTarget>/</runTarget>
+						<executions>
+							<execution>
+								<goals>
+									<!-- <goal>endpoints_get_discovery_doc</goal> -->
+								</goals>
+							</execution>
+						</executions>
 
-					<draftCompile>true</draftCompile>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>client</id>
 
-					<webappDirectory>target</webappDirectory>
-					<optimizationLevel>9</optimizationLevel>
+			<build>
 
-					<closureCompiler>true</closureCompiler>
-					<disableCastChecking>true</disableCastChecking>
-					<disableClassMetadata>true</disableClassMetadata>
-					<localWorkers>4</localWorkers>
-				</configuration>
-			</plugin>
+				<plugins>
+
+					<!-- GWT Maven Plugin -->
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>gwt-maven-plugin</artifactId>
+						<version>${gwt.version}</version>
+						<executions>
+							<execution>
+								<goals>
+									<goal>compile</goal>
+									<goal>test</goal>
+								</goals>
+								<configuration>
+									<style>PRETTY</style>
+									<module>ie.sortons.events.Sortonsevents</module>
+								</configuration>
+							</execution>
+						</executions>
+						<configuration>
+							<runTarget>/</runTarget>
+
+							<draftCompile>true</draftCompile>
+
+							<webappDirectory>target</webappDirectory>
+							<optimizationLevel>9</optimizationLevel>
+
+							<closureCompiler>true</closureCompiler>
+							<disableCastChecking>true</disableCastChecking>
+							<disableClassMetadata>true</disableClassMetadata>
+							<localWorkers>4</localWorkers>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
+	<build>
+		<plugins>
 			<!-- Copy static web files before executing gwt:run -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -189,7 +238,50 @@
 							</includes>
 						</resource>
 					</webResources>
+					<includes>
+						<include>**/**</include>
+					</includes>
+					<excludes>
+						<exclude>**/client/**</exclude>
+					</excludes>
 				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>2.3</version>
+				<executions>
+					<execution>
+						<id>default-clean</id>
+						<phase>clean</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>remove-gwt-client-classes</id>
+						<phase>package</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+						<configuration>
+							<excludeDefaultDirectories>true</excludeDefaultDirectories>
+							<filesets>
+								<fileset>
+									<directory>${project.build.directory}/${project.build.finalName}/WEB-INF/classes</directory>
+									<includes>
+										<include>**</include>
+									</includes>
+								</fileset>
+								<fileset>
+									<directory>${project.build.directory}/${project.build.finalName}/WEB-INF/lib</directory>
+									<includes>
+										<include>gwt-user*jar</include>
+									</includes>
+								</fileset>
+							</filesets>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -200,32 +292,10 @@
 					<target>1.7</target>
 				</configuration>
 			</plugin>
-			 <plugin>
-                <groupId>com.google.appengine</groupId>
-                <artifactId>appengine-maven-plugin</artifactId>
-                <version>1.9.4</version>
-                <configuration>
-                    <enableJarClasses>false</enableJarClasses>
-                    <!-- Comment in the below snippet to bind to all IPs instead of just localhost -->
-                    <!-- address>0.0.0.0</address>
-                    <port>8080</port -->
-                    <!-- Comment in the below snippet to enable local debugging with a remove debugger
-                         like those included with Eclipse or IntelliJ -->
-                    <!-- jvmFlags>
-                      <jvmFlag>-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n</jvmFlag>
-                    </jvmFlags -->
-                </configuration>                
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>endpoints_get_discovery_doc</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                
-            </plugin>
 		</plugins>
 	</build>
+
+
 
 	<repositories>
 		<repository>

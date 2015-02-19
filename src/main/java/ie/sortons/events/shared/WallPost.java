@@ -2,12 +2,14 @@ package ie.sortons.events.shared;
 
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.gwt.core.shared.GwtIncompatible;
+import com.googlecode.objectify.annotation.Cache;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 
 @Entity
+@Cache
 public class WallPost implements JsonSerializable {
 
 	@GwtIncompatible

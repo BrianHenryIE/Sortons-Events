@@ -101,8 +101,15 @@ public class CollectorCron extends HttpServlet {
 
 		out.println("<pre>");
 
+		log.info("started");
+
+		out.println(clients.size() + " clients");
+
+		
 		for (ClientPageData client : clients) {
 
+			out.print(client.getClientPage().getName());
+			
 			Map<Long, DiscoveredEvent> createdEvents = findCreatedEventsForClient(client);
 
 			Map<Long, DiscoveredEvent> postedEvents = findPostedEventsForClient(client);
@@ -126,7 +133,7 @@ public class CollectorCron extends HttpServlet {
 						// if it changes resave, if it doesn't discard.
 
 						if (dsEvent.getSourceLists() == null || dsEvent.getSourceLists().size() == 0) {
-							log.warning("NPE for dsevent " + dsEvent.getFbEvent().getEid() + " CollectorCron ~117.");
+							log.warning("NPE for dsevent " + dsEvent.getFbEvent().getEid() + " CollectorCron ~129.");
 							log.warning(gson.toJson(dsEvent));
 							log.warning("dsEvent.getSourceLists().size() " + dsEvent.getSourceLists().size());
 						}

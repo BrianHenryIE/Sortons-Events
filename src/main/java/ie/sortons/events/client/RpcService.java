@@ -45,7 +45,11 @@ public class RpcService {
 
 	// Must be https for cloud endpoints
 	private String apiBase = "https://sortonsevents.appspot.com/_ah/api/";
+//TODO
+	
+	// private String apiBase = "https://dev.sortons.ie/appengine/_ah/api/";
 
+	
 	private Long currentPageId;
 
 	private FBCore fbCore;
@@ -58,10 +62,6 @@ public class RpcService {
 	}
 
 	public RpcService(SimpleEventBus eventBus) {
-		// Check for dev mode
-		if (!GWT.isProdMode() && GWT.isClient())
-			apiBase = "http://testbed.org.org:8888/_ah/api/";
-
 		// this.eventBus = eventBus;
 	}
 
