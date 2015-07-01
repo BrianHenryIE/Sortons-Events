@@ -3,67 +3,54 @@
 	xmlns:g="urn:import:com.google.gwt.user.client.ui" xmlns:fbb="urn:import:ie.sortons.gwtfbplus.client.widgets.buttons">
 
 	<ui:style>
-
-		.panel {
-		width:540px;
+	.panel {
+		width: 540px;
 		background: #fff;
-		-webkit-box-shadow: 0 0
-		1px rgba(0, 0, 0, .25), 0 1px 5px 3px rgba(0, 0, 0, .05), 0 5px
-		4px
-		-3px rgba(0, 0, 0, .06);
+		-webkit-box-shadow: 0 0 1px rgba(0, 0, 0, .25), 0 1px 5px 3px
+			rgba(0, 0, 0, .05), 0 5px 4px -3px rgba(0, 0, 0, .06);
 		border-bottom: 1px solid #666;
-		border: medium
-		none;
-		box-shadow: 0 0 1px rgba(0, 0, 0, 0.25), 0 1px 5px 3px rgba(0, 0,
-		0, 0.05), 0 5px
-		4px -3px rgba(0, 0, 0, 0.06);
-
-
-		}
-		.heading{
+		border: medium none;
+		box-shadow: 0 0 1px rgba(0, 0, 0, 0.25), 0 1px 5px 3px
+			rgba(0, 0, 0, 0.05), 0 5px 4px -3px rgba(0, 0, 0, 0.06);
+	}
+	
+	.heading {
 		color: #FFF;
-		background-color:
-		#6d84b4;
+		background-color: #6d84b4;
 		font-size: 14px;
-		font-weight:
-		bold;
-		padding:5px
-		10px;
-		margin:0;
-		}
-		.content
-		{
-		padding:5px 10px;
-		margin:0;
-		}
-
-
-		.closeButton{
-		position:absolute;
-		top:-40px;
-		right:0;
+		font-weight: bold;
+		padding: 5px 10px;
+		margin: 0;
+	}
+	
+	.content {
+		padding: 5px 10px;
+		margin: 0;
+	}
+	
+	.closeButton {
+		position: absolute;
+		top: -40px;
+		right: 0;
 		color: #333;
-		border: 1px solid
-		#999;
+		border: 1px solid #999;
 		border-top: 0px;
 		background-color: white;
 		font-weight: bold;
 		padding: 2px 6px;
-		cursor:
-		pointer;
+		cursor: pointer;
 		font-size: 11px;
-		}
-
-		.scrollIncluded {
-		height:400px;
-		overflow-x:hidden;
-		}
-
-		.bold{
-		font-weight:bold;
-		margin-bottom:5px;
-		}
-
+	}
+	
+	.scrollIncluded {
+		height: 400px;
+		overflow-x: hidden;
+	}
+	
+	.bold {
+		font-weight: bold;
+		margin-bottom: 5px;
+	}
 	</ui:style>
 	<g:FlowPanel addStyleNames="{style.panel}">
 

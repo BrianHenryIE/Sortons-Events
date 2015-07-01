@@ -8,3 +8,4 @@ gwt-unitCache
 WEB-INF
 *.devmode.js
 *.nocache.js
+/target/

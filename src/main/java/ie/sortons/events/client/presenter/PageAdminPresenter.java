@@ -94,7 +94,7 @@ public class PageAdminPresenter implements Presenter {
 						@Override
 						public void run() {
 							if (display.getSuggestBox().getValue() == null) {
-								System.out.println("asd");
+								
 								processTextBox(display.getSuggestBox().getValueBox().getText());
 							}
 						}
@@ -117,7 +117,7 @@ public class PageAdminPresenter implements Presenter {
 			@Override
 			public void onSuccess(ClientPageData result) {
 				display.setIncludedPages(result.getIncludedPages());
-
+				getSuggestions();
 			}
 		});
 	}
@@ -346,4 +346,5 @@ public class PageAdminPresenter implements Presenter {
 	}
 
 	// TODO clientpagedata hasn't always returned... RACE CONDITION!
+	// maybe fixed by addition of getsuggestions on line 120
 }

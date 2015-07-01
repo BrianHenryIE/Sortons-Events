@@ -13,6 +13,7 @@ import ie.sortons.events.client.view.MyEventsView;
 import ie.sortons.events.client.view.PageAdminView;
 import ie.sortons.events.client.view.RecentPostsView;
 import ie.sortons.events.client.view.SortonsAdminView;
+import ie.sortons.events.shared.Config;
 import ie.sortons.gwtfbplus.client.api.FBCore;
 import ie.sortons.gwtfbplus.client.overlay.AuthResponse;
 import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
@@ -45,7 +46,7 @@ public class AppController {
 	// Courtesy of gwtfb.com
 	private FBCore fbCore = GWT.create(FBCore.class);
 
-	public String APPID = "251403644880972"; // Config.getAppID();
+	public String APPID = Config.getAppID();
 	private boolean status = true;
 	private boolean xfbml = true;
 	private boolean cookie = true;
@@ -113,7 +114,7 @@ public class AppController {
 			container.add(sortonsAdminPanel);
 
 		} else if (sr.getPage() == null) {
-			// Are we inside Facebook with no Page ID? Then we're the app...
+			// Are we inside Facebook with no Page ID? Then we're the canvas app...
 
 			// Show friends events!
 

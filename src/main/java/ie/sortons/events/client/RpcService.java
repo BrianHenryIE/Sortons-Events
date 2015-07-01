@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.google.common.base.Joiner;
 import com.google.gwt.core.client.JavaScriptObject;
@@ -256,9 +258,16 @@ public class RpcService {
 
 		// TODO shouldn't included existing included pages
 
-		System.out.println("getSuggestions()!");
-
+		java.util.logging.Logger logger = Logger.getLogger(this.getClass().getSimpleName());
+		logger.log(Level.INFO, "getSuggestions()!");
+		
+		
+		// Uncaught com.google.gwt.event.shared.UmbrellaException: Exception caught: (TypeError) : Cannot read property 'ie_sortons_events_shared_ClientPageData_includedPages' of undefined
+		// Have to wait for the clientpagedata here.
 		List<Long> searchPagesList = new ArrayList<Long>();
+		if(clientPageData==null)
+			return;
+		
 		for (Long pageId : clientPageData.getIncludedPageIds())
 			searchPagesList.add(pageId);
 

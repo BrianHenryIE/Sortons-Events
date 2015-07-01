@@ -1,0 +1,116 @@
+<html>
+ 
+<head>
+    
+<!-- https://sortonsevents.appspot.com/_ah/api/recentPosts/v1/recentpostsresponse/197528567092983 -->
+
+<style>
+
+.fb-post {
+    margin-bottom: 20px;
+}
+
+</style>
+
+</head>
+
+<body>
+        <script>
+            window.fbAsyncInit = function() {
+                FB.init({
+                        appId      : '123069381111681',
+                        xfbml      : true,
+                        version    : 'v2.3'
+                        });
+            };
+        
+        (function(d, s, id){
+         var js, fjs = d.getElementsByTagName(s)[0];
+         if (d.getElementById(id)) {return;}
+         js = d.createElement(s); js.id = id;
+         js.src = "https://connect.facebook.net/en_US/sdk.js";
+         fjs.parentNode.insertBefore(js, fjs);
+         }(document, 'script', 'facebook-jssdk'));
+            </script>
+        
+        
+        <div id="loading" style="width:100%; text-align:center;"><img src="loading.gif"/></div>
+        
+        <div id="theposts"></div>
+        
+        <div id="fb-root"></div>
+      
+        <script>
+            
+            // // select the target node
+            // var target = document.querySelector('#theposts');
+ 
+            // // create an observer instance
+            // var observer = new MutationObserver(function(mutations) {
+            //   mutations.forEach(function(mutation) {
+            //     console.log(mutation.type);
+            //   });    
+            // });
+             
+            // // configuration of the observer:
+            // var config = { attributes: true, childList: true, characterData: true };
+             
+            // // pass in the target node, as well as the observer options
+            // observer.observe(target, config);
+
+
+            var xmlhttp=new XMLHttpRequest();
+            
+            var posts;
+
+            xmlhttp.onreadystatechange=function()
+              {
+              if (xmlhttp.readyState==4 && xmlhttp.status==200)
+                {
+                
+                        var eventsjson = xmlhttp.responseText;
+                    
+                        var eventsjsonparsed = JSON.parse(eventsjson);
+
+                        posts = eventsjsonparsed.data;
+
+                        for (i = 0; i < 7; i++) {
+
+                            setTimeout(addPost, i*1500)
+
+                        }
+                }
+            }
+            xmlhttp.open("GET","https://sortonsevents.appspot.com/_ah/api/recentPosts/v1/recentpostsresponse/197528567092983",true);
+            xmlhttp.send();
+
+            j = 0 
+
+            function addPost()
+            {
+                
+                var nextPost = document.createElement('div');
+     
+                nextPost.innerHTML = '<div class="fb-post" data-href="' + posts[j].url + '" data-width="500"></div>';
+                
+                document.getElementById('theposts').appendChild(nextPost);
+
+                FB.XFBML.parse();
+
+                if(j==2){
+                    var element = document.getElementById("loading");
+                    element.parentNode.removeChild(element);
+                }
+
+                j++;
+            }
+
+
+        </script>
+    </body>
+</html>
+
+
+
+
+
