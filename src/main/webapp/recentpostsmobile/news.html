@@ -18,7 +18,7 @@ body {
 }
 
 #moreButton {
-    display: none;
+    display: block;
     font-size: 14px;
     line-height: 18px;
     font-family: helvetica, arial, sans-serif;
@@ -88,7 +88,7 @@ body {
             // observer.observe(target, config);
 
 
-            var xmlhttp=new XMLHttpRequest();
+            var xmlhttp = new XMLHttpRequest();
             
             var posts;
 
@@ -97,17 +97,13 @@ body {
               if (xmlhttp.readyState==4 && xmlhttp.status==200)
                 {
                 
-                        var eventsjson = xmlhttp.responseText;
+                    var eventsjson = xmlhttp.responseText;
                     
-                        var eventsjsonparsed = JSON.parse(eventsjson);
+                    var eventsjsonparsed = JSON.parse(eventsjson);
 
-                        posts = eventsjsonparsed.data;
+                    posts = eventsjsonparsed.data;
 
-                        for (i = 0; i < 4; i++) {
-
-                            setTimeout(addPost, i*1500)
-
-                        }
+                    addPosts()
                 }
             }
 
@@ -130,22 +126,12 @@ body {
                 
                 document.getElementById('theposts').appendChild(nextPost);
 
-                var pp = document.getElementById('post'+j);
-                console.log(pp);
-
-                FB.XFBML.parse(pp);
-
-                if(j==1){
-                    var element = document.getElementById("loading");
-                    element.parentNode.removeChild(element);
-                }
-
-                if(j==2){
-                    // document.getElementById("moreButton").innerHTML = '<a id="loadmorelink" href="#" onclick="addPosts();return false;">Load More Posts...</a>';
-                    document.getElementById("moreButton").style.display = 'block';
-                }
-
                 j++;
+
+                var pp = document.getElementById('post'+j);
+                
+                FB.XFBML.parse(pp); 
+
             }
 
             function addPosts()
@@ -157,9 +143,14 @@ body {
                 }
             }
 
-            function refreshXfbml() 
+            // function stopJS() 
+            // {
+            //     throw new Error("Stopping JS execution!");
+            // }
+
+             function refreshXfbml() 
             {
-                // do your javascript operation
+                
                 FB.XFBML.parse();
             
             }
