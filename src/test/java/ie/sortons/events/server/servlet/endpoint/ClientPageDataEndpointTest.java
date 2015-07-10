@@ -1,6 +1,6 @@
 package ie.sortons.events.server.servlet.endpoint;
 
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+import ie.sortons.events.shared.SourcePage;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -13,7 +13,7 @@ public class ClientPageDataEndpointTest {
 	
 		ClientPageDataEndpoint cpde = new ClientPageDataEndpoint();
 	
-		FqlPage fbPage = cpde.getPageFromId(Long.parseLong("176727859052209"));
+		SourcePage fbPage = cpde.getPageFromId(Long.parseLong("176727859052209"));
 		
 		System.out.println(fbPage.getName());
 	

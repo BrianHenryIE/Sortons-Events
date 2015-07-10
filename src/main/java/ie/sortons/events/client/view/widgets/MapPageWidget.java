@@ -1,6 +1,6 @@
 package ie.sortons.events.client.view.widgets;
 
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+import ie.sortons.events.shared.SourcePage;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.uibinder.client.UiBinder;
@@ -31,7 +31,7 @@ public class MapPageWidget extends Composite {
 	@UiField
 	Label about;
 
-	public MapPageWidget(FqlPage page) {
+	public MapPageWidget(SourcePage page) {
 		initWidget(uiBinder.createAndBindUi(this));
 
 		picture.setUrl("//graph.facebook.com/" + page.getPageId() + "/picture?type=square");

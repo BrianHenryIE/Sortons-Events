@@ -5,6 +5,7 @@ import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.ClientPageDataResponse;
 import ie.sortons.events.shared.Config;
 import ie.sortons.events.shared.PageList;
+import ie.sortons.events.shared.SourcePage;
 import ie.sortons.gwtfbplus.server.SimpleStringCipher;
 import ie.sortons.gwtfbplus.shared.domain.FbResponse;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
@@ -75,7 +76,7 @@ public class ClientPageDataEndpoint {
 		// When the customer has just signed up
 		if (clientPageData == null) {
 
-			FqlPage clientPageDetails = getPageFromId(clientPageId);
+			SourcePage clientPageDetails = getPageFromId(clientPageId);
 
 			System.out.println("Added to new page: " + clientPageDetails.getName() + " " + clientPageDetails.getPageUrl() + " " + clientPageId);
 
@@ -91,7 +92,7 @@ public class ClientPageDataEndpoint {
 
 		} else {
 
-			System.out.println(clientPageData.getClientPage().getName());
+			System.out.println(clientPageData.getName());
 			
 			return clientPageData;
 
@@ -99,14 +100,14 @@ public class ClientPageDataEndpoint {
 	}
 
 	@ApiMethod(name = "clientdata.addPage", httpMethod = "post")
-	public FqlPage addPage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, FqlPage jsonPage) {
+	public SourcePage addPage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
 		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
 			return null;
 		// TODO return an error
 
 		log.info("addPage: " + jsonPage.getName() + " " + jsonPage.getPageId());
 
-		FqlPage newPage = getPageFromId(jsonPage.getPageId());
+		SourcePage newPage = getPageFromId(jsonPage.getPageId());
 
 		log.info("fbdetails 2: " + newPage.getName() + " " + newPage.getPageId());
 
@@ -136,7 +137,7 @@ public class ClientPageDataEndpoint {
 	}
 
 	@ApiMethod(name = "clientdata.addPagesList", httpMethod = "post")
-	public List<FqlPage> addPagesList(HttpServletRequest req, @Named("clientpageid") Long clientPageId, PageList pagesList) {
+	public List<SourcePage> addPagesList(HttpServletRequest req, @Named("clientpageid") Long clientPageId, PageList pagesList) {
 		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
 			return null;
 		// TODO return an error
@@ -148,10 +149,10 @@ public class ClientPageDataEndpoint {
 
 		ClientPageData clientPageData = getClientPageData(clientPageId);
 
-		List<FqlPage> newPages = new ArrayList<FqlPage>();
+		List<SourcePage> newPages = new ArrayList<SourcePage>();
 
 		for (String pageid : pagesList.getList()) {
-			FqlPage newPage = getPageFromId(Long.parseLong(pageid));
+			SourcePage newPage = getPageFromId(Long.parseLong(pageid));
 			if (clientPageData.addPage(newPage)) {
 				newPages.add(newPage);
 				log.info("page added: " + newPage.getName() + " " + newPage.getPageId());
@@ -170,14 +171,14 @@ public class ClientPageDataEndpoint {
 	}
 
 	@ApiMethod(name = "clientdata.ignorePage", httpMethod = "post")
-	public FqlPage ignorePage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, FqlPage jsonPage) {
+	public SourcePage ignorePage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
 		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
 			return null;
 		// TODO return an error
 
 		ClientPageData clientPageData = getClientPageData(clientPageId);
 
-		FqlPage newPage;
+		SourcePage newPage;
 		if (jsonPage.getName() == "" || jsonPage.getPageUrl() == "") {
 			newPage = getPageFromId(jsonPage.getPageId());
 		} else {
@@ -203,7 +204,7 @@ public class ClientPageDataEndpoint {
 		return new ClientPageDataResponse(clients);
 	}
 
-	FqlPage getPageFromId(Long pageId) {
+	SourcePage getPageFromId(Long pageId) {
 		// FQL call pieces
 		String fqlcallstub = "https://graph.facebook.com/fql?q=";
 		String fql = "SELECT page_id, name, page_url, location, about, phone FROM page WHERE page_id = " + pageId;
@@ -241,7 +242,7 @@ public class ClientPageDataEndpoint {
 		FbResponse<FqlPage> pages = gson.fromJson(json, fooType);
 
 		if (pages.getError() == null && pages.getData() != null && pages.getData().size() > 0)
-			return pages.getData().get(0);
+			return new SourcePage(pages.getData().get(0));
 		else
 			return null;
 

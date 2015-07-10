@@ -19,13 +19,13 @@ public class CpdAdminItem extends Composite {
 	interface CpdAdminItemUiBinder extends UiBinder<Widget, CpdAdminItem> {
 	}
 
-	private ClientPageData client;
+	//private ClientPageData client;
 
 	public CpdAdminItem(ClientPageData client) {
-		this.client = client;
+		//this.client = client;
 		initWidget(uiBinder.createAndBindUi(this));
-		title.setText(client.getClientPage().getName());
-		title.setHref(client.getClientPage().getPageUrl());
+		title.setText(client.getName());
+		title.setHref(client.getPageUrl());
 	}
 
 	@UiField

@@ -5,11 +5,10 @@ import ie.sortons.events.client.appevent.LoginAuthResponseEvent;
 import ie.sortons.events.client.appevent.PermissionsEvent;
 import ie.sortons.events.client.appevent.ResponseErrorEvent;
 import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.FqlPageSearchable;
+import ie.sortons.events.shared.SourcePage;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSearchable;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSingleSuggestbox;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.SelectedItemWidget;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 import ie.sortons.gwtfbplus.shared.domain.graph.GraphPage;
 
 import java.util.ArrayList;
@@ -53,7 +52,7 @@ public class PageAdminPresenter implements Presenter {
 	public interface Display {
 		FbSingleSuggestbox getSuggestBox();
 
-		void setIncludedPages(List<FqlPage> includedList);
+		void setIncludedPages(List<SourcePage> includedList);
 
 		void setPresenter(PageAdminPresenter presenter);
 
@@ -82,7 +81,7 @@ public class PageAdminPresenter implements Presenter {
 		display.getSuggestBox().addValueChangeHandler(new ValueChangeHandler<FbSearchable>() {
 			@Override
 			public void onValueChange(ValueChangeEvent<FbSearchable> event) {
-				addPage((FqlPageSearchable) event.getValue());
+				addPage((SourcePage) event.getValue());
 			}
 		});
 
@@ -123,7 +122,7 @@ public class PageAdminPresenter implements Presenter {
 	}
 
 	private void getSuggestions() {
-		rpcService.getSuggestions(new AsyncCallback<List<FqlPageSearchable>>() {
+		rpcService.getSuggestions(new AsyncCallback<List<SourcePage>>() {
 
 			@Override
 			public void onFailure(Throwable caught) {
@@ -132,11 +131,11 @@ public class PageAdminPresenter implements Presenter {
 			}
 
 			@Override
-			public void onSuccess(List<FqlPageSearchable> result) {
+			public void onSuccess(List<SourcePage> result) {
 				System.out.println("setsuggestions");
 
 				List<FbSearchable> pages = new ArrayList<FbSearchable>();
-				for (FqlPageSearchable p : result) {
+				for (SourcePage p : result) {
 					pages.add((FbSearchable) p);
 				}
 
@@ -189,12 +188,7 @@ public class PageAdminPresenter implements Presenter {
 
 					System.out.println("pageDetails.getName() " + pageDetails.getName());
 
-					FqlPageSearchable newPage = new FqlPageSearchable();
-
-					// TODO Worst case of OO in the project
-					newPage.name = pageDetails.getName();
-					newPage.page_url = pageDetails.getLink();
-					newPage.page_id = pageDetails.getId();
+					SourcePage newPage = new SourcePage(pageDetails.getName(), pageDetails.getId(), pageDetails.getLink());
 
 					// TODO
 					// This should only empty when it's successful
@@ -217,7 +211,7 @@ public class PageAdminPresenter implements Presenter {
 			// TODO
 			// Waiting indicator
 
-			rpcService.addPagesList(textEntered, new AsyncCallback<List<FqlPageSearchable>>() {
+			rpcService.addPagesList(textEntered, new AsyncCallback<List<SourcePage>>() {
 
 				@Override
 				public void onFailure(Throwable caught) {
@@ -226,11 +220,11 @@ public class PageAdminPresenter implements Presenter {
 				}
 
 				@Override
-				public void onSuccess(List<FqlPageSearchable> result) {
+				public void onSuccess(List<SourcePage> result) {
 
 					System.out.println("pages added: " + result.size());
 
-					for (FqlPageSearchable page : result) {
+					for (SourcePage page : result) {
 						rpcService.getClientPageData().addPage(page);
 
 						display.getSuggestBox().removeFromOracle(page);
@@ -250,7 +244,7 @@ public class PageAdminPresenter implements Presenter {
 
 	}
 
-	public void addPage(final FqlPageSearchable newPage) {
+	public void addPage(final SourcePage newPage) {
 
 		System.out.println("client: adminPresenter addPage");
 		System.out.println(serializer.serialize(newPage));
@@ -268,7 +262,7 @@ public class PageAdminPresenter implements Presenter {
 					System.out.println("client: adminPresenter addPage response");
 					System.out.println(response.getText());
 
-					FqlPageSearchable page = (FqlPageSearchable) serializer.deSerialize(response.getText(),
+					SourcePage page = (SourcePage) serializer.deSerialize(response.getText(),
 							"ie.sortons.events.shared.FqlPageSearchable");
 
 					// TODO return a real error message
@@ -301,7 +295,7 @@ public class PageAdminPresenter implements Presenter {
 		});
 	}
 
-	public void removePage(FqlPage page) {
+	public void removePage(SourcePage page) {
 
 		rpcService.removePage(page, new RequestCallback() {
 			public void onError(Request request, Throwable exception) {
@@ -311,7 +305,7 @@ public class PageAdminPresenter implements Presenter {
 			public void onResponseReceived(Request request, Response response) {
 				if (200 == response.getStatusCode()) {
 
-					FqlPage page = (FqlPage) serializer.deSerialize(response.getText(), "ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
+					SourcePage page = (SourcePage) serializer.deSerialize(response.getText(), "ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
 
 					rpcService.getClientPageData().removePage(page);
 

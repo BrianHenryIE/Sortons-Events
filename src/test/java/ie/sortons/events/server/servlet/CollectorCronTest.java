@@ -78,7 +78,7 @@ public class CollectorCronTest {
 		assertEquals(1, result.size());
 
 		// Testing eid
-		assertEquals("173054636229456", result.get("173054636229456").getFbEvent().getEid());
+		assertEquals("173054636229456", result.get("173054636229456").getEid());
 		// Testing single sourceList
 		assertEquals(clientPageData.getClientPageId(), result.get("173054636229456").getSourceLists().get(0));
 

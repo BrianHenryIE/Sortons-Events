@@ -2,11 +2,11 @@ package ie.sortons.events.client.view;
 
 import ie.sortons.events.client.presenter.PageAdminPresenter;
 import ie.sortons.events.client.view.widgets.AdminPageItem;
+import ie.sortons.events.shared.SourcePage;
 import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSearchable;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSingleSuggestbox;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.SelectedLoading;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,19 +63,20 @@ public class PageAdminView extends Composite implements PageAdminPresenter.Displ
 		return closeButton;
 	}
 	
-	@Override
-	public void setIncludedPages(List<FqlPage> includedPagesList) {
-		includedPagesPanel.clear();
-		for (FqlPage page : includedPagesList) {
-			AdminPageItem api = new AdminPageItem(page, presenter);
-			includedPagesPanel.add(api);
-		}
-		includedCount.setText("(" + includedPagesList.size() + ")");
-	}
 
 	@Override
 	public FbSingleSuggestbox getSuggestBox() {
 		return suggestBox;
+	}
+
+	@Override
+	public void setIncludedPages(List<SourcePage> includedPagesList) {
+		includedPagesPanel.clear();
+		for (SourcePage page : includedPagesList) {
+			AdminPageItem api = new AdminPageItem(page, presenter);
+			includedPagesPanel.add(api);
+		}
+		includedCount.setText("(" + includedPagesList.size() + ")");
 	}
 
 }

@@ -2,7 +2,7 @@ package ie.sortons.events.client.presenter;
 
 import ie.sortons.events.client.RpcService;
 import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+import ie.sortons.events.shared.SourcePage;
 
 import java.util.List;
 
@@ -14,7 +14,7 @@ public class DirectoryPresenter implements Presenter {
 
 	public interface Display {
 
-		void setPages(List<FqlPage> pages);
+		void setPages(List<SourcePage> pages);
 
 		Widget asWidget();
 	}

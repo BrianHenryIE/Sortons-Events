@@ -1,6 +1,5 @@
-	package ie.sortons.events.shared;
+package ie.sortons.events.shared;
 
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +18,60 @@ import com.kfuntak.gwt.json.serialization.client.SkipNullSerialization;
 @Cache @Entity @SkipNullSerialization
 public class ClientPageData implements JsonSerializable {
 
+	@GwtIncompatible @ApiResourceProperty(name = "class")
+	public final String classname = "ie.sortons.events.shared.ClientPageData";
+
+	
+	// this will be either a page id or an app id or an interest list??
+	@Id
+	@Index
+	private Long clientPageId;
+
+	private SourcePage clientPage;
+
+	@GwtIncompatible @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+	private List<Long> pageAdmins = new ArrayList<Long>();
+	
+	private List<SourcePage> includedPages = new ArrayList<SourcePage>();
+
+	@Ignore
+	private List<SourcePage> suggestedPages = new ArrayList<SourcePage>();
+
+	
+	public ClientPageData() {
+	}
+
+	public ClientPageData(SourcePage clientPageDetails) {
+		this.clientPage = clientPageDetails;
+		this.clientPageId = clientPageDetails.getPageId();
+		addPage(clientPageDetails);
+	}
+
+
+	/**
+	 * @param pageAdmins the pageAdmins to set
+	 */
+	@GwtIncompatible
+	public boolean addPageAdmin(Long admin) {
+		return pageAdmins.add(admin);
+	}
+	
+	public Long getClientPageId() {
+		return this.clientPageId;
+	}
+
+	public List<SourcePage> getIncludedPages() {
+		// TODO why is this a new ArrayList?
+		return new ArrayList<SourcePage>(includedPages);
+	}
+
+	public String getName(){
+		return clientPage.getName();
+	}
+	
+	public String getPageUrl() {
+		return clientPage.getPageUrl();
+	}
 	
 	/**
 	 * @return the pageAdmins
@@ -28,62 +81,15 @@ public class ClientPageData implements JsonSerializable {
 		return pageAdmins;
 	}
 
-	/**
-	 * @param pageAdmins the pageAdmins to set
-	 */
-	@GwtIncompatible
-	public boolean addPageAdmin(Long admin) {
-		return pageAdmins.add(admin);
-	}
-
-	@GwtIncompatible @ApiResourceProperty(name = "class")
-	public final String classname = "ie.sortons.events.shared.ClientPageData";
-
-	// this will be either a page id or an app id or an interest list??
-	@Id
-	@Index
-	public Long clientPageId;
-
-	public FqlPage clientPage;
-
-	@GwtIncompatible @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-	public List<Long> pageAdmins = new ArrayList<Long>();
-	
-	public List<FqlPage> includedPages = new ArrayList<FqlPage>();
-
-	@Ignore
-	public List<FqlPageSearchable> suggestedPages = new ArrayList<FqlPageSearchable>();
-
-	public ClientPageData() {
-	}
-
-	public ClientPageData(FqlPage clientPageDetails) {
-		this.clientPage = clientPageDetails;
-		this.clientPageId = clientPageDetails.getPageId();
-		addPage(clientPageDetails);
-	}
-
-	public Long getClientPageId() {
-		return this.clientPageId;
-	}
-
-	public FqlPage getClientPage() {
-		return this.clientPage;
-	}
-
-	public List<FqlPage> getIncludedPages() {
-		return new ArrayList<FqlPage>(includedPages);
-	}
-
-	public void setSuggestedPages(List<FqlPageSearchable> suggestedPages) {
+	public void setSuggestedPages(List<SourcePage> suggestedPages) {
 		this.suggestedPages = suggestedPages;
 	}
 
-	public List<FqlPageSearchable> getSuggestedPages() {
+	public List<SourcePage> getSuggestedPages() {
 		return suggestedPages;
 	}
 
-	public boolean addPage(FqlPage page) {
+	public boolean addPage(SourcePage page) {
 		boolean added = false;
 		if (page != null && !includedPages.contains(page)) {
 			includedPages.add(page);
@@ -93,7 +99,7 @@ public class ClientPageData implements JsonSerializable {
 	}
 
 	// TODO
-	public boolean removePage(FqlPage page) {
+	public boolean removePage(SourcePage page) {
 
 		boolean excluded = false;
 		if (includedPages.contains(page)) {
@@ -104,17 +110,19 @@ public class ClientPageData implements JsonSerializable {
 		return excluded;
 	}
 
-	public FqlPage getPageById(Long pageId) {
-		FqlPage thePage = null;
-		for (FqlPage page : includedPages)
+	public SourcePage getPageById(Long pageId) {
+		SourcePage thePage = null;
+		for (SourcePage page : includedPages)
 			if (page.getPageId().equals(pageId))
 				thePage = page;
 		return thePage;
 	}
 
+	// Ignored because the generated data will never be accessed by the getter
+	@ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
 	public List<Long> getIncludedPageIds() {
 		List<Long> pageIds = new ArrayList<Long>();
-		for (FqlPage page : includedPages)
+		for (SourcePage page : includedPages)
 			if (page != null)
 				pageIds.add(page.getPageId());
 		return pageIds;

@@ -2,15 +2,13 @@ package ie.sortons.events.client;
 
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.ClientPageDataResponse;
-import ie.sortons.events.shared.FqlPageSearchable;
 import ie.sortons.events.shared.PageList;
 import ie.sortons.events.shared.PagesListResponse;
 import ie.sortons.events.shared.RecentPostsResponse;
+import ie.sortons.events.shared.SourcePage;
 import ie.sortons.events.shared.WallPost;
 import ie.sortons.gwtfbplus.client.api.FBCore;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlEventMember;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import java.util.ArrayList;
@@ -174,7 +172,7 @@ public class RpcService {
 
 	}
 
-	public void addPage(FqlPage newPage, RequestCallback callback) {
+	public void addPage(SourcePage newPage, RequestCallback callback) {
 
 		String addPageAPI = apiBase + "clientdata/v1/addPage/" + currentPageId;
 
@@ -193,7 +191,7 @@ public class RpcService {
 
 	}
 
-	public void addPagesList(String pagesList, final AsyncCallback<List<FqlPageSearchable>> asyncCallback) {
+	public void addPagesList(String pagesList, final AsyncCallback<List<SourcePage>> asyncCallback) {
 
 		System.out.println(pagesList);
 		String addPagesListAPI = apiBase + "clientdata/v1/addPagesList/" + currentPageId;
@@ -230,7 +228,7 @@ public class RpcService {
 
 	}
 
-	public void removePage(FqlPage page, RequestCallback callback) {
+	public void removePage(SourcePage page, RequestCallback callback) {
 
 		clientPageData.getSuggestedPages().remove(page);
 
@@ -254,7 +252,12 @@ public class RpcService {
 
 	private boolean alreadyFailed = false;
 
-	public void getSuggestions(final AsyncCallback<List<FqlPageSearchable>> callback) {
+	/**
+	 * Uses FQL
+	 * 
+	 * @param callback
+	 */
+	public void getSuggestions(final AsyncCallback<List<SourcePage>> callback) {
 
 		// TODO shouldn't included existing included pages
 
@@ -306,10 +309,11 @@ public class RpcService {
 				JSONObject responseJson = new JSONObject(response);
 
 				// TODO check how slow this is compared to overlays
-				HashMap<String, FqlPageSearchable> map = new HashMap<String, FqlPageSearchable>();
+				HashMap<String, FqlPage> map = new HashMap<String, FqlPage>();
 				try {
-					map = (HashMap<String, FqlPageSearchable>) hashMapSerializer.deSerialize(responseJson,
-							"ie.sortons.events.shared.FqlPageSearchable");
+					// TODO stop using a string here
+					map = (HashMap<String, FqlPage>) hashMapSerializer.deSerialize(responseJson,
+							"ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
 				} catch (Exception e) {
 
 					System.out.println(responseJson);
@@ -333,10 +337,10 @@ public class RpcService {
 
 				}
 				System.out.println("process");
-				ArrayList<FqlPageSearchable> pages = new ArrayList<FqlPageSearchable>();
-				for (FqlPageSearchable page : map.values()) {
+				ArrayList<SourcePage> pages = new ArrayList<SourcePage>();
+				for (FqlPage page : map.values()) {
 					if (!clientPageData.getIncludedPageIds().contains(page.getPageId()))
-						pages.add(page);
+						pages.add(new SourcePage(page));
 				}
 
 				clientPageData.setSuggestedPages(pages);
@@ -401,118 +405,5 @@ public class RpcService {
 			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :ignorePage()");
 		}
 	}
-
-	public void getMyEvents(final AsyncCallback<List<FqlEvent>> asyncCallback) {
-
-		String fql = "SELECT all_members_count, attending_count, declined_count, description, eid, end_time, has_profile_pic, hide_guest_list, host, is_date_only, location, name, not_replied_count, pic, pic_big, pic_cover, pic_small, pic_square, privacy, start_time, unsure_count, venue FROM event WHERE creator = me()";
-
-		System.out.println(fql);
-
-		String method = "fql.query";
-		JSONObject query = new JSONObject();
-		query.put("method", new JSONString(method));
-		query.put("query", new JSONString(fql));
-
-		System.out.println("fire fql");
-
-		fbCore.api(query.getJavaScriptObject(), new AsyncCallback<JavaScriptObject>() {
-			@SuppressWarnings("unchecked")
-			public void onSuccess(JavaScriptObject response) {
-
-				HashMapSerializer hashMapSerializer = (HashMapSerializer) GWT.create(HashMapSerializer.class);
-
-				System.out.println("deserialize");
-
-				JSONObject responseJson = new JSONObject(response);
-
-				// TODO check how slow this is compared to overlays
-				HashMap<String, FqlEvent> map = new HashMap<String, FqlEvent>();
-				try {
-					map = (HashMap<String, FqlEvent>) hashMapSerializer.deSerialize(responseJson,
-							"ie.sortons.events.shared.FqlPageSearchable");
-				} catch (Exception e) {
-
-					System.out.println("failed");
-					System.out.println(responseJson);
-
-				}
-				System.out.println("process");
-				ArrayList<FqlEvent> events = new ArrayList<FqlEvent>();
-
-				for (FqlEvent e : map.values())
-					events.add(e);
-
-				System.out.println("events.size() " + events.size());
-
-				asyncCallback.onSuccess(events);
-
-			}
-
-			@Override
-			public void onFailure(Throwable caught) {
-				// TODO Auto-generated method stub
-			}
-		});
-
-	}
-
-	public void getInvitees(List<FqlEvent> sourceEvents, final AsyncCallback<List<FqlEventMember>> asyncCallback) {
-
-		List<String >sourceEids = new ArrayList<String>();
-		for(FqlEvent e : sourceEvents)
-			sourceEids.add(Long.toString(e.getEid()));
-		
-		String fql = "SELECT eid, uid, inviter, rsvp_status FROM event_member WHERE eid IN ("+ Joiner.on(",").join(sourceEids)+")";
-
-		System.out.println(fql);
-
-		String method = "fql.query";
-		JSONObject query = new JSONObject();
-		query.put("method", new JSONString(method));
-		query.put("query", new JSONString(fql));
-
-		System.out.println("fire fql");
-
-		fbCore.api(query.getJavaScriptObject(), new AsyncCallback<JavaScriptObject>() {
-			@SuppressWarnings("unchecked")
-			public void onSuccess(JavaScriptObject response) {
-
-				HashMapSerializer hashMapSerializer = (HashMapSerializer) GWT.create(HashMapSerializer.class);
-
-				System.out.println("deserialize");
-
-				JSONObject responseJson = new JSONObject(response);
-
-				// TODO check how slow this is compared to overlays
-				HashMap<String, FqlEventMember> map = new HashMap<String, FqlEventMember>();
-				try {
-					map = (HashMap<String, FqlEventMember>) hashMapSerializer.deSerialize(responseJson,
-							"ie.sortons.events.shared.FqlPageSearchable");
-				} catch (Exception e) {
-
-					System.out.println("failed");
-					System.out.println(responseJson);
-
-				}
-				System.out.println("process");
-				ArrayList<FqlEventMember> events = new ArrayList<FqlEventMember>();
-
-				for (FqlEventMember e : map.values())
-					events.add(e);
-
-				System.out.println("events.size() " + events.size());
-
-				asyncCallback.onSuccess(events);
-
-			}
-
-			@Override
-			public void onFailure(Throwable caught) {
-				// TODO Auto-generated method stub
-			}
-		});
-
-	}
-
 
 }

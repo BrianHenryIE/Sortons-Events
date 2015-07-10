@@ -26,6 +26,10 @@ public class SortonsAdminView extends Composite implements Display {
 	FlowPanel cpdList;
 	private SortonsAdminPresenter presenter;
 	
+	public SortonsAdminPresenter getPresenter() {
+		return presenter;
+	}
+
 	public SortonsAdminView() {
 		initWidget(uiBinder.createAndBindUi(this));
 	}

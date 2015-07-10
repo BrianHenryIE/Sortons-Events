@@ -11,9 +11,9 @@ import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
  */
 public class PagesListResponse implements JsonSerializable {
 
-	public List<FqlPageSearchable> items;
+	public List<SourcePage> items;
 
-	public List<FqlPageSearchable> getPages() {
+	public List<SourcePage> getPages() {
 		return items;
 	}
 

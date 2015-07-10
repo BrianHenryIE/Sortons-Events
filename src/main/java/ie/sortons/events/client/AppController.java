@@ -9,7 +9,6 @@ import ie.sortons.events.client.presenter.RecentPostsPresenter;
 import ie.sortons.events.client.presenter.SortonsAdminPresenter;
 import ie.sortons.events.client.resources.Resources;
 import ie.sortons.events.client.view.DirectoryView;
-import ie.sortons.events.client.view.MyEventsView;
 import ie.sortons.events.client.view.PageAdminView;
 import ie.sortons.events.client.view.RecentPostsView;
 import ie.sortons.events.client.view.SortonsAdminView;
@@ -19,10 +18,6 @@ import ie.sortons.gwtfbplus.client.overlay.AuthResponse;
 import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
 import ie.sortons.gwtfbplus.client.widgets.popups.ClickPopup;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlEventMember;
-
-import java.util.List;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
@@ -223,37 +218,7 @@ public class AppController {
 
 				container.add(dPanel);
 				
-			}else if (Window.Location.getHref().contains("myevents") || (sr.getAppData() != null && sr.getAppData().contains("myevents"))) {
-
-					System.out.println("myevents");
-
-					final MyEventsView mev = new MyEventsView();
-					rpcService.getMyEvents(new AsyncCallback<List<FqlEvent>>(){
-						@Override
-						public void onFailure(Throwable caught) {}
-
-						@Override
-						public void onSuccess(List<FqlEvent> events) {
-							mev.setEvents(events);
-							
-							rpcService.getInvitees(events, new AsyncCallback<List<FqlEventMember>>(){
-								@Override
-								public void onFailure(Throwable caught) {}
-
-								@Override
-								public void onSuccess(List<FqlEventMember> events) {
-									mev.setInvitees(events);
-									
-									
-								}});
-							
-						}});
-
-					container.add(mev);
-
 			} else {
-
-			
 
 				PageEventsPresenter pep = new PageEventsPresenter(rpcService);
 

@@ -1,11 +1,12 @@
 package ie.sortons.events.client.view.widgets;
 
 import ie.sortons.events.client.presenter.PageAdminPresenter;
+import ie.sortons.events.shared.SourcePage;
 import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
 import ie.sortons.gwtfbplus.client.widgets.Link;
 import ie.sortons.gwtfbplus.client.widgets.buttons.X1Button;
 import ie.sortons.gwtfbplus.client.widgets.popups.ToolTipPanel;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.Display;
@@ -43,11 +44,11 @@ public class AdminPageItem extends Composite {
 	@UiField
 	Label location;
 
-	private FqlPage page;
+	private SourcePage page;
 
 	// private AdminPresenter presenter;
 
-	public AdminPageItem(final FqlPage page, final PageAdminPresenter presenter) {
+	public AdminPageItem(final SourcePage page, final PageAdminPresenter presenter) {
 		
 		initWidget(uiBinder.createAndBindUi(this));
 
@@ -63,8 +64,9 @@ public class AdminPageItem extends Composite {
 		name.setHref(page.getPageUrl());
 		name.setTarget("_blank");
 
-		if (page.getLocation() != null)
-			location.setText(page.getLocation().getFriendlyString());
+		// TODO this if can probably go
+		if (page.getFriendlyLocationString() != null)
+			location.setText(page.getFriendlyLocationString());
 
 		ToolTipPanel pageImageToolTip = new ToolTipPanel(page.getName(), pageImage);
 		pageImageToolTip.getElement().getStyle().setDisplay(Display.INLINE_BLOCK);
@@ -87,7 +89,7 @@ public class AdminPageItem extends Composite {
 		ignoreButton.setVisible(false);
 	}
 
-	public FqlPage getPage() {
+	public SourcePage getPage() {
 		return page;
 	}
 

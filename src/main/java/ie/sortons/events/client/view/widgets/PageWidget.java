@@ -1,6 +1,6 @@
 package ie.sortons.events.client.view.widgets;
 
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+import ie.sortons.events.shared.SourcePage;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.uibinder.client.UiBinder;
@@ -34,17 +34,17 @@ public class PageWidget extends Composite {
 	@UiField
 	Label contact;
 
-	public PageWidget(FqlPage page) {
+	public PageWidget(SourcePage page) {
 		initWidget(uiBinder.createAndBindUi(this));
 
 		picture.setUrl("//graph.facebook.com/" + page.getPageId() + "/picture?type=square");
 
 		about.setText(page.getAbout());
 
-		if (page.getLocation() != null) {
+		if (page.getFriendlyLocationString() != null) {
 			String contactString = "";
 
-			String address = page.getLocation().getFriendlyString();
+			String address = page.getFriendlyLocationString();
 			
 			if(address.matches("Dublin, \\d{1,2}"))
 				address = address.replace("Dublin, ", "Dublin ");

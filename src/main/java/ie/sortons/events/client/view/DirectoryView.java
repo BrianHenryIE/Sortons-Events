@@ -11,9 +11,9 @@ import ie.brianhenry.gwtbingmaps.client.api.ViewOptions;
 import ie.sortons.events.client.presenter.DirectoryPresenter;
 import ie.sortons.events.client.view.widgets.MapPageWidget;
 import ie.sortons.events.client.view.widgets.PageWidget;
+import ie.sortons.events.shared.SourcePage;
 import ie.sortons.gwtfbplus.client.api.Canvas;
 import ie.sortons.gwtfbplus.client.resources.map.MapResources;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import java.util.List;
 
@@ -91,14 +91,13 @@ public class DirectoryView extends Composite implements DirectoryPresenter.Displ
 	}
 
 	@Override
-	public void setPages(List<FqlPage> pages) {
-
+	public void setPages(List<SourcePage> pages) {
 		int count = 0;
 
-		for (FqlPage page : pages) {
+		for (SourcePage page : pages) {
 
-			if (page.getLocation() != null && page.getLocation().getLatitude() != null && page.getLocation().getLongitude() != null) {
-				Location location = Location.newLocation(page.getLocation().getLatitude(), page.getLocation().getLongitude());
+			if (page.getLatitude() != null && page.getLongitude() != null) {
+				Location location = Location.newLocation(page.getLatitude(), page.getLongitude());
 
 				MapPageWidget item = new MapPageWidget(page);
 				InfoboxOptions infoboxOptions = InfoboxOptions.getInfoboxOptions(400, 100, null, true, 0, true, false, null, null, item.getElement()
@@ -127,5 +126,6 @@ public class DirectoryView extends Composite implements DirectoryPresenter.Displ
 			}
 		};
 		timer.schedule(1000);
+		
 	}
 }
