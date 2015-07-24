@@ -148,6 +148,8 @@
 				<artifactId>gwt-maven-plugin</artifactId>
 				<version>${gwt.version}</version>
 				<configuration>
+				<bindAddress>dev.sortons.ie</bindAddress>
+					<port>8080</port>
 					<runTarget>/</runTarget>
 					<optimizationLevel>9</optimizationLevel>
 					<style>DETAILED</style>
@@ -206,6 +208,7 @@
 				<artifactId>appengine-maven-plugin</artifactId>
 				<version>${gae.version}</version>
 				<configuration>
+
 					<enableJarClasses>false</enableJarClasses>
 					<!-- Comment in the below snippet to bind to all IPs instead of just 
 						localhost -->

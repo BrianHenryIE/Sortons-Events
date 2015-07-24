@@ -19,6 +19,8 @@ import ie.sortons.gwtfbplus.client.resources.GwtFbPlusResources;
 import ie.sortons.gwtfbplus.client.widgets.popups.ClickPopup;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
 
+import java.util.logging.Logger;
+
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -38,10 +40,12 @@ import com.kfuntak.gwt.json.serialization.client.Serializer;
 
 public class AppController {
 
+	private static final Logger log = Logger.getLogger(AppController.class.getName());
+
 	// Courtesy of gwtfb.com
 	private FBCore fbCore = GWT.create(FBCore.class);
 
-	public String APPID = Config.getAppID();
+	public String APPID = Config.getAppIDClient();
 	private boolean status = true;
 	private boolean xfbml = true;
 	private boolean cookie = true;
@@ -66,6 +70,8 @@ public class AppController {
 		this.eventBus = eventBus;
 		eventBinder.bindEventHandlers(this, eventBus);
 
+		log.info("APPCONTROLLER");
+		
 		resources.facebookStyles().ensureInjected();
 		resources.css().ensureInjected();
 

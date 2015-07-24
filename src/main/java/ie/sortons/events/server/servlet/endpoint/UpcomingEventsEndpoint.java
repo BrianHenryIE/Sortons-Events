@@ -9,41 +9,46 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.inject.Named;
 
-import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.Api;
-import com.google.api.server.spi.config.ApiAuth;
 import com.googlecode.objectify.ObjectifyService;
 
 @Api(name = "upcomingEvents", version = "v1")
-@ApiAuth(allowCookieAuth = AnnotationBoolean.TRUE)
-
 public class UpcomingEventsEndpoint {
+
+	private static final Logger log = Logger.getLogger(UpcomingEventsEndpoint.class.getName());
 
 	static {
 		ObjectifyService.register(DiscoveredEvent.class);
 	}
 
-	
 	public DiscoveredEventsResponse getList(@Named("id") Long clientPageId) {
-		
+
 		List<DiscoveredEvent> upcomingEvents = new ArrayList<DiscoveredEvent>();
-		
+
 		Date now = new Date();
 
 		DiscoveredEventsResponse dto = new DiscoveredEventsResponse();
 
-		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("sourceLists", clientPageId).filter("fbEvent.start_time >", getHoursAgoOrToday(12)).order("fbEvent.start_time").list();
+		log.info("Searching for events for " + clientPageId);
+
+		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("sourceLists", clientPageId)
+				.filter("fbEvent.start_time >", getHoursAgoOrToday(12)).order("fbEvent.start_time").list();
 		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
 
 		for (DiscoveredEvent datastoreEvent : dsEvents) {
+
+			log.info("EVENT: " + datastoreEvent.getName());
 
 			if ((datastoreEvent.getEndTime() == null) || (datastoreEvent.getEndTime().after(now))) {
 
 				DiscoveredEvent de = new DiscoveredEvent(datastoreEvent, datastoreEvent.getSourcePages());
 				de.setSourceListsNull();
+
+				// TODO Keep events for different lists as separate entities
 				de.setSourcePagesToClientOnly(clientPageData);
 
 				upcomingEvents.add(de);
@@ -55,7 +60,7 @@ public class UpcomingEventsEndpoint {
 		return dto;
 		// return upcomingEvents;
 	}
-	
+
 	private Date getHoursAgoOrToday(int hours) {
 
 		Calendar calvar = Calendar.getInstance();

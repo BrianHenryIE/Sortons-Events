@@ -9,3 +9,4 @@ WEB-INF
 *.devmode.js
 *.nocache.js
 /target/
+.externalToolBuilders

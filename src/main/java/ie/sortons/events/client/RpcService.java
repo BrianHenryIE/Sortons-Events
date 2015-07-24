@@ -2,6 +2,9 @@ package ie.sortons.events.client;
 
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.ClientPageDataResponse;
+import ie.sortons.events.shared.Config;
+import ie.sortons.events.shared.DiscoveredEvent;
+import ie.sortons.events.shared.DiscoveredEventsResponse;
 import ie.sortons.events.shared.PageList;
 import ie.sortons.events.shared.PagesListResponse;
 import ie.sortons.events.shared.RecentPostsResponse;
@@ -30,6 +33,7 @@ import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
+import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.Random;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -41,14 +45,12 @@ public class RpcService {
 	// When it comes time to refactor:
 	// https://code.google.com/p/google-apis-client-generator/wiki/TableOfContents
 
+	private static final Logger log = Logger.getLogger(RpcService.class.getName());
+	
 	Serializer serializer = (Serializer) GWT.create(Serializer.class);
 
 	// Must be https for cloud endpoints
-	private String apiBase = "https://sortonsevents.appspot.com/_ah/api/";
-//TODO
-	
-	// private String apiBase = "https://dev.sortons.ie/appengine/_ah/api/";
-
+	private String apiBase = Config.getApiBase();
 	
 	private Long currentPageId;
 
@@ -76,8 +78,10 @@ public class RpcService {
 					.getPage().getId());
 	}
 
-	public void getEventsForPage(RequestCallback callback) {
+	public void getEventsForPage(final AsyncCallback<List<DiscoveredEvent>> callback) {
 
+		log.info("\n\ngetEventsForPage()");
+		
 		// Must be https for cloud endpoints
 		String jsonUrl = apiBase + "upcomingEvents/v1/discoveredeventsresponse/";
 
@@ -88,8 +92,29 @@ public class RpcService {
 		RequestBuilder builder = new RequestBuilder(RequestBuilder.GET, url);
 
 		try {
-			@SuppressWarnings("unused")
-			Request request = builder.sendRequest(null, callback);
+			builder.sendRequest(null, new RequestCallback() {
+				public void onError(Request request, Throwable exception) {
+					System.out.println("Couldn't retrieve JSON");
+				}
+
+				public void onResponseReceived(Request request, Response response) {
+					if (200 == response.getStatusCode()) {
+
+						log.info("about to deserialize");;
+						
+						DiscoveredEventsResponse deResponse = (DiscoveredEventsResponse) serializer.deSerialize(response.getText(),
+								"ie.sortons.events.shared.DiscoveredEventsResponse");
+
+						log.info("deserialized");
+						
+						callback.onSuccess(deResponse.getData());
+					} else {
+						System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") PageEventsPresenter.getEvents");
+						// System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
+						// System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
+					}
+				}
+			});
 		} catch (RequestException e) {
 			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :getEventsForPage()");
 		}
@@ -142,8 +167,7 @@ public class RpcService {
 		RequestBuilder builder = new RequestBuilder(RequestBuilder.GET, url);
 
 		try {
-			@SuppressWarnings("unused")
-			Request request = builder.sendRequest(null, new RequestCallback() {
+			builder.sendRequest(null, new RequestCallback() {
 				public void onError(Request request, Throwable exception) {
 					System.out.println("Couldn't retrieve JSON getClientPageData");
 				}
@@ -172,19 +196,77 @@ public class RpcService {
 
 	}
 
-	public void addPage(SourcePage newPage, RequestCallback callback) {
+	
+	public void addPage(SourcePage newPage, final AsyncCallback<SourcePage> callback) {
 
+		log.info("addPage");		
+		
 		String addPageAPI = apiBase + "clientdata/v1/addPage/" + currentPageId;
 
 		RequestBuilder addPageBuilder = new RequestBuilder(RequestBuilder.POST, addPageAPI);
 
 		addPageBuilder.setHeader("Content-Type", "application/json");
 
+		// temporary to build request cookie header
+		StringBuilder sb = new StringBuilder();
+		
+		for(String cookieName : Cookies.getCookieNames()){
+			if (sb.length() > 0) {
+	            sb.append("; ");
+	        }
+			String value = cookieName+"="+Cookies.getCookie(cookieName);
+	        sb.append(value);
+		}
+		String cookieHeader = sb.toString();
+
+		addPageBuilder.setHeader("Cookie", cookieHeader);
+		
+		log.info("cookieHeader " + cookieHeader);
+		
 		clientPageData.getSuggestedPages().remove(newPage);
 
 		try {
-			@SuppressWarnings("unused")
-			Request request = addPageBuilder.sendRequest(serializer.serialize(newPage), callback);
+			addPageBuilder.sendRequest(serializer.serialize(newPage), new RequestCallback() {
+				public void onError(Request request, Throwable exception) {
+
+					// TODO Set the suggestbox item to xable
+					System.out.println("Couldn't retrieve JSON");
+				}
+
+				public void onResponseReceived(Request request, Response response) {
+					if (200 == response.getStatusCode()) {
+
+						
+						SourcePage page = (SourcePage) serializer.deSerialize(response.getText(),
+								"ie.sortons.events.shared.FqlPageSearchable");
+
+						// TODO return a real error message
+						if (page.getPageId() != null) {
+							clientPageData.addPage(page);
+
+							callback.onSuccess(page);
+							
+
+						} else {
+							// TODO Fire error message
+							// was page already included?
+							// or serious error?
+						}
+
+					} else {
+						System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.addPage()");
+						System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
+						System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
+
+						// TODO: How to know what type of error it is?
+//						eventBus.fireEvent(new ResponseErrorEvent(response));
+
+						
+					}
+				}
+			});
+			
+			log.info("post request cookie: " + addPageBuilder.getHeader("Cookie"));
 		} catch (RequestException e) {
 			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :addPage()");
 		}
@@ -232,20 +314,21 @@ public class RpcService {
 
 		clientPageData.getSuggestedPages().remove(page);
 
-		String removePageAPI = apiBase + "clientdata/v1/ignorePage/" + currentPageId;
+		String removePageAPI = apiBase + "clientdata/v1/removePage/" + currentPageId;
 
-		RequestBuilder ignorePageBuilder = new RequestBuilder(RequestBuilder.POST, removePageAPI);
-		ignorePageBuilder.setHeader("Content-Type", "application/json");
+		RequestBuilder removePageBuilder = new RequestBuilder(RequestBuilder.POST, removePageAPI);
+		removePageBuilder.setHeader("Content-Type", "application/json");
 
 		try {
 			@SuppressWarnings("unused")
-			Request request = ignorePageBuilder.sendRequest(serializer.serialize(page), callback);
+			Request request = removePageBuilder.sendRequest(serializer.serialize(page), callback);
 		} catch (RequestException e) {
-			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :ignorePage()");
+			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :removePage()");
 		}
 
 	}
 
+	// TODO make private to keep powers separate
 	public void graphCall(String graphPath, AsyncCallback<JavaScriptObject> callback) {
 		fbCore.api(graphPath, callback);
 	}
@@ -402,7 +485,7 @@ public class RpcService {
 				}
 			});
 		} catch (RequestException e) {
-			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :ignorePage()");
+			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :removePage()");
 		}
 	}
 

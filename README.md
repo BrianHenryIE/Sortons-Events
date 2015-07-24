@@ -14,3 +14,5 @@ And GwtBingMaps
 Run with
 mvn gwt:run-codeserver
 mvn appengine:devserver
+
+localhost:8080/_ah/admin

@@ -76,7 +76,7 @@ public class CollectorCron extends HttpServlet {
 	PrintWriter out;
 
 	// The app's fb access token. Never to be used client-side.
-	private String access_token = Config.getAppAccessToken();
+	private String access_token = Config.getAppAccessTokenServer();
 
 	// FQL call pieces
 	private String fqlcallstub = "https://graph.facebook.com/fql?q=";

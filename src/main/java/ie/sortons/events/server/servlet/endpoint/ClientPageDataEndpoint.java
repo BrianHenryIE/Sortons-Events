@@ -44,9 +44,11 @@ import com.googlecode.objectify.ObjectifyService;
  * @author brianhenry
  * 
  */
-@Api(name = "clientdata", version = "v1")
-@ApiAuth(allowCookieAuth = AnnotationBoolean.TRUE)
+@Api(name = "clientdata", version = "v1", auth = @ApiAuth(allowCookieAuth = AnnotationBoolean.TRUE))
 public class ClientPageDataEndpoint {
+
+	// TODO Should everything be returned in a generic object with a data and an
+	// error property?
 
 	private static final Logger log = Logger.getLogger(ClientPageDataEndpoint.class.getName());
 
@@ -61,25 +63,32 @@ public class ClientPageDataEndpoint {
 	 */
 	public ClientPageData getClientPageData(HttpServletRequest req, @Named("clientid") Long clientPageId) {
 		// TODO only return what's needed, i.e. no page admins
-		
-		return getClientPageData(clientPageId);
+
+		ClientPageData clientPageData = getClientPageData(clientPageId);
+
+		log.info("_ah/api/clientdata/v1/clientpagedata/ :" + clientPageData.getName());
+
+		return clientPageData;
 	}
 
 	private ClientPageData getClientPageData(Long clientPageId) {
-		// TODO
-		
-		
+
 		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
 
 		// When the customer has just signed up
+		// TODO check they're a page admin else return: no such client
 		if (clientPageData == null) {
+
+			log.info("clientPageData == null");
 
 			SourcePage clientPageDetails = getPageFromId(clientPageId);
 
-			System.out.println("Added to new page: " + clientPageDetails.getName() + " " + clientPageDetails.getPageUrl() + " " + clientPageId);
+			log.info("Added to new page: " + clientPageDetails.getName() + " " + clientPageDetails.getPageUrl() + " "
+					+ clientPageId);
 
 			// TODO
-			// This fails with a NPE if the page isn't public, i.e. test users and unpublished pages
+			// This fails with a NPE if the page isn't public, i.e. test users
+			// and unpublished pages
 
 			// Add new entry
 			ClientPageData newClient = new ClientPageData(clientPageDetails);
@@ -90,18 +99,16 @@ public class ClientPageDataEndpoint {
 
 		} else {
 
-			System.out.println(clientPageData.getName());
-			
 			return clientPageData;
-
 		}
 	}
 
 	@ApiMethod(name = "clientdata.addPage", httpMethod = "post")
 	public SourcePage addPage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
+		log.info("addPage pre auth check");
 		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
 			return null;
-		// TODO return an error
+		// TODO return an error: permission denied
 
 		log.info("addPage: " + jsonPage.getName() + " " + jsonPage.getPageId());
 
@@ -111,7 +118,6 @@ public class ClientPageDataEndpoint {
 
 		ClientPageData clientPageData = getClientPageData(clientPageId);
 
-		
 		if (clientPageData.addPage(newPage)) {
 			ofy().save().entity(clientPageData).now();
 			log.info("saved");
@@ -121,7 +127,6 @@ public class ClientPageDataEndpoint {
 		// Check for events on this page immediately
 
 		// TODO Understand and remove troubleshooting
-		
 
 		// TODO return an error, if appropriate
 		clientPageData = null;
@@ -135,15 +140,14 @@ public class ClientPageDataEndpoint {
 	}
 
 	@ApiMethod(name = "clientdata.addPagesList", httpMethod = "post")
-	public List<SourcePage> addPagesList(HttpServletRequest req, @Named("clientpageid") Long clientPageId, PageList pagesList) {
+	public List<SourcePage> addPagesList(HttpServletRequest req, @Named("clientpageid") Long clientPageId,
+			PageList pagesList) {
 		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
 			return null;
 		// TODO return an error
 
 		System.out.println("cpdendpoint: " + pagesList);
 		log.info("addPagesList: " + pagesList);
-
-		
 
 		ClientPageData clientPageData = getClientPageData(clientPageId);
 
@@ -168,12 +172,12 @@ public class ClientPageDataEndpoint {
 		return newPages;
 	}
 
-	@ApiMethod(name = "clientdata.ignorePage", httpMethod = "post")
-	public SourcePage ignorePage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
+	@ApiMethod(name = "clientdata.removePage", httpMethod = "post")
+	public SourcePage removePage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
 		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
 			return null;
 		// TODO return an error
-
+		
 		ClientPageData clientPageData = getClientPageData(clientPageId);
 
 		SourcePage newPage;
@@ -206,14 +210,15 @@ public class ClientPageDataEndpoint {
 		// FQL call pieces
 		String fqlcallstub = "https://graph.facebook.com/fql?q=";
 		String fql = "SELECT page_id, name, page_url, location, about, phone FROM page WHERE page_id = " + pageId;
-		String access_token = Config.getAppAccessToken();
+		String access_token = Config.getAppAccessTokenServer();
 
 		String json = "";
 
 		try {
-			// System.out.println("Getting all page events: " + fql);
+
 			String call = fqlcallstub + URLEncoder.encode(fql, "UTF-8") + "&access_token=" + access_token;
-			// System.out.println(call);
+			log.info(call);
+
 			URL url = new URL(call);
 			BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
 			String line;
@@ -223,12 +228,16 @@ public class ClientPageDataEndpoint {
 			}
 			reader.close();
 
+			log.info(json);
+
 		} catch (MalformedURLException e) {
 			System.out.println("getPageFromId: catch (MalformedURLException e)");
 			// ...
+			return null;
 		} catch (IOException e) {
 			System.out.println("getPageFromId: catch (IOException e)");
 			// ...
+			return null;
 		}
 
 		log.info("Page details from fb: " + json);
@@ -248,37 +257,48 @@ public class ClientPageDataEndpoint {
 	}
 
 	private boolean isAppAdmin(HttpServletRequest req) {
-		if (req.getCookies() == null) // TODO wait for google for fix the bug and remove
-			return true;
+		if (req.getCookies() == null)
+			return false;
 
 		// TODO
-		// SELECT application_id, developer_id, role FROM developer WHERE developer_id = 37302520
+		// SELECT application_id, developer_id, role FROM developer WHERE
+		// developer_id = 37302520
 
-		// The client will know it's an admin and add the signed request to the cookie.
-		// It will always request the clientPageData, so now is the best time to see if the
+		// The client will know it's an admin and add the signed request to the
+		// cookie.
+		// It will always request the clientPageData, so now is the best time to
+		// see if the
 		// signedrequest says they're an admin and add them if they are.
 
 		ClientCookieData c = new ClientCookieData(req);
 
 		// For now it's just me!
-		return (c.getUserId() != null ? c.getUserId() == 37302520 : false);
+		
+		log.info("c.getUserId() " + c.getUserId());
+		
+		boolean isAppAdmin = (c.getUserId() != null ? c.getUserId().equals(37302520l) : false);
+
+		log.info("checking is app admin: " + isAppAdmin);
+
+		return isAppAdmin;
 
 	}
 
 	private boolean isPageAdmin(HttpServletRequest req, Long clientPageId) {
-		if (req.getCookies() == null) { // wait for google to fix the bug them remove
-			// System.out.println("still no cookies");
-			return true;
-		}
+		if (req.getCookies() == null)
+			return false;
+
 		ClientCookieData c = new ClientCookieData(req);
 		ClientPageData cpd = getClientPageData(clientPageId);
 
 		// Check the encrypted signed request
 		// Add them to the admin list if possible
-		if (c.getSignedRequest() != null && c.getSignedRequest().getPage() != null && c.getSignedRequest().getPage().isAdmin() == true
+		if (c.getSignedRequest() != null && c.getSignedRequest().getPage() != null
+				&& c.getSignedRequest().getPage().isAdmin() == true
 				&& c.getSignedRequest().getPage().getId().equals(Long.toString(clientPageId))) {
-			if (c.getSignedRequest().getUserId() != null && cpd.addPageAdmin(Long.parseLong(c.getSignedRequest().getUserId()))) {
-				
+			if (c.getSignedRequest().getUserId() != null
+					&& cpd.addPageAdmin(Long.parseLong(c.getSignedRequest().getUserId()))) {
+
 				ofy().save().entity(cpd).now();
 			}
 			return true;
@@ -354,6 +374,10 @@ public class ClientPageDataEndpoint {
 
 			if (req.getCookies() != null) {
 				for (Cookie c : req.getCookies()) {
+					
+					log.info("Reading COOKIE: " + c.getName() + " " + c.getValue());
+					
+					
 					System.out.println("cookies: " + c.getName());
 					if (c.getName().equals("accessToken"))
 						accessToken = c.getValue();
@@ -371,8 +395,9 @@ public class ClientPageDataEndpoint {
 						}
 					}
 
-					if ((signedRequest != null && (userId == null || accessToken == null))&&signedRequest.getUserId()!=null) {
-						
+					if ((signedRequest != null && (userId == null || accessToken == null))
+							&& signedRequest.getUserId() != null) {
+
 						userId = Long.parseLong(signedRequest.getUserId());
 						accessToken = signedRequest.getOauthToken();
 					}

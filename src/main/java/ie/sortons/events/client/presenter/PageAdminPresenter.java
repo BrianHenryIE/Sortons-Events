@@ -3,7 +3,6 @@ package ie.sortons.events.client.presenter;
 import ie.sortons.events.client.RpcService;
 import ie.sortons.events.client.appevent.LoginAuthResponseEvent;
 import ie.sortons.events.client.appevent.PermissionsEvent;
-import ie.sortons.events.client.appevent.ResponseErrorEvent;
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.SourcePage;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSearchable;
@@ -13,6 +12,7 @@ import ie.sortons.gwtfbplus.shared.domain.graph.GraphPage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
@@ -36,6 +36,8 @@ import com.kfuntak.gwt.json.serialization.client.Serializer;
 
 public class PageAdminPresenter implements Presenter {
 
+	private static final Logger log = Logger.getLogger(PageAdminPresenter.class.getName());
+
 	interface MyEventBinder extends EventBinder<PageAdminPresenter> {
 	}
 
@@ -48,7 +50,6 @@ public class PageAdminPresenter implements Presenter {
 	private final EventBus eventBus;
 	private final Display display;
 
-	
 	public interface Display {
 		FbSingleSuggestbox getSuggestBox();
 
@@ -93,12 +94,13 @@ public class PageAdminPresenter implements Presenter {
 						@Override
 						public void run() {
 							if (display.getSuggestBox().getValue() == null) {
-								
+
 								processTextBox(display.getSuggestBox().getValueBox().getText());
 							}
 						}
 					};
-					t.schedule(250); // Gives the oracle a moment to set the value
+					t.schedule(250); // Gives the oracle a moment to set the
+										// value
 				}
 			}
 		});
@@ -183,16 +185,28 @@ public class PageAdminPresenter implements Presenter {
 
 					System.out.println(new JSONObject(response).toString());
 
-					GraphPage pageDetails = (GraphPage) serializer.deSerialize(new JSONObject(response).toString(),
-							"ie.sortons.gwtfbplus.shared.domain.graph.GraphPage");
+					try {
+						GraphPage pageDetails = (GraphPage) serializer.deSerialize(new JSONObject(response).toString(),
+								"ie.sortons.gwtfbplus.shared.domain.graph.GraphPage");
 
-					System.out.println("pageDetails.getName() " + pageDetails.getName());
+						System.out.println("pageDetails.getName() " + pageDetails.getName());
 
-					SourcePage newPage = new SourcePage(pageDetails.getName(), pageDetails.getId(), pageDetails.getLink());
+						SourcePage newPage = new SourcePage(pageDetails.getName(), pageDetails.getId(), pageDetails
+								.getLink());
 
-					// TODO
-					// This should only empty when it's successful
-					display.getSuggestBox().setValue(newPage, true); // This will fire the valuechangehandler
+						// TODO
+						// This should only empty when it's successful
+						display.getSuggestBox().setValue(newPage, true); // This
+																			// will
+																			// fire
+																			// the
+																			// valuechangehandler
+
+					} catch (Exception e) {
+
+						log.info(e.getMessage());
+
+					}
 
 				}
 
@@ -249,48 +263,24 @@ public class PageAdminPresenter implements Presenter {
 		System.out.println("client: adminPresenter addPage");
 		System.out.println(serializer.serialize(newPage));
 
-		rpcService.addPage(newPage, new RequestCallback() {
-			public void onError(Request request, Throwable exception) {
+		rpcService.addPage(newPage, new AsyncCallback<SourcePage>() {
 
-				// TODO Set the suggestbox item to xable
-				System.out.println("Couldn't retrieve JSON");
+			@Override
+			public void onFailure(Throwable caught) {
+
+				// I refactored and don't know what's going on here
+				display.getSuggestBox().addSelectedItemToDisplay(newPage, new SelectedItemWidget());
+
 			}
 
-			public void onResponseReceived(Request request, Response response) {
-				if (200 == response.getStatusCode()) {
+			@Override
+			public void onSuccess(SourcePage newPage) {
 
-					System.out.println("client: adminPresenter addPage response");
-					System.out.println(response.getText());
+				// then update UI
+				getClientPageData();
 
-					SourcePage page = (SourcePage) serializer.deSerialize(response.getText(),
-							"ie.sortons.events.shared.FqlPageSearchable");
-
-					// TODO return a real error message
-					if (page.getPageId() != null) {
-						rpcService.getClientPageData().addPage(page);
-
-						// then update UI
-						getClientPageData();
-
-						display.getSuggestBox().unSelectItem();
-						display.getSuggestBox().removeFromOracle(newPage);
-
-					} else {
-						// TODO Fire error message
-						// was page already included?
-						// or serious error?
-					}
-
-				} else {
-					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.addPage()");
-					System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
-					System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
-
-					// TODO: How to know what type of error it is?
-					eventBus.fireEvent(new ResponseErrorEvent(response));
-
-					display.getSuggestBox().addSelectedItemToDisplay(newPage, new SelectedItemWidget());
-				}
+				display.getSuggestBox().unSelectItem();
+				display.getSuggestBox().removeFromOracle(newPage);
 			}
 		});
 	}
@@ -305,7 +295,8 @@ public class PageAdminPresenter implements Presenter {
 			public void onResponseReceived(Request request, Response response) {
 				if (200 == response.getStatusCode()) {
 
-					SourcePage page = (SourcePage) serializer.deSerialize(response.getText(), "ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
+					SourcePage page = (SourcePage) serializer.deSerialize(response.getText(),
+							"ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
 
 					rpcService.getClientPageData().removePage(page);
 
@@ -313,10 +304,13 @@ public class PageAdminPresenter implements Presenter {
 					getClientPageData();
 
 				} else {
-					System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.ignorePage()");
+					System.out.println("Couldn't retrieve JSON (" + response.getStatusText()
+							+ ") AdminPresenter.ignorePage()");
 					System.out.println(response.getText());
-					// System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
-					// System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
+					// System.out.println("Couldn't retrieve JSON (" +
+					// response.getStatusCode() + ")");
+					// System.out.println("Couldn't retrieve JSON (" +
+					// response.getText() + ")");
 				}
 			}
 		});
@@ -326,7 +320,6 @@ public class PageAdminPresenter implements Presenter {
 
 	}
 
-	
 	// This is for the first time the user authorises the app.
 	@EventHandler
 	void onLoginEvent(LoginAuthResponseEvent event) {

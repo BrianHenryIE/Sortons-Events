@@ -1,6 +1,5 @@
 package ie.sortons.events.server.servlet;
 
-import ie.sortons.gwtfbplus.server.LandingPageServlet;
 
 @SuppressWarnings("serial")
 public class Directory extends LandingPageServlet {

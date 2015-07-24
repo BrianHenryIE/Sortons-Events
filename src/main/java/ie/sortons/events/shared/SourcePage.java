@@ -29,26 +29,20 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 	private String phone;
 	private String pageUrl;
 	private String street;
-	
-
-	public String getFriendlyLocationString() {
-		return friendlyLocationString;
-	}
 
 	private String city;
 	private String country;
-	private double latitude;
-    private double longitude;
-    private String friendlyLocationString;
+	private Double latitude;
+	private Double longitude;
 
 	private String zip;
 
 	private String state;
-    
+
 	// Needed on line 78, 245 ClientPageDataEndpoint
 	public SourcePage(FqlPage fqlPage) {
 		this.about = fqlPage.getAbout();
-		
+
 		this.street = fqlPage.getLocation().getStreet();
 		this.city = fqlPage.getLocation().getCity();
 		this.zip = fqlPage.getLocation().getZip();
@@ -56,27 +50,24 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 		this.country = fqlPage.getLocation().getCountry();
 		this.latitude = fqlPage.getLocation().getLatitude();
 		this.longitude = fqlPage.getLocation().getLongitude();
-		this.friendlyLocationString = fqlPage.getLocation().getFriendlyString();		
-		
+
+		// this.parent_page = fqlPage.getParent_Page();
+		this.phone = fqlPage.getPhone() != null ? fqlPage.getPhone() : null;
+		this.pageUrl = fqlPage.getPageUrl() !=  null ? fqlPage.getPageUrl() : null;
+
 		this.name = fqlPage.getName();
 		this.pageId = fqlPage.getPageId();
-		// this.parent_page = fqlPage.getParent_Page();
-		this.phone = fqlPage.getPhone();
 		this.pageUrl = fqlPage.getPageUrl();
 	}
-	
-	
+
 	public SourcePage() {
 	}
-	
 
 	public SourcePage(String name, Long id, String link) {
 		this.name = name;
 		this.pageId = id;
 		this.pageUrl = link;
 	}
-
-
 
 	public String getName() {
 		return name;
@@ -89,9 +80,9 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 	public String getPageUrl() {
 		return pageUrl;
 	}
-	
+
 	public String getAbout() {
-		
+
 		return about;
 	}
 
@@ -103,26 +94,21 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 		return street;
 	}
 
-
 	public String getCity() {
 		return city;
 	}
-
 
 	public String getCountry() {
 		return country;
 	}
 
-
 	public Double getLatitude() {
 		return latitude;
 	}
 
-
 	public Double getLongitude() {
 		return longitude;
 	}
-
 
 	public String getZip() {
 		return zip;
@@ -132,7 +118,6 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 		return state;
 	}
 
-	
 	@Override
 	public final boolean equals(Object obj) {
 		if (obj == this)
@@ -152,16 +137,15 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 		return this.pageId.compareTo(other.getPageId());
 	}
 
-
-	
 	// FbSearchable interface for suggestbox
-	
+
 	public String getTitle() {
 		return name;
 	}
-	
+
 	public String getSubTitle() {
-		// return (getLocation().getCity() != null ? getLocation().getCity() : "");
+		// return (getLocation().getCity() != null ? getLocation().getCity() :
+		// "");
 		return getFriendlyLocationString();
 	}
 
@@ -170,79 +154,95 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 	}
 
 	public String getSearchableString() {
-		return name + " " + getCity() + " " + getCountry() + " " + getName() + " " + getState() + " "
-				+ getStreet();
+		return name + " " + getCity() + " " + getCountry() + " " + getName() + " " + getState() + " " + getStreet();
 	}
 
-
 	// public getters and setters are needed for the serialization
-	
+
 	public void setAbout(String about) {
 		this.about = about;
 	}
-
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-
 	public void setPageId(Long pageId) {
 		this.pageId = pageId;
 	}
-
 
 	public void setPhone(String phone) {
 		this.phone = phone;
 	}
 
-
 	public void setPageUrl(String pageUrl) {
 		this.pageUrl = pageUrl;
 	}
-
 
 	public void setStreet(String street) {
 		this.street = street;
 	}
 
-
 	public void setCity(String city) {
 		this.city = city;
 	}
-
 
 	public void setCountry(String country) {
 		this.country = country;
 	}
 
-
-	public void setLatitude(double latitude) {
+	public void setLatitude(Double latitude) {
 		this.latitude = latitude;
 	}
 
-
-	public void setLongitude(double longitude) {
+	public void setLongitude(Double longitude) {
 		this.longitude = longitude;
 	}
-
-
-	public void setFriendlyLocationString(String friendlyLocationString) {
-		this.friendlyLocationString = friendlyLocationString;
-	}
-
 
 	public void setZip(String zip) {
 		this.zip = zip;
 	}
 
-
 	public void setState(String state) {
 		this.state = state;
 	}
 
-	
-	
-	
+	public String getFriendlyLocationString() {
+
+		String location = "";
+
+		if (street != null && !street.trim().equals("")) {
+			location += street;
+		}
+
+		if (city != null && !city.trim().equals("")) {
+			if (!location.equals(""))
+				location += ", ";
+			location += city;
+		}
+
+		if (state != null && !state.trim().equals("")) {
+			if (!location.equals(""))
+				location += ", ";
+			location += state;
+		}
+
+		if (zip != null && !zip.trim().equals("")) {
+			if (!location.equals(""))
+				location += ", ";
+			location += zip;
+		}
+
+		if (country != null && !country.trim().equals("")) {
+			if (!location.equals(""))
+				location += ", ";
+			location += country;
+		}
+
+		location = location.replace(" ,", ",");
+		location = location.replace(",,", ",");
+
+		return location;
+	}
 
 }
