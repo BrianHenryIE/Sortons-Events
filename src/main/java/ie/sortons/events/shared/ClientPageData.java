@@ -2,9 +2,10 @@ package ie.sortons.events.shared;
 
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.gwt.core.shared.GwtIncompatible;
 import com.googlecode.objectify.annotation.Cache;
@@ -29,7 +30,7 @@ public class ClientPageData implements JsonSerializable {
 
 	private SourcePage clientPage;
 
-	@GwtIncompatible @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+	//@GwtIncompatible // @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
 	private List<Long> pageAdmins = new ArrayList<Long>();
 	
 	private List<SourcePage> includedPages = new ArrayList<SourcePage>();
@@ -55,14 +56,10 @@ public class ClientPageData implements JsonSerializable {
 	public boolean addPageAdmin(Long admin) {
 		return pageAdmins.add(admin);
 	}
-	
+
+	// TODO Are these next three needed?
 	public Long getClientPageId() {
 		return this.clientPageId;
-	}
-
-	public List<SourcePage> getIncludedPages() {
-		// TODO why is this a new ArrayList?
-		return new ArrayList<SourcePage>(includedPages);
 	}
 
 	public String getName(){
@@ -76,7 +73,7 @@ public class ClientPageData implements JsonSerializable {
 	/**
 	 * @return the pageAdmins
 	 */
-	@GwtIncompatible
+	//@GwtIncompatible
 	public List<Long> getPageAdmins() {
 		return pageAdmins;
 	}
@@ -118,8 +115,9 @@ public class ClientPageData implements JsonSerializable {
 		return thePage;
 	}
 
-	// Ignored because the generated data will never be accessed by the getter
-	@ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+	// Ignored because ClientEndpoints doesn't need to generate the data, if a client needs it, it can
+	// but fock, there's no source so we can't compile this if we try this
+	//@ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
 	public List<Long> getIncludedPageIds() {
 		List<Long> pageIds = new ArrayList<Long>();
 		for (SourcePage page : includedPages)
@@ -127,5 +125,50 @@ public class ClientPageData implements JsonSerializable {
 				pageIds.add(page.getPageId());
 		return pageIds;
 	}
+	
+	//@ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+	public List<SourcePage> getIncludedPages() {
+		// TODO why is this a new ArrayList?
+		return new ArrayList<SourcePage>(includedPages);
+	}
 
+	//@ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+	public Map<Long, SourcePage> getIncludedIdsPagesMap() {
+
+		Map<Long, SourcePage> sourceClientPages = new HashMap<Long, SourcePage>();
+
+		for (SourcePage page :includedPages)
+			sourceClientPages.put(page.getPageId(), page);
+
+		return sourceClientPages;
+	}
+
+	
+	// public getters and setters for serialization
+	
+	public SourcePage getClientPage() {
+		return clientPage;
+	}
+
+	public void setClientPage(SourcePage clientPage) {
+		this.clientPage = clientPage;
+	}
+
+	public void setClientPageId(Long clientPageId) {
+		this.clientPageId = clientPageId;
+	}
+
+	public void setPageAdmins(List<Long> pageAdmins) {
+		this.pageAdmins = pageAdmins;
+	}
+
+	public void setIncludedPages(List<SourcePage> includedPages) {
+		this.includedPages = includedPages;
+	}
+
+	
+	
+	
+
+	
 }

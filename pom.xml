@@ -46,7 +46,7 @@
 		<dependency>
 			<groupId>com.googlecode.objectify</groupId>
 			<artifactId>objectify</artifactId>
-			<version>4.1.3</version>
+			<version>5.1.5</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
@@ -94,7 +94,7 @@
 		<dependency>
 			<groupId>ie.sortons</groupId>
 			<artifactId>gwtfbplus</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.2-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>

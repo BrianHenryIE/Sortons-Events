@@ -5,7 +5,6 @@ import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.gwt.core.shared.GwtIncompatible;
-import com.googlecode.objectify.annotation.Embed;
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 import com.kfuntak.gwt.json.serialization.client.SkipNullSerialization;
 
@@ -13,7 +12,6 @@ import com.kfuntak.gwt.json.serialization.client.SkipNullSerialization;
  * @see http://developers.facebook.com/docs/reference/fql/page/
  */
 @SkipNullSerialization
-@Embed
 public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbSearchable {
 
 	@GwtIncompatible
@@ -46,8 +44,6 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 	private String zip;
 
 	private String state;
-
-
     
 	// Needed on line 78, 245 ClientPageDataEndpoint
 	public SourcePage(FqlPage fqlPage) {
@@ -178,5 +174,75 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 				+ getStreet();
 	}
 
+
+	// public getters and setters are needed for the serialization
+	
+	public void setAbout(String about) {
+		this.about = about;
+	}
+
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+
+	public void setPageId(Long pageId) {
+		this.pageId = pageId;
+	}
+
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+
+	public void setPageUrl(String pageUrl) {
+		this.pageUrl = pageUrl;
+	}
+
+
+	public void setStreet(String street) {
+		this.street = street;
+	}
+
+
+	public void setCity(String city) {
+		this.city = city;
+	}
+
+
+	public void setCountry(String country) {
+		this.country = country;
+	}
+
+
+	public void setLatitude(double latitude) {
+		this.latitude = latitude;
+	}
+
+
+	public void setLongitude(double longitude) {
+		this.longitude = longitude;
+	}
+
+
+	public void setFriendlyLocationString(String friendlyLocationString) {
+		this.friendlyLocationString = friendlyLocationString;
+	}
+
+
+	public void setZip(String zip) {
+		this.zip = zip;
+	}
+
+
+	public void setState(String state) {
+		this.state = state;
+	}
+
+	
+	
+	
 
 }

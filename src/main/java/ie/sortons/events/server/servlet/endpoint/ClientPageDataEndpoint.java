@@ -60,9 +60,7 @@ public class ClientPageDataEndpoint {
 	 * @return
 	 */
 	public ClientPageData getClientPageData(HttpServletRequest req, @Named("clientid") Long clientPageId) {
-//		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req))) // Don't need to be a page admin to get the data for using with the map
-//			return null;
-		// TODO return an error
+		// TODO only return what's needed, i.e. no page admins
 		
 		return getClientPageData(clientPageId);
 	}

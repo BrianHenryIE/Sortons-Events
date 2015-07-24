@@ -25,13 +25,19 @@ public class DiscoveredEvent implements JsonSerializable {
 	public final String classname = "ie.sortons.events.shared.DiscoveredEvent";
 
 	@Id
-	public Long eid;
+	private Long eid;
 
 	@Index
-	public List<Long> sourceLists = new ArrayList<Long>();
+	private List<Long> sourceLists = new ArrayList<Long>();
 
-	public List<SourcePage> sourcePages = new ArrayList<SourcePage>();
+	private List<SourcePage> sourcePages = new ArrayList<SourcePage>();
 
+	String name;
+	String location;
+	Date startTime;
+	Date endTime;
+	boolean dateOnly;
+	
 	/**
 	 * No args constructor for Objectify etc
 	 */
@@ -83,12 +89,6 @@ public class DiscoveredEvent implements JsonSerializable {
 		this.endTime = fbEvent.getEndTime();
 		this.dateOnly = fbEvent.is_date_only;
 	}
-
-	String name;
-	String location;
-	Date startTime;
-	Date endTime;
-	boolean dateOnly;
 	
 	// Encapsulating in preparation for fql deprecation
 	public String getName() {
@@ -184,4 +184,44 @@ public class DiscoveredEvent implements JsonSerializable {
 			sourceLists = null;
 	}
 
+	public boolean isDateOnly() {
+		return dateOnly;
+	}
+
+	public void setDateOnly(boolean dateOnly) {
+		this.dateOnly = dateOnly;
+	}
+
+	public void setEid(Long eid) {
+		this.eid = eid;
+	}
+
+	public void setSourceLists(List<Long> sourceLists) {
+		this.sourceLists = sourceLists;
+	}
+
+	public void setSourcePages(List<SourcePage> sourcePages) {
+		this.sourcePages = sourcePages;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setLocation(String location) {
+		this.location = location;
+	}
+
+	public void setStartTime(Date startTime) {
+		this.startTime = startTime;
+	}
+
+	public void setEndTime(Date endTime) {
+		this.endTime = endTime;
+	}
+
+	// public getters and setters for serialization
+	
+	
+	
 }
