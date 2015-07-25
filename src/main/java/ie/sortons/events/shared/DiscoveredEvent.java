@@ -36,6 +36,8 @@ public class DiscoveredEvent implements JsonSerializable {
 
 	String name;
 	String location;
+	
+	@Index
 	Date startTime;
 	Date endTime;
 	boolean dateOnly;
