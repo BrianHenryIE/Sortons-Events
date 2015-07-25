@@ -24,11 +24,13 @@ public class DiscoveredEvent implements JsonSerializable {
 	@ApiResourceProperty(name = "class")
 	public final String classname = "ie.sortons.events.shared.DiscoveredEvent";
 
-	@Id
-	private Long eid;
+	@GwtIncompatible
+	@Id Long id;
+	
+	private Long eventId;
 
 	@Index
-	private List<Long> sourceLists = new ArrayList<Long>();
+	private Long clientId;
 
 	private List<SourcePage> sourcePages = new ArrayList<SourcePage>();
 
@@ -46,43 +48,43 @@ public class DiscoveredEvent implements JsonSerializable {
 
 	public DiscoveredEvent(FqlEvent fbEvent, Long clientId, SourcePage sourcePage) {
 		setEvent(fbEvent);
-		addSourceList(clientId);
+		this.clientId = clientId;
 		addSourcePage(sourcePage);
 	}
 
-	public DiscoveredEvent(Long eid, Long clientId, SourcePage sourcePage) {
-		this.eid = eid;
-		addSourceList(clientId);
+	public DiscoveredEvent(Long eventId, Long clientId, SourcePage sourcePage) {
+		this.eventId = eventId;
+		this.clientId = clientId;
 		addSourcePage(sourcePage);
 	}
 
-	public DiscoveredEvent(String eid, Long clientId, SourcePage sourcePage) {
-		new DiscoveredEvent(Long.parseLong(eid), clientId, sourcePage);
+	public DiscoveredEvent(String eventId, Long clientId, SourcePage sourcePage) {
+		new DiscoveredEvent(Long.parseLong(eventId), clientId, sourcePage);
 	}
 
-	public DiscoveredEvent(FqlEvent fbEvent, List<Long> sourceLists, List<SourcePage> sourcePages) {
-		setEvent(fbEvent);
-		this.sourceLists = sourceLists;
-		this.sourcePages = sourcePages;
+	public DiscoveredEvent(FqlEvent fbEvent, Long clientId, List<SourcePage> sourcePages) {
+		this(fbEvent, sourcePages);
+		this.clientId = clientId;
 	}
-
+	
 	public DiscoveredEvent(FqlEvent fbEvent, List<SourcePage> sourcePages) {
 		setEvent(fbEvent);
 		this.sourcePages = sourcePages;
 	}
 
 	public DiscoveredEvent(DiscoveredEvent dEvent, List<SourcePage> sourcePages) {
-		this.eid = dEvent.getEid();
+		this.eventId = dEvent.getEventId();
+		this.clientId = dEvent.getClientId();
 		this.name = dEvent.getName();
 		this.location = dEvent.getLocation();
 		this.startTime = dEvent.getStartTime();
 		this.endTime = dEvent.getEndTime();
-		this.dateOnly = dEvent.is_date_only();
+		this.dateOnly = dEvent.isDateOnly();
 		this.sourcePages = sourcePages;
 	}
 	
 	private void setEvent(FqlEvent fbEvent) {
-		this.eid = fbEvent.getEid();
+		this.eventId = fbEvent.getEid();
 		this.name = fbEvent.getName();
 		this.location = fbEvent.getLocation();
 		this.startTime = fbEvent.getStartTime();
@@ -106,13 +108,9 @@ public class DiscoveredEvent implements JsonSerializable {
 	public Date getEndTime() {
 		return endTime;
 	}
-	
-	public boolean is_date_only(){
-		return dateOnly;
-	}
-	
-	public Long getEid() {
-		return eid;
+
+	public Long getEventId() {
+		return eventId;
 	}
 
 
@@ -142,48 +140,11 @@ public class DiscoveredEvent implements JsonSerializable {
 		return changed;
 	}
 
-	public List<Long> getSourceLists() {
-		return sourceLists;
+	public Long getClientId() {
+		return clientId;
 	}
 
-	public boolean hasSourceList(String source) {
-		return sourceLists.contains(source);
-	}
-
-	public boolean addSourceList(Long source) {
-		if (!sourceLists.contains(source)) {
-			sourceLists.add(source);
-			return true;
-		}
-		return false;
-	}
-
-	public boolean addSourceLists(List<Long> newSourceLists) {
-		boolean changed = false;
-		for (Long source : newSourceLists)
-			if (addSourceList(source))
-				changed = true;
-		return changed;
-	}
-
-	/**
-	 * This is used to remove the source pages that are related to other clients from the same event
-	 */
-	public void setSourcePagesToClientOnly(ClientPageData client) {
-		List<SourcePage> newSources = new ArrayList<SourcePage>();
-		for (SourcePage page : sourcePages)
-			if (client.getIncludedPages().contains(page))
-				newSources.add(page);
-		sourcePages = newSources;
-	}
 	
-	/**
-	 * This is used to remove the source lists before transferring the data to the client
-	 */
-	public void setSourceListsNull() {
-			sourceLists = null;
-	}
-
 	public boolean isDateOnly() {
 		return dateOnly;
 	}
@@ -192,12 +153,16 @@ public class DiscoveredEvent implements JsonSerializable {
 		this.dateOnly = dateOnly;
 	}
 
-	public void setEid(Long eid) {
-		this.eid = eid;
+	public void setEventId(Long eventId) {
+		this.eventId = eventId;
 	}
 
-	public void setSourceLists(List<Long> sourceLists) {
-		this.sourceLists = sourceLists;
+	public void setClientIdFromCPD(ClientPageData clientPageData) {
+		this.clientId = clientPageData.getClientPageId();
+	}
+
+	public void setClientId(Long clientId) {
+		this.clientId = clientId;
 	}
 
 	public void setSourcePages(List<SourcePage> sourcePages) {

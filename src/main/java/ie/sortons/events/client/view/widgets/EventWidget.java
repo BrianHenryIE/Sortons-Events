@@ -50,14 +50,14 @@ public class EventWidget extends Composite {
 		initWidget(uiBinder.createAndBindUi(this));
 		
 		eventLink.setText(rowEvent.getName());
-		eventLink.setHref("//www.facebook.com/event.php?eid="  + rowEvent.getEid());
+		eventLink.setHref("//www.facebook.com/event.php?eid="  + rowEvent.getEventId());
 		eventLink.setTarget("_blank");
-		Image eventImage = new Image("//graph.facebook.com/" + rowEvent.getEid() + "/picture?type=square");
+		Image eventImage = new Image("//graph.facebook.com/" + rowEvent.getEventId() + "/picture?type=square");
 		eventImage.getElement().getStyle().setHeight(50, Unit.PX);
 		eventImage.getElement().getStyle().setWidth(50, Unit.PX);
-		eventPicture.add(new Link("//www.facebook.com/event.php?eid="  + rowEvent.getEid(), eventImage, "_blank"));
+		eventPicture.add(new Link("//www.facebook.com/event.php?eid="  + rowEvent.getEventId(), eventImage, "_blank"));
 		
-	    startTime.setText(rowEvent.is_date_only() ? DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy").format(rowEvent.getStartTime()) : DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy, 'at' k:mm").format(rowEvent.getStartTime()) );
+	    startTime.setText(rowEvent.isDateOnly() ? DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy").format(rowEvent.getStartTime()) : DateTimeFormat.getFormat("EEEE, dd MMMM, yyyy, 'at' k:mm").format(rowEvent.getStartTime()) );
 	    location.setText(rowEvent.getLocation());
 
 	   

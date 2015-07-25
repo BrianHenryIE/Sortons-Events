@@ -130,16 +130,12 @@ public class CollectorCron extends HttpServlet {
 
 				for (DiscoveredEvent dsEvent : dsEvents) {
 
-					if (detailedEvents.containsKey(dsEvent.getEid())) {
+					if (detailedEvents.containsKey(dsEvent.getEventId())) {
 
 						// Add the datastore info to the discovered events list
 						// if it changes resave, if it doesn't discard.
 
-						if (dsEvent.getSourceLists() == null || dsEvent.getSourceLists().size() == 0) {
-							log.warning("NPE for dsevent " + dsEvent.getEid() + " CollectorCron ~129.");
-							log.warning(gson.toJson(dsEvent));
-							log.warning("dsEvent.getSourceLists().size() " + dsEvent.getSourceLists().size());
-						}
+						dsEvent.setClientIdFromCPD(client);
 
 						if (dsEvent.getSourcePages() == null || dsEvent.getSourcePages().size() == 0)
 							log.warning("dsEvent.getSourcePages() " + dsEvent.getSourcePages());
@@ -149,14 +145,12 @@ public class CollectorCron extends HttpServlet {
 						// merge the new record and the datastore one and save
 						// it,
 						// otherwise drop it from the list to be saved
-						if (dsEvent.addSourceLists(detailedEvents.get(dsEvent.getEid()).getSourceLists())
-								|| dsEvent.addSourcePages(detailedEvents.get(dsEvent.getEid()).getSourcePages())) {
-							dsEvent.addSourceLists(detailedEvents.get(dsEvent.getEid()).getSourceLists());
-							dsEvent.addSourcePages(detailedEvents.get(dsEvent.getEid()).getSourcePages());
-							detailedEvents.put(dsEvent.getEid(), dsEvent); // DiscoveredEvent.merge(dsEvent,
-																			// detailedEvents.get(dsEvent.getFbEvent().getEid())));
+						if (dsEvent.addSourcePages(detailedEvents.get(dsEvent.getEventId()).getSourcePages())) {
+							
+							detailedEvents.put(dsEvent.getEventId(), dsEvent); // DiscoveredEvent.merge(dsEvent,
+																				// detailedEvents.get(dsEvent.getFbEvent().getEid())));
 						} else
-							detailedEvents.remove(dsEvent.getEid());
+							detailedEvents.remove(dsEvent.getEventId());
 
 					}
 				}
@@ -219,7 +213,7 @@ public class CollectorCron extends HttpServlet {
 	 * Created because MalformeddUrlException was being thrown when URLs were
 	 * too long due to too many ids.
 	 * 
-	 * @see http
+	 * @see http 
 	 *      ://ikaisays.com/2010/06/29/using-asynchronous-urlfetch-on-java-app
 	 *      -engine/
 	 * @param fqlCalls
@@ -262,7 +256,6 @@ public class CollectorCron extends HttpServlet {
 		return json;
 	}
 
-
 	/**
 	 * We're querying via event_member table. As a page cannot be invited to an
 	 * event, if it is a member then it was the creator.
@@ -275,7 +268,7 @@ public class CollectorCron extends HttpServlet {
 	 * @param ids
 	 * @return
 	 */
-	 Map<Long, DiscoveredEvent> findCreatedEventsForClient(ClientPageData client) {
+	Map<Long, DiscoveredEvent> findCreatedEventsForClient(ClientPageData client) {
 
 		Map<Long, DiscoveredEvent> createdEvents = new HashMap<Long, DiscoveredEvent>();
 
@@ -306,7 +299,7 @@ public class CollectorCron extends HttpServlet {
 			for (DiscoveredEvent event : createdEvents.values())
 				out.println("Created event : "
 						+ client.getPageById(event.getSourcePages().get(0).getPageId()).getName() + " : "
-						+ event.getEid());
+						+ event.getEventId());
 
 		return createdEvents;
 	}
@@ -332,11 +325,11 @@ public class CollectorCron extends HttpServlet {
 	 * 
 	 * 
 	 * @param ids
-	 * @see http
+	 * @see http 
 	 *      ://ikaisays.com/2010/06/29/using-asynchronous-urlfetch-on-java-app
 	 *      -engine/
 	 */
-	 Map<Long, DiscoveredEvent> findPostedEventsForClient(ClientPageData client) {
+	Map<Long, DiscoveredEvent> findPostedEventsForClient(ClientPageData client) {
 
 		Map<Long, DiscoveredEvent> postedEvents = new HashMap<Long, DiscoveredEvent>();
 
@@ -350,7 +343,7 @@ public class CollectorCron extends HttpServlet {
 		List<String> jsons = asyncFqlCall(fqlCalls);
 
 		for (String json : jsons) {
-						
+
 			Type fooType = new TypeToken<FbResponse<FqlStream>>() {
 			}.getType();
 
@@ -522,7 +515,7 @@ public class CollectorCron extends HttpServlet {
 			for (FqlEvent ei : eventsDetails) {
 				if (discoveredEvents.containsKey(ei.getEid())) {
 
-					DiscoveredEvent de = new DiscoveredEvent(ei, discoveredEvents.get(ei.getEid()).getSourceLists(),
+					DiscoveredEvent de = new DiscoveredEvent(ei, discoveredEvents.get(ei.getEid()).getClientId(),
 							discoveredEvents.get(ei.getEid()).getSourcePages());
 
 					detailedEvents.put(ei.getEid(), de);
@@ -581,7 +574,6 @@ public class CollectorCron extends HttpServlet {
 
 		for (Long key : map1.keySet())
 			if (map2.containsKey(key)) {
-				map1.get(key).addSourceLists(map2.get(key).getSourceLists());
 				map1.get(key).addSourcePages(map2.get(key).getSourcePages());
 				newMap.put(key, map1.get(key));
 			} else

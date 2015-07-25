@@ -1,7 +1,6 @@
 package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
-import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.DiscoveredEvent;
 import ie.sortons.events.shared.DiscoveredEventsResponse;
 
@@ -35,9 +34,8 @@ public class UpcomingEventsEndpoint {
 
 		log.info("Searching for events for " + clientPageId);
 
-		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("sourceLists", clientPageId)
-				.filter("fbEvent.start_time >", getHoursAgoOrToday(12)).order("fbEvent.start_time").list();
-		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
+		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("clientId", clientPageId)
+				.filter("startTime >", getHoursAgoOrToday(12)).order("startTime").list();
 
 		for (DiscoveredEvent datastoreEvent : dsEvents) {
 
@@ -46,10 +44,6 @@ public class UpcomingEventsEndpoint {
 			if ((datastoreEvent.getEndTime() == null) || (datastoreEvent.getEndTime().after(now))) {
 
 				DiscoveredEvent de = new DiscoveredEvent(datastoreEvent, datastoreEvent.getSourcePages());
-				de.setSourceListsNull();
-
-				// TODO Keep events for different lists as separate entities
-				de.setSourcePagesToClientOnly(clientPageData);
 
 				upcomingEvents.add(de);
 

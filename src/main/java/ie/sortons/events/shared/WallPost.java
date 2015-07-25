@@ -12,6 +12,8 @@ import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 @Cache
 public class WallPost implements JsonSerializable {
 
+	// TODO get rid of public modifiers!
+	
 	@GwtIncompatible
 	@ApiResourceProperty(name = "class")
 	public final String classname = "ie.sortons.events.shared.WallPost";
@@ -27,7 +29,7 @@ public class WallPost implements JsonSerializable {
 	public String url;
 
 	@Index
-	public Long sourceList;
+	public Long clientId;
 
 	/**
 	 * No args constructor for Objectify etc
@@ -36,7 +38,7 @@ public class WallPost implements JsonSerializable {
 	}
 
 	public WallPost(Long clientId, String postId, int date, String url) {
-		this.sourceList = clientId;
+		this.clientId = clientId;
 		this.postId = postId;
 		this.date = date;
 		this.url = url;
