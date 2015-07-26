@@ -68,6 +68,7 @@ public class CollectorCron extends HttpServlet {
 
 	static {
 		ObjectifyService.register(ClientPageData.class);
+		ObjectifyService.register(SourcePage.class);
 		ObjectifyService.register(DiscoveredEvent.class);
 		ObjectifyService.register(WallPost.class);
 	}
@@ -111,6 +112,11 @@ public class CollectorCron extends HttpServlet {
 
 		for (ClientPageData client : clients) {
 
+			// TODO This whole thing should be written to only use the pages and not the ClientPageData
+			// It will be more easier to manage and makes more sense.
+			List<SourcePage> includedPages = ofy().load().type(SourcePage.class).filter("clientId", client.getClientPageId()).list();
+			client.setIncludedPages(includedPages);
+			
 			out.print(client.getName());
 
 			Map<Long, DiscoveredEvent> createdEvents = findCreatedEventsForClient(client);

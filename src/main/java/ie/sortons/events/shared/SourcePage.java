@@ -5,12 +5,16 @@ import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.gwt.core.shared.GwtIncompatible;
+import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Index;
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 import com.kfuntak.gwt.json.serialization.client.SkipNullSerialization;
 
 /**
  * @see http://developers.facebook.com/docs/reference/fql/page/
  */
+@Entity
 @SkipNullSerialization
 public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbSearchable {
 
@@ -18,10 +22,19 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 	@ApiResourceProperty(name = "class")
 	public final String classname = "ie.sortons.events.shared.SourcePage";
 
+	@Index
+	private Long clientId;
+	
+	/**
+	 * A concatenation of the clientPageId and the SourcePage pageId
+	 */
+	@Id
+	private String id;
+	
 	private String about;
 
 	private String name;
-
+	
 	private Long pageId;
 
 	// private String parent_page;
@@ -58,6 +71,8 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 		this.name = fqlPage.getName();
 		this.pageId = fqlPage.getPageId();
 		this.pageUrl = fqlPage.getPageUrl();
+		
+		setId();
 	}
 
 	public SourcePage() {
@@ -67,6 +82,8 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 		this.name = name;
 		this.pageId = id;
 		this.pageUrl = link;
+		
+		setId();
 	}
 
 	public String getName() {
@@ -243,6 +260,30 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 		location = location.replace(",,", ",");
 
 		return location;
+	}
+
+	public Long getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(Long clientId) {
+		this.clientId = clientId;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+	
+	public void setId(Long clientPageId, Long sourcePageId) {
+		this.id = clientPageId + "" + sourcePageId;
+	}
+	
+	public void setId(){
+		this.id = this.clientId + "" + this.pageId;
 	}
 
 }

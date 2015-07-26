@@ -33,6 +33,7 @@ public class ClientPageData implements JsonSerializable {
 	//@GwtIncompatible // @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
 	private List<Long> pageAdmins = new ArrayList<Long>();
 	
+	@Ignore
 	private List<SourcePage> includedPages = new ArrayList<SourcePage>();
 
 	@Ignore

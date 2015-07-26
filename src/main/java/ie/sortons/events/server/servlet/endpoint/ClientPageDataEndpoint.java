@@ -54,6 +54,7 @@ public class ClientPageDataEndpoint {
 
 	static {
 		ObjectifyService.register(ClientPageData.class);
+		ObjectifyService.register(SourcePage.class);
 	}
 
 	/**
@@ -71,9 +72,9 @@ public class ClientPageDataEndpoint {
 		return clientPageData;
 	}
 
-	private ClientPageData getClientPageData(Long clientPageId) {
+	private ClientPageData getClientPageData(Long clientId) {
 
-		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
+		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientId).now();
 
 		// When the customer has just signed up
 		// TODO check they're a page admin else return: no such client
@@ -81,10 +82,10 @@ public class ClientPageDataEndpoint {
 
 			log.info("clientPageData == null");
 
-			SourcePage clientPageDetails = getPageFromId(clientPageId);
+			SourcePage clientPageDetails = getPageFromId(clientId);
 
 			log.info("Added to new page: " + clientPageDetails.getName() + " " + clientPageDetails.getPageUrl() + " "
-					+ clientPageId);
+					+ clientId);
 
 			// TODO
 			// This fails with a NPE if the page isn't public, i.e. test users
@@ -98,11 +99,15 @@ public class ClientPageDataEndpoint {
 			return newClient;
 
 		} else {
-
+			
+			List<SourcePage> includedPages = ofy().load().type(SourcePage.class).filter("clientId", clientId).list();
+			clientPageData.setIncludedPages(includedPages);
+			
 			return clientPageData;
 		}
 	}
 
+	// Not sure if I can take a String as a POST parameter here (Endpoints doesn't elsewhere)
 	@ApiMethod(name = "clientdata.addPage", httpMethod = "post")
 	public SourcePage addPage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
 		log.info("addPage pre auth check");
@@ -112,16 +117,17 @@ public class ClientPageDataEndpoint {
 
 		log.info("addPage: " + jsonPage.getName() + " " + jsonPage.getPageId());
 
+		// Keeping this here because in future we'll want more details about the page
+		// and there's no need for the client to fetch them.
 		SourcePage newPage = getPageFromId(jsonPage.getPageId());
 
 		log.info("fbdetails 2: " + newPage.getName() + " " + newPage.getPageId());
 
-		ClientPageData clientPageData = getClientPageData(clientPageId);
-
-		if (clientPageData.addPage(newPage)) {
-			ofy().save().entity(clientPageData).now();
-			log.info("saved");
-		}
+		newPage.setClientId(clientPageId);
+		newPage.setId();
+		
+		ofy().save().entity(newPage).now();
+		
 
 		// TODO
 		// Check for events on this page immediately
@@ -129,14 +135,13 @@ public class ClientPageDataEndpoint {
 		// TODO Understand and remove troubleshooting
 
 		// TODO return an error, if appropriate
-		clientPageData = null;
+		
+		log.info("returning from ds: " + newPage.getId());
 
-		// Moved here to make succinct
-		clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
-
-		log.info("returning from ds: " + clientPageData.getPageById(jsonPage.getPageId()).getName());
-
-		return clientPageData.getPageById(jsonPage.getPageId());
+		// This should be tested properly and removed... it's a waste of resources.
+		SourcePage fromDs = ofy().load().type(SourcePage.class).id(newPage.getId()).now();
+		
+		return fromDs;
 	}
 
 	@ApiMethod(name = "clientdata.addPagesList", httpMethod = "post")
