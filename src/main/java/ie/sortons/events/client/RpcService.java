@@ -207,22 +207,6 @@ public class RpcService {
 
 		addPageBuilder.setHeader("Content-Type", "application/json");
 
-		// temporary to build request cookie header
-		StringBuilder sb = new StringBuilder();
-		
-		for(String cookieName : Cookies.getCookieNames()){
-			if (sb.length() > 0) {
-	            sb.append("; ");
-	        }
-			String value = cookieName+"="+Cookies.getCookie(cookieName);
-	        sb.append(value);
-		}
-		String cookieHeader = sb.toString();
-
-		addPageBuilder.setHeader("Cookie", cookieHeader);
-		
-		log.info("cookieHeader " + cookieHeader);
-		
 		clientPageData.getSuggestedPages().remove(newPage);
 
 		try {
@@ -236,7 +220,6 @@ public class RpcService {
 				public void onResponseReceived(Request request, Response response) {
 					if (200 == response.getStatusCode()) {
 
-						
 						SourcePage page = (SourcePage) serializer.deSerialize(response.getText(),
 								"ie.sortons.events.shared.FqlPageSearchable");
 
@@ -246,7 +229,6 @@ public class RpcService {
 
 							callback.onSuccess(page);
 							
-
 						} else {
 							// TODO Fire error message
 							// was page already included?
@@ -261,7 +243,6 @@ public class RpcService {
 						// TODO: How to know what type of error it is?
 //						eventBus.fireEvent(new ResponseErrorEvent(response));
 
-						
 					}
 				}
 			});

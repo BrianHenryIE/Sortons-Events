@@ -148,7 +148,7 @@
 				<artifactId>gwt-maven-plugin</artifactId>
 				<version>${gwt.version}</version>
 				<configuration>
-				<bindAddress>dev.sortons.ie</bindAddress>
+				
 					<port>8080</port>
 					<runTarget>/</runTarget>
 					<optimizationLevel>9</optimizationLevel>

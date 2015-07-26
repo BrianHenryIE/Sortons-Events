@@ -6,6 +6,7 @@ import ie.sortons.events.shared.Config;
 import ie.sortons.events.shared.PageList;
 import ie.sortons.events.shared.SourcePage;
 import ie.sortons.events.shared.dto.ClientPageDataResponse;
+import ie.sortons.events.shared.dto.PagesListResponse;
 import ie.sortons.gwtfbplus.server.SimpleStringCipher;
 import ie.sortons.gwtfbplus.shared.domain.FbResponse;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
@@ -117,11 +118,18 @@ public class ClientPageDataEndpoint {
 
 		log.info("addPage: " + jsonPage.getName() + " " + jsonPage.getPageId());
 
+		SourcePage fromDs = savePage(clientPageId, jsonPage.getPageId());
+		
+		return fromDs;
+	}
+
+	private SourcePage savePage(Long clientPageId, Long pageId){
 		// Keeping this here because in future we'll want more details about the page
 		// and there's no need for the client to fetch them.
-		SourcePage newPage = getPageFromId(jsonPage.getPageId());
 
-		log.info("fbdetails 2: " + newPage.getName() + " " + newPage.getPageId());
+		SourcePage newPage = getPageFromId(pageId);
+		
+		log.info("fbdetails 2: " + newPage.getName() + " " + pageId);
 
 		newPage.setClientId(clientPageId);
 		newPage.setId();
@@ -142,10 +150,11 @@ public class ClientPageDataEndpoint {
 		SourcePage fromDs = ofy().load().type(SourcePage.class).id(newPage.getId()).now();
 		
 		return fromDs;
+		
 	}
-
+	
 	@ApiMethod(name = "clientdata.addPagesList", httpMethod = "post")
-	public List<SourcePage> addPagesList(HttpServletRequest req, @Named("clientpageid") Long clientPageId,
+	public PagesListResponse addPagesList(HttpServletRequest req, @Named("clientpageid") Long clientPageId,
 			PageList pagesList) {
 		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
 			return null;
@@ -154,26 +163,13 @@ public class ClientPageDataEndpoint {
 		System.out.println("cpdendpoint: " + pagesList);
 		log.info("addPagesList: " + pagesList);
 
-		ClientPageData clientPageData = getClientPageData(clientPageId);
+		PagesListResponse newPages = new PagesListResponse();
 
-		List<SourcePage> newPages = new ArrayList<SourcePage>();
-
-		for (String pageid : pagesList.getList()) {
-			SourcePage newPage = getPageFromId(Long.parseLong(pageid));
-			if (clientPageData.addPage(newPage)) {
-				newPages.add(newPage);
-				log.info("page added: " + newPage.getName() + " " + newPage.getPageId());
-			}
-		}
-
-		if (newPages.size() > 0) {
-			ofy().save().entity(clientPageData).now();
-			log.info("saved");
-		}
-
-		// TODO
-		// Check for events on new pages immediately
-
+		List<SourcePage> dsPages = new ArrayList<SourcePage>();
+		
+		for (String pageid : pagesList.getList())
+			dsPages.add(savePage(clientPageId, Long.parseLong(pageid)));
+			
 		return newPages;
 	}
 
