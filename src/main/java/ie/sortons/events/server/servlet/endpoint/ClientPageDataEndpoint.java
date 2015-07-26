@@ -2,10 +2,10 @@ package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.ClientPageDataResponse;
 import ie.sortons.events.shared.Config;
 import ie.sortons.events.shared.PageList;
 import ie.sortons.events.shared.SourcePage;
+import ie.sortons.events.shared.dto.ClientPageDataResponse;
 import ie.sortons.gwtfbplus.server.SimpleStringCipher;
 import ie.sortons.gwtfbplus.shared.domain.FbResponse;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
@@ -208,7 +208,10 @@ public class ClientPageDataEndpoint {
 		List<ClientPageData> clients = new ArrayList<ClientPageData>();
 		clients = ofy().load().type(ClientPageData.class).list();
 
-		return new ClientPageDataResponse(clients);
+		ClientPageDataResponse cpd = new ClientPageDataResponse();
+		cpd.setData(clients);
+		
+		return cpd;
 	}
 
 	SourcePage getPageFromId(Long pageId) {

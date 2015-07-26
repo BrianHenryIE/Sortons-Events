@@ -1,15 +1,15 @@
 package ie.sortons.events.client;
 
 import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.ClientPageDataResponse;
 import ie.sortons.events.shared.Config;
 import ie.sortons.events.shared.DiscoveredEvent;
-import ie.sortons.events.shared.DiscoveredEventsResponse;
 import ie.sortons.events.shared.PageList;
-import ie.sortons.events.shared.PagesListResponse;
-import ie.sortons.events.shared.RecentPostsResponse;
 import ie.sortons.events.shared.SourcePage;
 import ie.sortons.events.shared.WallPost;
+import ie.sortons.events.shared.dto.ClientPageDataResponse;
+import ie.sortons.events.shared.dto.DiscoveredEventsResponse;
+import ie.sortons.events.shared.dto.PagesListResponse;
+import ie.sortons.events.shared.dto.RecentPostsResponse;
 import ie.sortons.gwtfbplus.client.api.FBCore;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
@@ -290,9 +290,9 @@ public class RpcService {
 					System.out.println(response.getText());
 					PagesListResponse addedPages = (PagesListResponse) serializer.deSerialize(response.getText(),
 							"ie.sortons.events.shared.PagesListResponse");
-					System.out.println(addedPages.getPages());
+					System.out.println(addedPages.getData());
 
-					asyncCallback.onSuccess(addedPages.getPages());
+					asyncCallback.onSuccess(addedPages.getData());
 
 				}
 

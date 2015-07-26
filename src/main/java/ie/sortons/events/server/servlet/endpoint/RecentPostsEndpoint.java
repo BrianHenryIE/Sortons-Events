@@ -1,8 +1,8 @@
 package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
-import ie.sortons.events.shared.RecentPostsResponse;
 import ie.sortons.events.shared.WallPost;
+import ie.sortons.events.shared.dto.RecentPostsResponse;
 
 import java.util.List;
 

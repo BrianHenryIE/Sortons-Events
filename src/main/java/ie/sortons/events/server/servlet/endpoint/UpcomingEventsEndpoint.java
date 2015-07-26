@@ -2,7 +2,7 @@ package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.shared.DiscoveredEvent;
-import ie.sortons.events.shared.DiscoveredEventsResponse;
+import ie.sortons.events.shared.dto.DiscoveredEventsResponse;
 
 import java.util.ArrayList;
 import java.util.Calendar;
