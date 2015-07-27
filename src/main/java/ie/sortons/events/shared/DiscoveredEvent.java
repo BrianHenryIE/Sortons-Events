@@ -24,7 +24,7 @@ public class DiscoveredEvent implements JsonSerializable {
 	@ApiResourceProperty(name = "class")
 	public final String classname = "ie.sortons.events.shared.DiscoveredEvent";
 
-	@GwtIncompatible
+	
 	@Id
 	private String id;
 	
@@ -53,29 +53,22 @@ public class DiscoveredEvent implements JsonSerializable {
 		setEvent(fbEvent);
 		this.clientId = clientId;
 		addSourcePage(sourcePage);
+		updateDatastoreId();
 	}
 
 	// TODO: having clientId and sourcePage is redundant. Is it possible to have a 
 	// sourcePage without a clientId in it? (parent)
-	public DiscoveredEvent(Long eventId, Long clientId, SourcePage sourcePage) {
+	public DiscoveredEvent(Long eventId,SourcePage sourcePage) {
 		this.eventId = eventId;
-		this.clientId = clientId;
+		this.clientId = sourcePage.getClientId();
 		addSourcePage(sourcePage);
+		updateDatastoreId();
 	}
 
 	public DiscoveredEvent(String eventId, Long clientId, SourcePage sourcePage) {
-		new DiscoveredEvent(Long.parseLong(eventId), clientId, sourcePage);
+		new DiscoveredEvent(Long.parseLong(eventId), sourcePage);
 	}
 
-	public DiscoveredEvent(FqlEvent fbEvent, Long clientId, List<SourcePage> sourcePages) {
-		this(fbEvent, sourcePages);
-		this.clientId = clientId;
-	}
-	
-	public DiscoveredEvent(FqlEvent fbEvent, List<SourcePage> sourcePages) {
-		setEvent(fbEvent);
-		this.sourcePages = sourcePages;
-	}
 
 	public DiscoveredEvent(DiscoveredEvent dEvent, List<SourcePage> sourcePages) {
 		this.eventId = dEvent.getEventId();
@@ -88,7 +81,7 @@ public class DiscoveredEvent implements JsonSerializable {
 		this.sourcePages = sourcePages;
 	}
 	
-	private void setEvent(FqlEvent fbEvent) {
+	public void setEvent(FqlEvent fbEvent) {
 		this.eventId = fbEvent.getEid();
 		this.name = fbEvent.getName();
 		this.location = fbEvent.getLocation();
@@ -160,16 +153,16 @@ public class DiscoveredEvent implements JsonSerializable {
 
 	public void setEventId(Long eventId) {
 		this.eventId = eventId;
-		setId();
+		updateDatastoreId();
 	}
 
 	public void setClientIdFromCPD(ClientPageData clientPageData) {
-		this.clientId = clientPageData.getClientPageId();
+		setClientId(clientPageData.getClientPageId());
 	}
 
 	public void setClientId(Long clientId) {
 		this.clientId = clientId;
-		setId();
+		updateDatastoreId();
 	}
 
 	public void setSourcePages(List<SourcePage> sourcePages) {
@@ -192,7 +185,7 @@ public class DiscoveredEvent implements JsonSerializable {
 		this.endTime = endTime;
 	}
 
-	public void setId(){
+	public void updateDatastoreId(){
 		this.id = clientId + "" + eventId;
 	}
 
@@ -203,6 +196,75 @@ public class DiscoveredEvent implements JsonSerializable {
 	public void setId(String id) {
 		this.id = id;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((clientId == null) ? 0 : clientId.hashCode());
+		result = prime * result + (dateOnly ? 1231 : 1237);
+		result = prime * result + ((endTime == null) ? 0 : endTime.hashCode());
+		result = prime * result + ((eventId == null) ? 0 : eventId.hashCode());
+		result = prime * result + ((location == null) ? 0 : location.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((sourcePages == null) ? 0 : sourcePages.hashCode());
+		result = prime * result + ((startTime == null) ? 0 : startTime.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		DiscoveredEvent other = (DiscoveredEvent) obj;
+		if (clientId == null) {
+			if (other.clientId != null)
+				return false;
+		} else if (!clientId.equals(other.clientId))
+			return false;
+		if (dateOnly != other.dateOnly)
+			return false;
+		if (endTime == null) {
+			if (other.endTime != null)
+				return false;
+		} else if (!endTime.equals(other.endTime))
+			return false;
+		if (eventId == null) {
+			if (other.eventId != null)
+				return false;
+		} else if (!eventId.equals(other.eventId))
+			return false;
+		if (location == null) {
+			if (other.location != null)
+				return false;
+		} else if (!location.equals(other.location))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (sourcePages == null) {
+			if (other.sourcePages != null)
+				return false;
+		} else if (!sourcePages.equals(other.sourcePages))
+			return false;
+		if (startTime == null) {
+			if (other.startTime != null)
+				return false;
+		} else if (!startTime.equals(other.startTime))
+			return false;
+		return true;
+	}
+	
+	
+
+	
+
 	
 	
 }

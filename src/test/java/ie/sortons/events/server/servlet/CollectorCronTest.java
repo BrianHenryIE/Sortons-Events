@@ -129,7 +129,7 @@ public class CollectorCronTest {
 	@Test
 	public void testFindPostsByPageToSave() {
 		
-		List<WallPost> wallPosts = cc.findPostsByPageToSave(fqlStream, clientPageData);
+		// 	List<WallPost> wallPosts = cc.findPostsByPageToSave(fqlStream);
 		
 		// TODO this test doesn't work with past data... the method only looks at data from the past 15 minutes
 		// There are ways to change the time!
@@ -139,7 +139,7 @@ public class CollectorCronTest {
 	@Test
 	public void testFindEventsInStreamPosts() {
 		
-		List<Long> eventIds = cc.findEventsInStreamPosts(fqlStream);
+		List<Long> eventIds = cc.findEventIdsInStreamPosts(fqlStream);
 		
 		assertEquals(10, eventIds.size());
 	}
