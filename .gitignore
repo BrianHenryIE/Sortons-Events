@@ -4,9 +4,12 @@ gwt-unitCache
 .settings
 .project
 .classpath
+.factorypath
 *.cache.js
 WEB-INF/*.api
 *.devmode.js
 *.nocache.js
 /target/
 .externalToolBuilders
+/.apt_generated/
+*.api

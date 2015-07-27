@@ -186,6 +186,7 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 
 	public void setPageId(Long pageId) {
 		this.pageId = pageId;
+		setId();
 	}
 
 	public void setPhone(String phone) {
@@ -268,6 +269,7 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 
 	public void setClientId(Long clientId) {
 		this.clientId = clientId;
+		setId();
 	}
 
 	public String getId() {

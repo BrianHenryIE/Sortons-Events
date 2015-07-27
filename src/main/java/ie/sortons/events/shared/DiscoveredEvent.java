@@ -25,7 +25,8 @@ public class DiscoveredEvent implements JsonSerializable {
 	public final String classname = "ie.sortons.events.shared.DiscoveredEvent";
 
 	@GwtIncompatible
-	@Id Long id;
+	@Id
+	private String id;
 	
 	private Long eventId;
 
@@ -54,6 +55,8 @@ public class DiscoveredEvent implements JsonSerializable {
 		addSourcePage(sourcePage);
 	}
 
+	// TODO: having clientId and sourcePage is redundant. Is it possible to have a 
+	// sourcePage without a clientId in it? (parent)
 	public DiscoveredEvent(Long eventId, Long clientId, SourcePage sourcePage) {
 		this.eventId = eventId;
 		this.clientId = clientId;
@@ -157,6 +160,7 @@ public class DiscoveredEvent implements JsonSerializable {
 
 	public void setEventId(Long eventId) {
 		this.eventId = eventId;
+		setId();
 	}
 
 	public void setClientIdFromCPD(ClientPageData clientPageData) {
@@ -165,6 +169,7 @@ public class DiscoveredEvent implements JsonSerializable {
 
 	public void setClientId(Long clientId) {
 		this.clientId = clientId;
+		setId();
 	}
 
 	public void setSourcePages(List<SourcePage> sourcePages) {
@@ -187,8 +192,17 @@ public class DiscoveredEvent implements JsonSerializable {
 		this.endTime = endTime;
 	}
 
-	// public getters and setters for serialization
-	
+	public void setId(){
+		this.id = clientId + "" + eventId;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
 	
 	
 }

@@ -83,7 +83,7 @@ public class ClientPageDataEndpoint {
 
 			log.info("clientPageData == null");
 
-			SourcePage clientPageDetails = getPageFromId(clientId);
+			SourcePage clientPageDetails = getPageDetailsFromFacebook(clientId);
 
 			log.info("Added to new page: " + clientPageDetails.getName() + " " + clientPageDetails.getPageUrl() + " "
 					+ clientId);
@@ -100,15 +100,16 @@ public class ClientPageDataEndpoint {
 			return newClient;
 
 		} else {
-			
+
 			List<SourcePage> includedPages = ofy().load().type(SourcePage.class).filter("clientId", clientId).list();
 			clientPageData.setIncludedPages(includedPages);
-			
+
 			return clientPageData;
 		}
 	}
 
-	// Not sure if I can take a String as a POST parameter here (Endpoints doesn't elsewhere)
+	// Not sure if I can take a String as a POST parameter here (Endpoints
+	// doesn't elsewhere)
 	@ApiMethod(name = "clientdata.addPage", httpMethod = "post")
 	public SourcePage addPage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
 		log.info("addPage pre auth check");
@@ -118,40 +119,33 @@ public class ClientPageDataEndpoint {
 
 		log.info("addPage: " + jsonPage.getName() + " " + jsonPage.getPageId());
 
-		SourcePage fromDs = savePage(clientPageId, jsonPage.getPageId());
-		
+		SourcePage newPage = getSourcePageFromId(clientPageId, jsonPage.getPageId());
+
+		SourcePage fromDs = savePage(newPage);
+
 		return fromDs;
 	}
 
-	private SourcePage savePage(Long clientPageId, Long pageId){
-		// Keeping this here because in future we'll want more details about the page
-		// and there's no need for the client to fetch them.
+	/**
+	 * Due to earlier problems, this method saves the page and then queries the
+	 * datastore for it. I think it's overkill now and the old problems may have
+	 * been related to resaving ClientPageDate with its 1MB list over itself
+	 * before everything had settled.
+	 * 
+	 * Eventually anywhere that calls this should just have the ofy() call there
+	 * 
+	 * @param newPage
+	 * @return
+	 */
+	SourcePage savePage(SourcePage newPage) {
 
-		SourcePage newPage = getPageFromId(pageId);
-		
-		log.info("fbdetails 2: " + newPage.getName() + " " + pageId);
-
-		newPage.setClientId(clientPageId);
-		newPage.setId();
-		
 		ofy().save().entity(newPage).now();
-		
 
-		// TODO
-		// Check for events on this page immediately
-
-		// TODO Understand and remove troubleshooting
-
-		// TODO return an error, if appropriate
-		
-		log.info("returning from ds: " + newPage.getId());
-
-		// This should be tested properly and removed... it's a waste of resources.
 		SourcePage fromDs = ofy().load().type(SourcePage.class).id(newPage.getId()).now();
-		
+
 		return fromDs;
-		
 	}
+
 	
 	@ApiMethod(name = "clientdata.addPagesList", httpMethod = "post")
 	public PagesListResponse addPagesList(HttpServletRequest req, @Named("clientpageid") Long clientPageId,
@@ -160,30 +154,45 @@ public class ClientPageDataEndpoint {
 			return null;
 		// TODO return an error
 
+		
 		System.out.println("cpdendpoint: " + pagesList);
 		log.info("addPagesList: " + pagesList);
 
 		PagesListResponse newPages = new PagesListResponse();
 
 		List<SourcePage> dsPages = new ArrayList<SourcePage>();
-		
-		for (String pageid : pagesList.getList())
-			dsPages.add(savePage(clientPageId, Long.parseLong(pageid)));
-			
+		List<String> failed = new ArrayList<String>();
+
+		// TODO... for lists, this will be slow (the many calls to fb)
+		for (String pageId : pagesList.getList()) {
+			SourcePage newPage = getSourcePageFromId(clientPageId, Long.parseLong(pageId));
+			if (newPage == null)
+				failed.add(pageId);
+			else {
+				SourcePage added = savePage(newPage);
+				if (added != null)
+					dsPages.add(added);
+				else
+					failed.add(pageId);
+			}
+
+		}
+
 		return newPages;
 	}
 
+	// TODO This doesn't work anymore
 	@ApiMethod(name = "clientdata.removePage", httpMethod = "post")
 	public SourcePage removePage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
 		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
 			return null;
 		// TODO return an error
-		
+
 		ClientPageData clientPageData = getClientPageData(clientPageId);
 
 		SourcePage newPage;
 		if (jsonPage.getName() == "" || jsonPage.getPageUrl() == "") {
-			newPage = getPageFromId(jsonPage.getPageId());
+			newPage = getPageDetailsFromFacebook(jsonPage.getPageId());
 		} else {
 			newPage = jsonPage;
 		}
@@ -206,11 +215,20 @@ public class ClientPageDataEndpoint {
 
 		ClientPageDataResponse cpd = new ClientPageDataResponse();
 		cpd.setData(clients);
-		
+
 		return cpd;
 	}
 
-	SourcePage getPageFromId(Long pageId) {
+	SourcePage getSourcePageFromId(Long clientPageId, Long pageId) {
+
+		SourcePage newPage = getPageDetailsFromFacebook(pageId);
+		if (newPage != null)
+			newPage.setClientId(clientPageId);
+
+		return newPage;
+	}
+
+	SourcePage getPageDetailsFromFacebook(Long pageId) {
 		// FQL call pieces
 		String fqlcallstub = "https://graph.facebook.com/fql?q=";
 		String fql = "SELECT page_id, name, page_url, location, about, phone FROM page WHERE page_id = " + pageId;
@@ -252,10 +270,13 @@ public class ClientPageDataEndpoint {
 		}.getType();
 		FbResponse<FqlPage> pages = gson.fromJson(json, fooType);
 
-		if (pages.getError() == null && pages.getData() != null && pages.getData().size() > 0)
+		if (pages.getError() == null && pages.getData() != null && pages.getData().size() > 0) {
+			log.info("returning page details");
 			return new SourcePage(pages.getData().get(0));
-		else
+		} else {
+			log.info("returning null");
 			return null;
+		}
 
 		// TODO: return an error.
 	}
@@ -277,9 +298,9 @@ public class ClientPageDataEndpoint {
 		ClientCookieData c = new ClientCookieData(req);
 
 		// For now it's just me!
-		
+
 		log.info("c.getUserId() " + c.getUserId());
-		
+
 		boolean isAppAdmin = (c.getUserId() != null ? c.getUserId().equals(37302520l) : false);
 
 		log.info("checking is app admin: " + isAppAdmin);
@@ -378,10 +399,9 @@ public class ClientPageDataEndpoint {
 
 			if (req.getCookies() != null) {
 				for (Cookie c : req.getCookies()) {
-					
+
 					log.info("Reading COOKIE: " + c.getName() + " " + c.getValue());
-					
-					
+
 					System.out.println("cookies: " + c.getName());
 					if (c.getName().equals("accessToken"))
 						accessToken = c.getValue();
