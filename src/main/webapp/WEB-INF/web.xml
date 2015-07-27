@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	version="2.5">
+	<servlet>
+		<servlet-name>CollectorCron</servlet-name>
+		<servlet-class>ie.sortons.events.server.servlet.CollectorCron</servlet-class>
+	</servlet>
+	<servlet>
+		<servlet-name>LandingPage</servlet-name>
+		<servlet-class>ie.sortons.events.server.servlet.LandingPage</servlet-class>
+	</servlet>
+	<servlet>
+		<servlet-name>RecentPosts</servlet-name>
+		<servlet-class>ie.sortons.events.server.servlet.RecentPosts</servlet-class>
+	</servlet>
+	<servlet>
+		<servlet-name>Directory</servlet-name>
+		<servlet-class>ie.sortons.events.server.servlet.Directory</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>CollectorCron</servlet-name>
+		<url-pattern>/collectorcron/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>LandingPage</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>RecentPosts</servlet-name>
+		<url-pattern>/recentposts/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>Directory</servlet-name>
+		<url-pattern>/directory/*</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>SystemServiceServlet</servlet-name>
+		<servlet-class>com.google.api.server.spi.SystemServiceServlet</servlet-class>
+		<init-param>
+			<param-name>services</param-name>
+			<param-value>ie.sortons.events.server.servlet.endpoint.ClientPageDataEndpoint,ie.sortons.events.server.servlet.endpoint.RecentPostsEndpoint,ie.sortons.events.server.servlet.endpoint.UpcomingEventsEndpoint</param-value>
+		</init-param>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>SystemServiceServlet</servlet-name>
+		<url-pattern>/_ah/spi/*</url-pattern>
+	</servlet-mapping>
+
+
+	<filter>
+		<filter-name>ObjectifyFilter</filter-name>
+		<filter-class>com.googlecode.objectify.ObjectifyFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>ObjectifyFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+</web-app>

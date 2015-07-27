@@ -5,7 +5,7 @@ gwt-unitCache
 .project
 .classpath
 *.cache.js
-WEB-INF
+WEB-INF/*.api
 *.devmode.js
 *.nocache.js
 /target/

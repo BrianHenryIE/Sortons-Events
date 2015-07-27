@@ -4,11 +4,11 @@
 
 	<groupId>ie.sortons</groupId>
 	<artifactId>events</artifactId>
-	<version>0.0.8-SNAPSHOT</version>
+	<version>0.1.0-SNAPSHOT</version>
 	<packaging>war</packaging>
 
 	<properties>
-		<appengine.app.version>81</appengine.app.version>
+		<appengine.app.version>1010</appengine.app.version>
 		<gae.version>1.9.23</gae.version>
 		<gwt.version>2.8.0-SNAPSHOT</gwt.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

@@ -1,0 +1,366 @@
+{
+  "extends" : "thirdParty.api",
+  "abstract" : false,
+  "root" : "https://sortonsevents.appspot.com/_ah/api",
+  "name" : "upcomingEvents",
+  "version" : "v1",
+  "defaultVersion" : false,
+  "adapter" : {
+    "bns" : "https://sortonsevents.appspot.com/_ah/spi",
+    "deadline" : 65.0,
+    "type" : "lily"
+  },
+  "auth" : {
+    "allowCookieAuth" : false
+  },
+  "frontendLimits" : {
+    "unregisteredUserQps" : -1,
+    "unregisteredQps" : -1,
+    "unregisteredDaily" : -1,
+    "rules" : [ ]
+  },
+  "cacheControl" : {
+    "type" : "no-cache",
+    "maxAge" : 0
+  },
+  "methods" : {
+    "upcomingEvents.upcomingEventsEndpoint.getList" : {
+      "path" : "discoveredeventsresponse/{id}",
+      "httpMethod" : "GET",
+      "authLevel" : "NONE",
+      "scopes" : [ "https://www.googleapis.com/auth/userinfo.email" ],
+      "audiences" : [ ],
+      "clientIds" : [ "292824132082.apps.googleusercontent.com" ],
+      "rosyMethod" : "ie.sortons.events.server.servlet.endpoint.UpcomingEventsEndpoint.getList",
+      "request" : {
+        "parameters" : {
+          "id" : {
+            "type" : "int64",
+            "required" : true
+          }
+        },
+        "body" : "empty"
+      },
+      "response" : {
+        "body" : "autoTemplate(backendResponse)"
+      }
+    }
+  },
+  "descriptor" : {
+    "schemas" : {
+      "DiscoveredEventsResponse" : {
+        "id" : "DiscoveredEventsResponse",
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "DiscoveredEvent"
+            }
+          },
+          "class" : {
+            "type" : "string"
+          }
+        }
+      },
+      "DiscoveredEvent" : {
+        "id" : "DiscoveredEvent",
+        "type" : "object",
+        "properties" : {
+          "eid" : {
+            "type" : "string",
+            "format" : "int64"
+          },
+          "sourceLists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "int64"
+            }
+          },
+          "sourcePages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "SourcePage"
+            }
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "startTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "endTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "sourcePagesToClientOnly" : {
+            "$ref" : "ClientPageData"
+          },
+          "_date_only" : {
+            "type" : "boolean"
+          },
+          "event" : {
+            "$ref" : "FqlEvent"
+          },
+          "class" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SourcePage" : {
+        "id" : "SourcePage",
+        "type" : "object",
+        "properties" : {
+          "about" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "pageId" : {
+            "type" : "string",
+            "format" : "int64"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "pageUrl" : {
+            "type" : "string"
+          },
+          "street" : {
+            "type" : "string"
+          },
+          "city" : {
+            "type" : "string"
+          },
+          "country" : {
+            "type" : "string"
+          },
+          "latitude" : {
+            "type" : "number"
+          },
+          "longitude" : {
+            "type" : "number"
+          },
+          "friendlyLocationString" : {
+            "type" : "string"
+          },
+          "zip" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "searchableString" : {
+            "type" : "string"
+          },
+          "subTitle" : {
+            "type" : "string"
+          },
+          "uid" : {
+            "type" : "string",
+            "format" : "int64"
+          },
+          "class" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ClientPageData" : {
+        "id" : "ClientPageData",
+        "type" : "object",
+        "properties" : {
+          "clientPageId" : {
+            "type" : "string",
+            "format" : "int64"
+          },
+          "suggestedPages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "SourcePage"
+            }
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "pageUrl" : {
+            "type" : "string"
+          },
+          "class" : {
+            "type" : "string"
+          }
+        }
+      },
+      "FqlEvent" : {
+        "id" : "FqlEvent",
+        "type" : "object",
+        "properties" : {
+          "all_members_count" : {
+            "type" : "integer"
+          },
+          "app_id" : {
+            "type" : "string"
+          },
+          "attending_count" : {
+            "type" : "integer"
+          },
+          "can_invite_friends" : {
+            "type" : "boolean"
+          },
+          "creator" : {
+            "type" : "string",
+            "format" : "int64"
+          },
+          "creator_cursor" : {
+            "type" : "string"
+          },
+          "declined_count" : {
+            "type" : "integer"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "eid" : {
+            "type" : "string",
+            "format" : "int64"
+          },
+          "end_time" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "has_profile_pic" : {
+            "type" : "boolean"
+          },
+          "hide_guest_list" : {
+            "type" : "boolean"
+          },
+          "host" : {
+            "type" : "string"
+          },
+          "is_date_only" : {
+            "type" : "boolean"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "pic_small" : {
+            "type" : "string"
+          },
+          "pic_big" : {
+            "type" : "string"
+          },
+          "pic_square" : {
+            "type" : "string"
+          },
+          "pic" : {
+            "type" : "string"
+          },
+          "privacy" : {
+            "type" : "string"
+          },
+          "start_time" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "update_time" : {
+            "type" : "string"
+          },
+          "venue" : {
+            "$ref" : "FqlEventVenue"
+          },
+          "unsure_count" : {
+            "type" : "string"
+          },
+          "not_replied_count" : {
+            "type" : "string"
+          },
+          "endTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "startTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "isDateOnly" : {
+            "type" : "boolean"
+          },
+          "hideGuestList" : {
+            "type" : "boolean"
+          },
+          "canInviteFriends" : {
+            "type" : "boolean"
+          },
+          "allMembersCount" : {
+            "type" : "integer"
+          },
+          "attendingCount" : {
+            "type" : "integer"
+          },
+          "unsureCount" : {
+            "type" : "string"
+          },
+          "declinedCount" : {
+            "type" : "integer"
+          }
+        }
+      },
+      "FqlEventVenue" : {
+        "id" : "FqlEventVenue",
+        "type" : "object",
+        "properties" : {
+          "street" : {
+            "type" : "string"
+          },
+          "city" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "country" : {
+            "type" : "string"
+          },
+          "zip" : {
+            "type" : "string"
+          },
+          "latitude" : {
+            "type" : "number"
+          },
+          "longitude" : {
+            "type" : "number"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "int64"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "located_in" : {
+            "type" : "string",
+            "format" : "int64"
+          }
+        }
+      }
+    },
+    "methods" : {
+      "ie.sortons.events.server.servlet.endpoint.UpcomingEventsEndpoint.getList" : {
+        "response" : {
+          "$ref" : "DiscoveredEventsResponse"
+        }
+      }
+    }
+  }
+}
