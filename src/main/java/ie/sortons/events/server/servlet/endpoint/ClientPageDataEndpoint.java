@@ -64,8 +64,7 @@ public class ClientPageDataEndpoint {
 	 * @return
 	 */
 	public ClientPageData getClientPageData(HttpServletRequest req, @Named("clientid") Long clientPageId) {
-		// TODO only return what's needed, i.e. no page admins
-
+		
 		ClientPageData clientPageData = getClientPageData(clientPageId);
 
 		log.info("_ah/api/clientdata/v1/clientpagedata/ :" + clientPageData.getName());
@@ -113,7 +112,8 @@ public class ClientPageDataEndpoint {
 	@ApiMethod(name = "clientdata.addPage", httpMethod = "post")
 	public SourcePage addPage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
 		log.info("addPage pre auth check");
-		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
+		ClientPageData clientPageData = getClientPageData(clientPageId);
+		if (req.getCookies()==null || !(isPageAdmin(req.getCookies(), clientPageData) || isAppAdmin(req.getCookies())))
 			return null;
 		// TODO return an error: permission denied
 
@@ -129,10 +129,12 @@ public class ClientPageDataEndpoint {
 	/**
 	 * Due to earlier problems, this method saves the page and then queries the
 	 * datastore for it. I think it's overkill now and the old problems may have
-	 * been related to resaving ClientPageDate with its 1MB list over itself
+	 * been related to resaving ClientPageData with its 1MB list over itself
 	 * before everything had settled.
 	 * 
 	 * Eventually anywhere that calls this should just have the ofy() call there
+	 * I'm not even convinced a ClientPageData object is needed, maybe just a SourcePage
+	 * with no parent would be adequate
 	 * 
 	 * @param newPage
 	 * @return
@@ -150,7 +152,9 @@ public class ClientPageDataEndpoint {
 	@ApiMethod(name = "clientdata.addPagesList", httpMethod = "post")
 	public PagesListResponse addPagesList(HttpServletRequest req, @Named("clientpageid") Long clientPageId,
 			PageList pagesList) {
-		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
+		
+		ClientPageData clientPageData = getClientPageData(clientPageId);
+		if (!(isPageAdmin(req.getCookies(), clientPageData) || isAppAdmin(req.getCookies())))
 			return null;
 		// TODO return an error
 
@@ -184,12 +188,13 @@ public class ClientPageDataEndpoint {
 	// TODO This doesn't work anymore
 	@ApiMethod(name = "clientdata.removePage", httpMethod = "post")
 	public SourcePage removePage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
-		if (!(isPageAdmin(req, clientPageId) || isAppAdmin(req)))
+		ClientPageData clientPageData = getClientPageData(clientPageId);
+
+		if (req.getCookies()==null || !(isPageAdmin(req.getCookies(), clientPageData) || isAppAdmin(req.getCookies())))
 			return null;
 		// TODO return an error
 
-		ClientPageData clientPageData = getClientPageData(clientPageId);
-
+		
 		SourcePage newPage;
 		if (jsonPage.getName() == "" || jsonPage.getPageUrl() == "") {
 			newPage = getPageDetailsFromFacebook(jsonPage.getPageId());
@@ -205,19 +210,6 @@ public class ClientPageDataEndpoint {
 		return newPage;
 	}
 
-	public ClientPageDataResponse getAllClients(HttpServletRequest req) {
-		if (!isAppAdmin(req))
-			return null;
-		// TODO return an error
-
-		List<ClientPageData> clients = new ArrayList<ClientPageData>();
-		clients = ofy().load().type(ClientPageData.class).list();
-
-		ClientPageDataResponse cpd = new ClientPageDataResponse();
-		cpd.setData(clients);
-
-		return cpd;
-	}
 
 	SourcePage getSourcePageFromId(Long clientPageId, Long pageId) {
 
@@ -281,10 +273,8 @@ public class ClientPageDataEndpoint {
 		// TODO: return an error.
 	}
 
-	private boolean isAppAdmin(HttpServletRequest req) {
-		if (req.getCookies() == null)
-			return false;
-
+	boolean isAppAdmin(Cookie[] cookies) {
+		
 		// TODO
 		// SELECT application_id, developer_id, role FROM developer WHERE
 		// developer_id = 37302520
@@ -295,7 +285,7 @@ public class ClientPageDataEndpoint {
 		// see if the
 		// signedrequest says they're an admin and add them if they are.
 
-		ClientCookieData c = new ClientCookieData(req);
+		AppCookieData c = new AppCookieData(cookies);
 
 		// For now it's just me!
 
@@ -309,29 +299,28 @@ public class ClientPageDataEndpoint {
 
 	}
 
-	private boolean isPageAdmin(HttpServletRequest req, Long clientPageId) {
-		if (req.getCookies() == null)
+	boolean isPageAdmin(Cookie[] cookies, ClientPageData clientPageData) {
+		if (cookies == null)
 			return false;
 
-		ClientCookieData c = new ClientCookieData(req);
-		ClientPageData cpd = getClientPageData(clientPageId);
+		AppCookieData c = new AppCookieData(cookies);
 
 		// Check the encrypted signed request
 		// Add them to the admin list if possible
 		if (c.getSignedRequest() != null && c.getSignedRequest().getPage() != null
 				&& c.getSignedRequest().getPage().isAdmin() == true
-				&& c.getSignedRequest().getPage().getId().equals(Long.toString(clientPageId))) {
+				&& c.getSignedRequest().getPage().getId().equals(Long.toString(clientPageData.getClientPageId()))) {
 			if (c.getSignedRequest().getUserId() != null
-					&& cpd.addPageAdmin(Long.parseLong(c.getSignedRequest().getUserId()))) {
+					&& clientPageData.addPageAdmin(Long.parseLong(c.getSignedRequest().getUserId()))) {
 
-				ofy().save().entity(cpd).now();
+				ofy().save().entity(clientPageData).now();
 			}
 			return true;
 		}
 
 		// Check the existing admin list
 		if (isValidAccessTokenForUser(c.getAccessToken(), c.getUserId()))
-			return cpd.getPageAdmins().contains(c.getUserId());
+			return clientPageData.getPageAdmins().contains(c.getUserId());
 
 		return false;
 
@@ -368,7 +357,7 @@ public class ClientPageDataEndpoint {
 		return false; // Shouldn't ever get here
 	}
 
-	class ClientCookieData {
+	class AppCookieData {
 
 		/**
 		 * @return the signedRequest
@@ -395,10 +384,10 @@ public class ClientPageDataEndpoint {
 		private Long userId;
 		private String accessToken;
 
-		public ClientCookieData(HttpServletRequest req) {
+		public AppCookieData(Cookie[] cookies) {
 
-			if (req.getCookies() != null) {
-				for (Cookie c : req.getCookies()) {
+			if (cookies != null) {
+				for (Cookie c : cookies) {
 
 					log.info("Reading COOKIE: " + c.getName() + " " + c.getValue());
 
@@ -413,6 +402,7 @@ public class ClientPageDataEndpoint {
 						SimpleStringCipher ssc = new SimpleStringCipher(Config.getAppSecret());
 						try {
 							String signedRequestFromCookie = ssc.decrypt(c.getValue());
+							log.info(signedRequestFromCookie);
 							signedRequest = SignedRequest.parseSignedRequest(signedRequestFromCookie);
 						} catch (Exception e) {
 							e.printStackTrace();

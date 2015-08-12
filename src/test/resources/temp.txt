@@ -3,3 +3,6 @@
 UCDSocietiesStreamWithEvents :
 SELECT source_id, post_id, permalink, actor_id, target_id, message, attachment.media, created_time, type FROM stream WHERE source_id = 208084049281702 AND actor_id = 208084049281702 AND created_time > 1428886861 AND created_time < 1429146061
 
+
+SignedRequest
+And tests relying on this should fail because the access token will be incorrect

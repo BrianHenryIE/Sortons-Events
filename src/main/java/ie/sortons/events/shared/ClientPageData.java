@@ -3,8 +3,10 @@ package ie.sortons.events.shared;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.gwt.core.shared.GwtIncompatible;
@@ -30,8 +32,8 @@ public class ClientPageData implements JsonSerializable {
 
 	private SourcePage clientPage;
 
-	//@GwtIncompatible // @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-	private List<Long> pageAdmins = new ArrayList<Long>();
+	@GwtIncompatible // @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+	private Set<Long> pageAdmins = new HashSet<Long>();
 	
 	@Ignore
 	private List<SourcePage> includedPages = new ArrayList<SourcePage>();
@@ -50,13 +52,6 @@ public class ClientPageData implements JsonSerializable {
 	}
 
 
-	/**
-	 * @param pageAdmins the pageAdmins to set
-	 */
-	@GwtIncompatible
-	public boolean addPageAdmin(Long admin) {
-		return pageAdmins.add(admin);
-	}
 
 	// TODO Are these next three needed?
 	public Long getClientPageId() {
@@ -71,13 +66,6 @@ public class ClientPageData implements JsonSerializable {
 		return clientPage.getPageUrl();
 	}
 	
-	/**
-	 * @return the pageAdmins
-	 */
-	//@GwtIncompatible
-	public List<Long> getPageAdmins() {
-		return pageAdmins;
-	}
 
 	public void setSuggestedPages(List<SourcePage> suggestedPages) {
 		this.suggestedPages = suggestedPages;
@@ -158,18 +146,33 @@ public class ClientPageData implements JsonSerializable {
 	public void setClientPageId(Long clientPageId) {
 		this.clientPageId = clientPageId;
 	}
-
-	public void setPageAdmins(List<Long> pageAdmins) {
-		this.pageAdmins = pageAdmins;
-	}
-
+	
 	public void setIncludedPages(List<SourcePage> includedPages) {
 		this.includedPages = includedPages;
 	}
 
 	
+	/**
+	 * @return the pageAdmins
+	 */
+	@GwtIncompatible
+	public Set<Long> getPageAdmins() {
+		return pageAdmins;
+	}
+
+	@GwtIncompatible
+	public void setPageAdmins(Set<Long> pageAdmins) {
+		this.pageAdmins = pageAdmins;
+	}
 	
-	
+	/**
+	 * @param pageAdmins the pageAdmins to set
+	 */
+	@GwtIncompatible
+	public boolean addPageAdmin(Long admin) {
+		return pageAdmins.add(admin);
+	}
+
 
 	
 }

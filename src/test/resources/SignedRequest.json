@@ -1,0 +1,20 @@
+ {
+ "algorithm": "HMAC-SHA256",
+ "app_data": "TheDataPassedInFrom#afterTheFacebookURL",
+ "expires": 1357354800,
+ "issued_at": 1357347803,
+ "oauth_token": "CAABv7lKZBb4EBALgc0KeuS5abcLNam46CUwLqLPWLCwsoIi9MmdiIrBWSStx3f1zf8uB59LPUhg6w6jzmocUpch0z6YgIZCfO9SKMcnAL1gkK2JNUj6c4LClQ9sumFKFL5X3CZAcZCBy9yltxNHhawkZBuovicO2FWIEtT2YSRDqokHh4ImluvmkftcQgpHwdDWvzFvr7DS8pHa9ARGZCB",
+ "page": {
+ "id": "197528567092983",
+ "liked": true,
+ "admin": true
+ },
+ "user": {
+ "country": "ie",
+ "locale": "en_GB",
+ "age": {
+ "min": 21
+ }
+ },
+ "user_id": "37302520"
+ }
