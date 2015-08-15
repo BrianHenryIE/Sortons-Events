@@ -65,7 +65,7 @@ body {
            
         <div id="theposts"></div>
 
-        <div id="moreButton"><a id="loadmorelink" href="#" onclick="addPosts();return false;">Load More Posts...</a></div>
+       <!-- <div id="moreButton"><a id="loadmorelink" href="#" onclick="addPosts();return false;">Load More Posts...</a></div> -->
         
         <div id="fb-root"></div>
       
@@ -154,6 +154,14 @@ body {
                 FB.XFBML.parse();
             
             }
+
+            // infinite scroll
+            window.onscroll = function(ev) {
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+                    // you're at the bottom of the page
+                    addPosts();
+                }
+            };
 
         </script>
     </body>
