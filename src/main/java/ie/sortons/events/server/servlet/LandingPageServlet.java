@@ -1,8 +1,5 @@
 package ie.sortons.events.server.servlet;
 
-import ie.sortons.gwtfbplus.server.SimpleStringCipher;
-import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
@@ -15,6 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
+
+import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
 
 @SuppressWarnings("serial")
 public abstract class LandingPageServlet extends HttpServlet {
