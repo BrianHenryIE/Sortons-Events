@@ -8,9 +8,9 @@ import ie.sortons.gwtfbplus.client.widgets.EmbeddedPost;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gwt.core.client.Callback;
 import com.google.gwt.dom.client.Style.Position;
 import com.google.gwt.dom.client.Style.Unit;
+import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Composite;
@@ -86,15 +86,13 @@ public class RecentPostsView extends Composite implements RecentPostsPresenter.D
 		int stop = Math.min(i + n, posts.size() - 1);
 		while (i < stop) {
 			EmbeddedPost np;
-			np = new EmbeddedPost(posts.get(i), 390, new Callback<String, String>() {
-				@Override
-				public void onFailure(String reason) {
-				}
+			np = new EmbeddedPost(posts.get(i), 390, new Command() {
 
 				@Override
-				public void onSuccess(String result) {
+				public void execute() {
 					Canvas.setSize();
 				}
+
 			});
 			np.getElement().getStyle().setMarginBottom(25, Unit.PX);
 			if (i % 2 == 1)
@@ -106,24 +104,17 @@ public class RecentPostsView extends Composite implements RecentPostsPresenter.D
 	}
 
 	// To stop too many posts rendering at once...
-	Callback<String, String> nextCallback = new Callback<String, String>() {
+	Command nextCallback = new Command() {
 
 		@Override
-		public void onFailure(String reason) {
-			// TODO Auto-generated method stub
-		}
-
-		@Override
-		public void onSuccess(String result) {
-
+		public void execute() {
 			addPostsToPanelWhenNeeded();
-
 			Canvas.setSize();
 		}
-
 	};
 
-	// If we're going to have multiple of these, we might as well spread them out.
+	// If we're going to have multiple of these, we might as well spread them
+	// out.
 	private int numResizeTimers = 1;
 
 	public void addPostsToPanelWhenNeeded() {
