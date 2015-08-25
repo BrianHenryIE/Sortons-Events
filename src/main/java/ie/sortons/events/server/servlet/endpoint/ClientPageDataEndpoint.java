@@ -30,8 +30,10 @@ import com.googlecode.objectify.ObjectifyService;
 import ie.sortons.events.server.servlet.SimpleStringCipher;
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.Config;
+import ie.sortons.events.shared.DiscoveredEvent;
 import ie.sortons.events.shared.PageList;
 import ie.sortons.events.shared.SourcePage;
+import ie.sortons.events.shared.WallPost;
 import ie.sortons.events.shared.dto.PagesListResponse;
 import ie.sortons.gwtfbplus.shared.domain.FbResponse;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
@@ -45,7 +47,7 @@ import ie.sortons.gwtfbplus.shared.domain.graph.GraphUser;
  * @author brianhenry
  * 
  */
-@Api(name = "clientdata", version = "v1", auth = @ApiAuth(allowCookieAuth = AnnotationBoolean.TRUE))
+@Api(name = "clientdata", version = "v1", auth = @ApiAuth(allowCookieAuth = AnnotationBoolean.TRUE) )
 public class ClientPageDataEndpoint {
 
 	// TODO Should everything be returned in a generic object with a data and an
@@ -64,7 +66,7 @@ public class ClientPageDataEndpoint {
 	 * @return
 	 */
 	public ClientPageData getClientPageData(HttpServletRequest req, @Named("clientid") Long clientPageId) {
-		
+
 		ClientPageData clientPageData = getClientPageData(clientPageId);
 
 		log.info("_ah/api/clientdata/v1/clientpagedata/ :" + clientPageData.getName());
@@ -113,7 +115,8 @@ public class ClientPageDataEndpoint {
 	public SourcePage addPage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
 		log.info("addPage pre auth check");
 		ClientPageData clientPageData = getClientPageData(clientPageId);
-		if (req.getCookies()==null || !(isPageAdmin(req.getCookies(), clientPageData) || isAppAdmin(req.getCookies())))
+		if (req.getCookies() == null
+				|| !(isPageAdmin(req.getCookies(), clientPageData) || isAppAdmin(req.getCookies())))
 			return null;
 		// TODO return an error: permission denied
 
@@ -133,8 +136,8 @@ public class ClientPageDataEndpoint {
 	 * before everything had settled.
 	 * 
 	 * Eventually anywhere that calls this should just have the ofy() call there
-	 * I'm not even convinced a ClientPageData object is needed, maybe just a SourcePage
-	 * with no parent would be adequate
+	 * I'm not even convinced a ClientPageData object is needed, maybe just a
+	 * SourcePage with no parent would be adequate
 	 * 
 	 * @param newPage
 	 * @return
@@ -148,17 +151,15 @@ public class ClientPageDataEndpoint {
 		return fromDs;
 	}
 
-	
 	@ApiMethod(name = "clientdata.addPagesList", httpMethod = "post")
 	public PagesListResponse addPagesList(HttpServletRequest req, @Named("clientpageid") Long clientPageId,
 			PageList pagesList) {
-		
+
 		ClientPageData clientPageData = getClientPageData(clientPageId);
 		if (!(isPageAdmin(req.getCookies(), clientPageData) || isAppAdmin(req.getCookies())))
 			return null;
 		// TODO return an error
 
-		
 		System.out.println("cpdendpoint: " + pagesList);
 		log.info("addPagesList: " + pagesList);
 
@@ -185,31 +186,40 @@ public class ClientPageDataEndpoint {
 		return newPages;
 	}
 
-	// TODO This doesn't work anymore
 	@ApiMethod(name = "clientdata.removePage", httpMethod = "post")
-	public SourcePage removePage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
-		ClientPageData clientPageData = getClientPageData(clientPageId);
+	public SourcePage removePage(HttpServletRequest req, SourcePage jsonPage) {
+		ClientPageData clientPageData = getClientPageData(jsonPage.getClientId());
 
-		if (req.getCookies()==null || !(isPageAdmin(req.getCookies(), clientPageData) || isAppAdmin(req.getCookies())))
+		if (req.getCookies() == null
+				|| !(isPageAdmin(req.getCookies(), clientPageData) || isAppAdmin(req.getCookies())))
 			return null;
 		// TODO return an error
 
+		// Find events that the source page was in and remove the reference to
+		// the SourcePage. If it was the only source page, delete the event
+		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class)
+				.filter("clientId", jsonPage.getClientId())
+				.filter("startTime >", UpcomingEventsEndpoint.getHoursAgoOrToday(12)).order("startTime").list();
+		for (DiscoveredEvent dse : dsEvents)
+			if (dse.getSourcePages().contains(jsonPage))
+				if (dse.getSourcePages().size() > 1) {
+					dse.getSourcePages().remove(jsonPage);
+					ofy().save().entity(dse).now();
+				} else
+					ofy().delete().type(DiscoveredEvent.class).id(dse.getId());
+
+		//  Delete corresponding wall posts.
+		// TODO: not working properly!
+		List<WallPost> recentPosts = ofy().load().type(WallPost.class).filter("clientId", jsonPage.getClientId()).limit(5000).list();
+		for(WallPost post:recentPosts)
+			if(post.getPageId().equals(jsonPage.getPageId()))
+				ofy().delete().type(WallPost.class).id(post.getUniqueId());
 		
-		SourcePage newPage;
-		if (jsonPage.getName() == "" || jsonPage.getPageUrl() == "") {
-			newPage = getPageDetailsFromFacebook(jsonPage.getPageId());
-		} else {
-			newPage = jsonPage;
-		}
+		// Finally delete the page itself
+		ofy().delete().type(SourcePage.class).id(jsonPage.getId());
 
-		clientPageData.removePage(newPage);
-
-		ofy().save().entity(clientPageData).now();
-
-		// TODO return an error, if appropriate
-		return newPage;
+		return jsonPage;
 	}
-
 
 	SourcePage getSourcePageFromId(Long clientPageId, Long pageId) {
 
@@ -274,7 +284,7 @@ public class ClientPageDataEndpoint {
 	}
 
 	boolean isAppAdmin(Cookie[] cookies) {
-		
+
 		// TODO
 		// SELECT application_id, developer_id, role FROM developer WHERE
 		// developer_id = 37302520

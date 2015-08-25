@@ -55,7 +55,7 @@ public class UpcomingEventsEndpoint {
 		// return upcomingEvents;
 	}
 
-	private Date getHoursAgoOrToday(int hours) {
+	public static Date getHoursAgoOrToday(int hours) {
 
 		Calendar calvar = Calendar.getInstance();
 

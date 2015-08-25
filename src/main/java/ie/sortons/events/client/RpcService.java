@@ -295,14 +295,13 @@ public class RpcService {
 
 		clientPageData.getSuggestedPages().remove(page);
 
-		String removePageAPI = apiBase + "clientdata/v1/removePage/" + currentPageId;
+		String removePageAPI = apiBase + "clientdata/v1/page?alt=json";
 
 		RequestBuilder removePageBuilder = new RequestBuilder(RequestBuilder.POST, removePageAPI);
 		removePageBuilder.setHeader("Content-Type", "application/json");
 
 		try {
-			@SuppressWarnings("unused")
-			Request request = removePageBuilder.sendRequest(serializer.serialize(page), callback);
+			removePageBuilder.sendRequest(serializer.serialize(page), callback);
 		} catch (RequestException e) {
 			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :removePage()");
 		}

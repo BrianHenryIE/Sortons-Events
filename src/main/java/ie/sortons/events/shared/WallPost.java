@@ -13,7 +13,7 @@ import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 public class WallPost implements JsonSerializable {
 
 	// TODO get rid of public modifiers!
-	
+
 	@GwtIncompatible
 	@ApiResourceProperty(name = "class")
 	public final String classname = "ie.sortons.events.shared.WallPost";
@@ -46,8 +46,15 @@ public class WallPost implements JsonSerializable {
 	}
 
 	public String getUrl() {
-
 		return this.url;
+	}
+
+	public String getPageId() {
+		return postId.split("_")[0];
+	}
+
+	public String getUniqueId() {
+		return uniqueId;
 	}
 
 }
