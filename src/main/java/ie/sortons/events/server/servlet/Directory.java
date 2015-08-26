@@ -1,9 +1,14 @@
 package ie.sortons.events.server.servlet;
 
+import java.util.logging.Logger;
 
 @SuppressWarnings("serial")
 public class Directory extends LandingPageServlet {
-
+	
+	static {
+		log = Logger.getLogger(Directory.class.getName());
+	}
+	
 	// TODO: scriptinject from the bing maps project
 	String head ="			<script src='//ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0&amp;s=1' />";
 	
