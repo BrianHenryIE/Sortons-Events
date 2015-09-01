@@ -70,6 +70,12 @@ public class DiscoveredEvent implements JsonSerializable {
 	}
 
 
+	/**
+	 * Copy constructor
+	 * 
+	 * @param dEvent
+	 * @param sourcePages
+	 */
 	public DiscoveredEvent(DiscoveredEvent dEvent, List<SourcePage> sourcePages) {
 		this.eventId = dEvent.getEventId();
 		this.clientId = dEvent.getClientId();
@@ -262,7 +268,7 @@ public class DiscoveredEvent implements JsonSerializable {
 	}
 	
 	
-
+	
 	
 
 	

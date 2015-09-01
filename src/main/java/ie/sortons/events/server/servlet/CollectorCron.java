@@ -181,7 +181,7 @@ public class CollectorCron extends HttpServlet {
 	 * @param fqlCalls
 	 * @return
 	 */
-	private Map<SourcePage, String> asyncFqlCall(Map<SourcePage, String> fqlCalls) {
+	Map<SourcePage, String> asyncFqlCall(Map<SourcePage, String> fqlCalls) {
 
 		Map<SourcePage, String> jsonList = new HashMap<SourcePage, String>();
 
@@ -224,7 +224,7 @@ public class CollectorCron extends HttpServlet {
 		return jsonList;
 	}
 
-	private Map<SourcePage, List<FqlStream>> parseJsonWalls(Map<SourcePage, String> jsonWalls) {
+	Map<SourcePage, List<FqlStream>> parseJsonWalls(Map<SourcePage, String> jsonWalls) {
 
 		Map<SourcePage, List<FqlStream>> streams = new HashMap<SourcePage, List<FqlStream>>();
 
@@ -275,7 +275,7 @@ public class CollectorCron extends HttpServlet {
 		return posts;
 	}
 
-	private List<DiscoveredEvent> findEventsInStreams(Map<SourcePage, List<FqlStream>> walls) {
+	List<DiscoveredEvent> findEventsInStreams(Map<SourcePage, List<FqlStream>> walls) {
 
 		List<DiscoveredEvent> justFoundEvents = new ArrayList<DiscoveredEvent>();
 
@@ -330,7 +330,7 @@ public class CollectorCron extends HttpServlet {
 	 * @param ids
 	 * @return
 	 */
-	private List<DiscoveredEvent> findCreatedEventsByPages(List<SourcePage> sourcePages) {
+	List<DiscoveredEvent> findCreatedEventsByPages(List<SourcePage> sourcePages) {
 
 		List<DiscoveredEvent> createdEvents = new ArrayList<DiscoveredEvent>();
 
@@ -389,7 +389,7 @@ public class CollectorCron extends HttpServlet {
 	 * @param list
 	 * @return
 	 */
-	private List<DiscoveredEvent> mergeEvents(List<DiscoveredEvent> list) {
+	List<DiscoveredEvent> mergeEvents(List<DiscoveredEvent> list) {
 
 		List<DiscoveredEvent> events = new ArrayList<DiscoveredEvent>();
 
@@ -599,24 +599,19 @@ public class CollectorCron extends HttpServlet {
 	 * @param discoveredEvents
 	 * @return
 	 */
-	private List<DiscoveredEvent> findEventDetails(List<DiscoveredEvent> discoveredEvents) {
-
-		List<DiscoveredEvent> detailedEvents = new ArrayList<DiscoveredEvent>();
-
-		Map<Long, DiscoveredEvent> searchMap = buildSearchMapEventIds(discoveredEvents);
+	List<DiscoveredEvent> findEventDetails(List<DiscoveredEvent> discoveredEvents) {
 
 		Set<Long> eventIds = getEventIdsFromDiscoveredEvents(discoveredEvents);
 
 		List<FqlEvent> eventsDetails = findEventDetailsById(eventIds);
 
 		// These must be in the future (filter in the FQL)
-		for (FqlEvent ei : eventsDetails) {
-			DiscoveredEvent detailedEvent = searchMap.get(ei.getEid());
-			detailedEvent.setEvent(ei);
-			detailedEvents.add(detailedEvent);
-		}
+		for (FqlEvent ei : eventsDetails)
+			for(DiscoveredEvent de : discoveredEvents)
+				if(de.getEventId().equals(ei.getEid()))
+					de.setEvent(ei);
 
-		return detailedEvents;
+		return discoveredEvents;
 	}
 
 	private List<FqlEvent> findEventDetailsById(Set<Long> eventIds) {
