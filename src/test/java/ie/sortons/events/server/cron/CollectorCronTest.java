@@ -1,4 +1,4 @@
-package ie.sortons.events.server.servlet;
+package ie.sortons.events.server.cron;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -13,12 +13,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -28,6 +31,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
+import ie.sortons.events.server.cron.CollectorCron;
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.DiscoveredEvent;
 import ie.sortons.events.shared.SourcePage;
@@ -143,10 +147,20 @@ public class CollectorCronTest {
 
 		assertEquals(10, eventIds.size());
 	}
+
 	private final LocalServiceTestHelper helper = new LocalServiceTestHelper(new LocalURLFetchServiceTestConfig());
-	@Before public void setUp() { helper.setUp(); }
-	@After public void tearDown() { helper.tearDown(); }
-	
+
+	@Before
+	public void setUp() {
+		helper.setUp();
+	}
+
+	@After
+	public void tearDown() {
+		helper.tearDown();
+	}
+
+	@Ignore
 	@Test
 	public void testDoGet() {
 
@@ -165,14 +179,13 @@ public class CollectorCronTest {
 				"https://www.facebook.com/UCDMUSICALSOC");
 		sourcePage3.setClientId(208084049281702l); // UCDSocieties
 
-
 		// 1678665409024104 <-event
-		
+
 		List<DiscoveredEvent> eventsPosted = new ArrayList<DiscoveredEvent>();
 		eventsPosted.add(new DiscoveredEvent(1678665409024104l, sourcePage1));
 		eventsPosted.add(new DiscoveredEvent(1678665409024104l, sourcePage2));
 		eventsPosted.add(new DiscoveredEvent(1678665409024104l, sourcePage3));
-		
+
 		System.out.println(eventsPosted.size() + " events posted.\n");
 
 		// Now we have many lists of events including some duplicates and many
@@ -180,7 +193,94 @@ public class CollectorCronTest {
 
 		List<DiscoveredEvent> mergedLists = new ArrayList<DiscoveredEvent>();
 		mergedLists.addAll(eventsPosted);
+
+		// mergedLists.removeAll(Collections.singleton(null));
+
+		List<DiscoveredEvent> allEvents = cc.mergeEvents(mergedLists);
+
+		System.out.println(allEvents.size() + " total events (duplicates merged).\n");
+
+		// Some of the events don't have info, i.e. from the event_member table
+		// Some will be in the past – the fql finding details will filter them
+		// out
+
+		List<DiscoveredEvent> eventsReady = cc.findEventDetails(allEvents);
+
+		System.out.println(eventsReady.size() + " future events.\n");
+
+	}
+
+	@Test
+	public void testDuplicateIssue() {
+
+		Map<Long, String> names = new HashMap<Long, String>();
+		names.put(197528567092983l, "UCD Events");
+		names.put(428055040731753l, "FOMO UCD");
+		names.put(208084049281702l, "UCD Societies");
+
+		List<SourcePage> sourcePages = new ArrayList<SourcePage>();
+
+		SourcePage sourcePage1 = new SourcePage("UCD Societies", 208084049281702l,
+				"https://www.facebook.com/UCDSocieties");
+		sourcePage1.setClientId(197528567092983l); // UCDEvents
+
+		SourcePage sourcePage2 = new SourcePage("UCD Societies", 208084049281702l,
+				"https://www.facebook.com/UCDSocieties");
+		sourcePage2.setClientId(428055040731753l); // FOMOUCD
+
+		SourcePage sourcePage3 = new SourcePage("UCD Societies", 208084049281702l,
+				"https://www.facebook.com/UCDSocieties");
+		sourcePage3.setClientId(208084049281702l); // UCDSocieties
+
+		sourcePages.add(sourcePage1);
+		sourcePages.add(sourcePage2);
+		sourcePages.add(sourcePage3);
+
+		System.out.println("sourcePages.size() : " + sourcePages.size() +"\n");
+
+		// Get the calls for reading their walls
+		Map<SourcePage, String> fqlCalls = new HashMap<SourcePage, String>();
 		
+		for (SourcePage sourcePage : sourcePages){
+			System.out.println(names.get(sourcePage.getClientId()));
+			fqlCalls.put(sourcePage, cc.getFqlStreamCall(sourcePage));
+		}
+		
+		System.out.println("fqlCalls.size : " + fqlCalls.size());
+		
+		Map<SourcePage, String> jsonWalls = cc.asyncFqlCall(fqlCalls);
+
+		System.out.println("jsonWalls.size : " + jsonWalls.size());
+		
+		Map<SourcePage, List<FqlStream>> parsedWalls = cc.parseJsonWalls(jsonWalls);
+
+		System.out.println("parsedWalls.size : " + parsedWalls.size());
+		
+		for (List<FqlStream> stream : parsedWalls.values()) {
+			List<Long> a = cc.findEventIdsInStreamPosts(stream);
+			System.out.println("event ids found: " + a.size());
+		}
+
+		List<DiscoveredEvent> eventsPosted = cc.findEventsInStreams(parsedWalls);
+
+		System.out.println(eventsPosted.size() + " events posted.\n");
+		for (DiscoveredEvent de : eventsPosted) {
+			System.out.println(de.getEventId() + " for " + names.get(de.getClientId()));
+		}
+
+		List<DiscoveredEvent> eventsCreated = cc.findCreatedEventsByPages(sourcePages);
+
+		System.out.println(eventsCreated.size() + " events created.\n");
+		for (DiscoveredEvent de : eventsCreated) {
+			System.out.println(de.getEventId() + " for " + names.get(de.getClientId()));
+		}
+
+		// Now we have many lists of events including some duplicates and many
+		// nulls. Merge them.
+
+		List<DiscoveredEvent> mergedLists = new ArrayList<DiscoveredEvent>();
+		mergedLists.addAll(eventsPosted);
+		mergedLists.addAll(eventsCreated);
 		// mergedLists.removeAll(Collections.singleton(null));
 
 		List<DiscoveredEvent> allEvents = cc.mergeEvents(mergedLists);

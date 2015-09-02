@@ -24,17 +24,17 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 
 	@Index
 	private Long clientId;
-	
+
 	/**
 	 * A concatenation of the clientPageId and the SourcePage pageId
 	 */
 	@Id
 	private String id;
-	
+
 	private String about;
 
 	private String name;
-	
+
 	private Long pageId;
 
 	// private String parent_page;
@@ -66,12 +66,12 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 
 		// this.parent_page = fqlPage.getParent_Page();
 		this.phone = fqlPage.getPhone() != null ? fqlPage.getPhone() : null;
-		this.pageUrl = fqlPage.getPageUrl() !=  null ? fqlPage.getPageUrl() : null;
+		this.pageUrl = fqlPage.getPageUrl() != null ? fqlPage.getPageUrl() : null;
 
 		this.name = fqlPage.getName();
 		this.pageId = fqlPage.getPageId();
 		this.pageUrl = fqlPage.getPageUrl();
-		
+
 		setId();
 	}
 
@@ -82,7 +82,7 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 		this.name = name;
 		this.pageId = id;
 		this.pageUrl = link;
-		
+
 		setId();
 	}
 
@@ -133,20 +133,6 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 
 	public String getState() {
 		return state;
-	}
-
-	@Override
-	public final boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (!(obj instanceof SourcePage))
-			return false;
-		return compareTo((SourcePage) obj) == 0;
-	}
-
-	@Override
-	public final int hashCode() {
-		return pageId.hashCode();
 	}
 
 	@Override
@@ -279,13 +265,117 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 	public void setId(String id) {
 		this.id = id;
 	}
-	
+
 	public void setId(Long clientPageId, Long sourcePageId) {
 		this.id = clientPageId + "" + sourcePageId;
 	}
-	
-	public void setId(){
+
+	public void setId() {
 		this.id = this.clientId + "" + this.pageId;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((about == null) ? 0 : about.hashCode());
+		result = prime * result + ((city == null) ? 0 : city.hashCode());
+		result = prime * result + ((clientId == null) ? 0 : clientId.hashCode());
+		result = prime * result + ((country == null) ? 0 : country.hashCode());
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		result = prime * result + ((latitude == null) ? 0 : latitude.hashCode());
+		result = prime * result + ((longitude == null) ? 0 : longitude.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((pageId == null) ? 0 : pageId.hashCode());
+		result = prime * result + ((pageUrl == null) ? 0 : pageUrl.hashCode());
+		result = prime * result + ((phone == null) ? 0 : phone.hashCode());
+		result = prime * result + ((state == null) ? 0 : state.hashCode());
+		result = prime * result + ((street == null) ? 0 : street.hashCode());
+		result = prime * result + ((zip == null) ? 0 : zip.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SourcePage other = (SourcePage) obj;
+		if (about == null) {
+			if (other.about != null)
+				return false;
+		} else if (!about.equals(other.about))
+			return false;
+		if (city == null) {
+			if (other.city != null)
+				return false;
+		} else if (!city.equals(other.city))
+			return false;
+		if (clientId == null) {
+			if (other.clientId != null)
+				return false;
+		} else if (!clientId.equals(other.clientId))
+			return false;
+		if (country == null) {
+			if (other.country != null)
+				return false;
+		} else if (!country.equals(other.country))
+			return false;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
+			return false;
+		if (latitude == null) {
+			if (other.latitude != null)
+				return false;
+		} else if (!latitude.equals(other.latitude))
+			return false;
+		if (longitude == null) {
+			if (other.longitude != null)
+				return false;
+		} else if (!longitude.equals(other.longitude))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (pageId == null) {
+			if (other.pageId != null)
+				return false;
+		} else if (!pageId.equals(other.pageId))
+			return false;
+		if (pageUrl == null) {
+			if (other.pageUrl != null)
+				return false;
+		} else if (!pageUrl.equals(other.pageUrl))
+			return false;
+		if (phone == null) {
+			if (other.phone != null)
+				return false;
+		} else if (!phone.equals(other.phone))
+			return false;
+		if (state == null) {
+			if (other.state != null)
+				return false;
+		} else if (!state.equals(other.state))
+			return false;
+		if (street == null) {
+			if (other.street != null)
+				return false;
+		} else if (!street.equals(other.street))
+			return false;
+		if (zip == null) {
+			if (other.zip != null)
+				return false;
+		} else if (!zip.equals(other.zip))
+			return false;
+		return true;
+	}
+
 
 }

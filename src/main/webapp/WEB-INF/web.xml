@@ -6,7 +6,7 @@ http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 	version="2.5">
 	<servlet>
 		<servlet-name>CollectorCron</servlet-name>
-		<servlet-class>ie.sortons.events.server.servlet.CollectorCron</servlet-class>
+		<servlet-class>ie.sortons.events.server.cron.CollectorCron</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>LandingPage</servlet-name>

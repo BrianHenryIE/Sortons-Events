@@ -1,4 +1,4 @@
-package ie.sortons.events.server.servlet;
+package ie.sortons.events.server.cron;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import ie.sortons.events.shared.Config;
@@ -50,10 +50,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.googlecode.objectify.ObjectifyService;
+import com.google.common.collect.Lists;
 
 /**
- * Servlet which polls Facebook for events created by a list of ids and events
- * posted on their walls by them.
+ * Servlet which polls Facebook for events created by a list of ids and events posted on their walls by them.
  * 
  * To be run regularly as a cron job.
  * 
@@ -104,17 +104,38 @@ public class CollectorCron extends HttpServlet {
 
 		out.write(sourcePages.size() + " SourcePages in datastore.\n");
 
-		// Get the calls for reading their walls
-		Map<SourcePage, String> fqlCalls = new HashMap<SourcePage, String>();
-		for (SourcePage sourcePage : sourcePages)
-			fqlCalls.put(sourcePage, getFqlStreamCall(sourcePage));
+		// Fix for out of memory error on App Engine!
+		List<List<SourcePage>> partitionedSourcePages = Lists.partition(sourcePages, 1000);
+		
+		Map<SourcePage, String> jsonWalls = new HashMap<SourcePage, String>();
+		
+		for(List<SourcePage> sourcePagePartition : partitionedSourcePages) {
+			
+			// Get the calls for reading their walls
+			Map<SourcePage, String> fqlCalls = new HashMap<SourcePage, String>();
+			
+			for (SourcePage sourcePage : sourcePagePartition)
+				fqlCalls.put(sourcePage, getFqlStreamCall(sourcePage));
+				
+			log.info("About to make " + fqlCalls.size() + " calls for walls.");
+			
+			Map<SourcePage, String> jsonWallsPartition = asyncFqlCall(fqlCalls);
 
-		Map<SourcePage, String> jsonWalls = asyncFqlCall(fqlCalls);
-
+			log.info(jsonWallsPartition.size() + " text/json walls returned.");
+			
+			jsonWalls.putAll(jsonWallsPartition);
+			
+		}
+		
+		
 		Map<SourcePage, List<FqlStream>> parsedWalls = parseJsonWalls(jsonWalls);
 
+		log.info(parsedWalls.size() + " walls parsed (with posts).");
+		
 		List<DiscoveredEvent> eventsPosted = findEventsInStreams(parsedWalls);
 
+		log.info(eventsPosted.size() + " events found on walls.");
+		
 		out.write(eventsPosted.size() + " events posted.\n");
 
 		List<DiscoveredEvent> eventsCreated = findCreatedEventsByPages(sourcePages);
@@ -172,12 +193,9 @@ public class CollectorCron extends HttpServlet {
 	/**
 	 * Makes FB API calls in parallel and returns a map of the <SourcePage,json>
 	 * 
-	 * Created because MalformeddUrlException was being thrown when URLs were
-	 * too long due to too many ids.
+	 * Created because MalformeddUrlException was being thrown when URLs were too long due to too many ids.
 	 * 
-	 * @see http 
-	 *      ://ikaisays.com/2010/06/29/using-asynchronous-urlfetch-on-java-app
-	 *      -engine/
+	 * @see http ://ikaisays.com/2010/06/29/using-asynchronous-urlfetch-on-java-app -engine/
 	 * @param fqlCalls
 	 * @return
 	 */
@@ -232,7 +250,9 @@ public class CollectorCron extends HttpServlet {
 			SourcePage sourcePage = entry.getKey();
 			String jsonWall = entry.getValue();
 
-			streams.put(sourcePage, parseJsonWall(jsonWall));
+			List<FqlStream> wall = parseJsonWall(jsonWall);
+			if(wall.size()>0)
+				streams.put(sourcePage, wall);
 		}
 
 		return streams;
@@ -259,8 +279,8 @@ public class CollectorCron extends HttpServlet {
 	}
 
 	/**
-	 * Filters a stream of posts from a page down to only those posted by the
-	 * page TODO Maybe the FQL call could do this for us
+	 * Filters a stream of posts from a page down to only those posted by the page TODO Maybe the FQL call could do this
+	 * for us
 	 * 
 	 * @return
 	 */
@@ -319,13 +339,12 @@ public class CollectorCron extends HttpServlet {
 	}
 
 	/**
-	 * We're querying via event_member table. As a page cannot be invited to an
-	 * event, if it is a member then it was the creator.
+	 * We're querying via event_member table. As a page cannot be invited to an event, if it is a member then it was the
+	 * creator.
 	 * 
 	 * Even using the app access token, we can query all ids at once.
 	 * 
-	 * If a page creates an event rsvp_status = "" If a profile does, odds are
-	 * it will be attending
+	 * If a page creates an event rsvp_status = "" If a profile does, odds are it will be attending
 	 * 
 	 * @param ids
 	 * @return
@@ -382,9 +401,8 @@ public class CollectorCron extends HttpServlet {
 	/**
 	 * Merges two lists of events, i.e. merges the event's SourcePages list
 	 * 
-	 * It searches to see if the event is found later in the list, if so it adds
-	 * the SourcePage and continues, otherwise it adds the event to the list to
-	 * be returned
+	 * It searches to see if the event is found later in the list, if so it adds the SourcePage and continues, otherwise
+	 * it adds the event to the list to be returned
 	 * 
 	 * @param list
 	 * @return
@@ -408,9 +426,8 @@ public class CollectorCron extends HttpServlet {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * javax.servlet.http.HttpServlet#doPost(javax.servlet.http.HttpServletRequest
-	 * , javax.servlet.http.HttpServletResponse)
+	 * @see javax.servlet.http.HttpServlet#doPost(javax.servlet.http.HttpServletRequest ,
+	 * javax.servlet.http.HttpServletResponse)
 	 * 
 	 * In case doPost is called, somehow.
 	 */
@@ -420,9 +437,8 @@ public class CollectorCron extends HttpServlet {
 	}
 
 	/**
-	 * App Engine URLFetch was throwing a MalformedUrlException because the URLs
-	 * were too long This method takes a full list of ids and splits them into
-	 * comma separated strings with max 75 in each.
+	 * App Engine URLFetch was throwing a MalformedUrlException because the URLs were too long This method takes a full
+	 * list of ids and splits them into comma separated strings with max 75 in each.
 	 * 
 	 * @param set
 	 * @return
@@ -446,12 +462,9 @@ public class CollectorCron extends HttpServlet {
 	}
 
 	/**
-	 * Created because MalformeddUrlException was being thrown when URLs were
-	 * too long due to too many ids.
+	 * Created because MalformeddUrlException was being thrown when URLs were too long due to too many ids.
 	 * 
-	 * @see http 
-	 *      ://ikaisays.com/2010/06/29/using-asynchronous-urlfetch-on-java-app
-	 *      -engine/
+	 * @see http ://ikaisays.com/2010/06/29/using-asynchronous-urlfetch-on-java-app -engine/
 	 * @param fqlCalls
 	 * @return
 	 */
@@ -527,9 +540,8 @@ public class CollectorCron extends HttpServlet {
 	}
 
 	/**
-	 * Filter down to post types 46, 66 or 80 that were made in the last 15
-	 * minutes (the assumed cron run frequency) i.e. remove events and photos we
-	 * already have events photos don't display properly in Embedded Posts
+	 * Filter down to post types 46, 66 or 80 that were made in the last 15 minutes (the assumed cron run frequency)
+	 * i.e. remove events and photos we already have events photos don't display properly in Embedded Posts
 	 * 
 	 * @param pagePosts
 	 * @param client
@@ -593,8 +605,7 @@ public class CollectorCron extends HttpServlet {
 	}
 
 	/**
-	 * Takes the list of event ids and gets the name, location etc. of those in
-	 * the future.
+	 * Takes the list of DiscoveredEvents and gets the name, location etc. of those in the future.
 	 * 
 	 * @param discoveredEvents
 	 * @return
@@ -605,23 +616,34 @@ public class CollectorCron extends HttpServlet {
 
 		List<FqlEvent> eventsDetails = findEventDetailsById(eventIds);
 
+		List<DiscoveredEvent> futureEvents = new ArrayList<DiscoveredEvent>();
+
 		// These must be in the future (filter in the FQL)
 		for (FqlEvent ei : eventsDetails)
-			for(DiscoveredEvent de : discoveredEvents)
-				if(de.getEventId().equals(ei.getEid()))
+			for (DiscoveredEvent de : discoveredEvents)
+				if (de.getEventId().equals(ei.getEid())) {
 					de.setEvent(ei);
+					futureEvents.add(de);
+				}
 
-		return discoveredEvents;
+		return futureEvents;
 	}
 
+	/**
+	 * Queries Facebook (using FQL) for the event details The query filters to only events starting in the future.
+	 * 
+	 * @param eventIds
+	 * @return
+	 */
 	private List<FqlEvent> findEventDetailsById(Set<Long> eventIds) {
 
 		List<FqlEvent> eventsDetails = new ArrayList<FqlEvent>();
 
 		List<String> fqlCalls = new ArrayList<String>();
 		for (String idList : getBrokenIdsLists(eventIds))
-			fqlCalls.add("SELECT%20creator%2C%20eid%2C%20name%2C%20location%2C%20venue%2C%20start_time%2C%20end_time%2C%20is_date_only%20FROM%20event%20WHERE%20eid%20IN%20("
-					+ idList + ")%20AND%20start_time%3Enow()");
+			fqlCalls.add(
+					"SELECT%20creator%2C%20eid%2C%20name%2C%20location%2C%20venue%2C%20start_time%2C%20end_time%2C%20is_date_only%20FROM%20event%20WHERE%20eid%20IN%20("
+							+ idList + ")%20AND%20start_time%3Enow()");
 
 		List<String> jsons = asyncFqlCall(fqlCalls);
 
@@ -637,14 +659,6 @@ public class CollectorCron extends HttpServlet {
 
 		return eventsDetails;
 
-	}
-
-	private Map<Long, DiscoveredEvent> buildSearchMapEventIds(List<DiscoveredEvent> discoveredEvents) {
-
-		Map<Long, DiscoveredEvent> searchMap = new HashMap<Long, DiscoveredEvent>();
-		for (DiscoveredEvent event : discoveredEvents)
-			searchMap.put(event.getEventId(), event);
-		return searchMap;
 	}
 
 	private Map<String, DiscoveredEvent> buildSearchMapDatastoreIds(List<DiscoveredEvent> discoveredEvents) {
