@@ -1,20 +1,22 @@
 package ie.sortons.events.shared;
 
-import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSearchable;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
-
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.gwt.core.shared.GwtIncompatible;
+import com.googlecode.objectify.annotation.Cache;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 import com.kfuntak.gwt.json.serialization.client.SkipNullSerialization;
 
+import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSearchable;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+
 /**
  * @see http://developers.facebook.com/docs/reference/fql/page/
  */
 @Entity
+@Cache
 @SkipNullSerialization
 public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbSearchable {
 

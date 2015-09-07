@@ -3,10 +3,6 @@ package ie.sortons.events.server.servlet.endpoint;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.Config;
-import ie.sortons.events.shared.SourcePage;
-import ie.sortons.gwtfbplus.server.SimpleStringCipher;
 
 import java.net.URL;
 import java.nio.file.Files;
@@ -19,6 +15,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.gson.Gson;
+
+import ie.sortons.events.server.servlet.SimpleStringCipher;
+import ie.sortons.events.shared.ClientPageData;
+import ie.sortons.events.shared.Config;
+import ie.sortons.events.shared.SourcePage;
 
 public class ClientPageDataEndpointTest {
 
