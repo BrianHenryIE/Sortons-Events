@@ -23,6 +23,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -106,86 +107,84 @@ public class CollectorCron extends HttpServlet {
 
 		// Fix for out of memory error on App Engine!
 		List<List<SourcePage>> partitionedSourcePages = Lists.partition(sourcePages, 1000);
-		
-		Map<SourcePage, String> jsonWalls = new HashMap<SourcePage, String>();
-		
-		for(List<SourcePage> sourcePagePartition : partitionedSourcePages) {
-			
+
+		// terrible fix for execution time exceeded!
+		// Collections.shuffle(partitionedSourcePages);
+
+		for (List<SourcePage> sourcePagePartition : partitionedSourcePages) {
+
 			// Get the calls for reading their walls
 			Map<SourcePage, String> fqlCalls = new HashMap<SourcePage, String>();
-			
+
 			for (SourcePage sourcePage : sourcePagePartition)
 				fqlCalls.put(sourcePage, getFqlStreamCall(sourcePage));
-				
+
 			log.info("About to make " + fqlCalls.size() + " calls for walls.");
-			
-			Map<SourcePage, String> jsonWallsPartition = asyncFqlCall(fqlCalls);
 
-			log.info(jsonWallsPartition.size() + " text/json walls returned.");
-			
-			jsonWalls.putAll(jsonWallsPartition);
-			
-		}
-		
-		
-		Map<SourcePage, List<FqlStream>> parsedWalls = parseJsonWalls(jsonWalls);
+			Map<SourcePage, String> jsonWalls = asyncFqlCall(fqlCalls);
 
-		log.info(parsedWalls.size() + " walls parsed (with posts).");
-		
-		List<DiscoveredEvent> eventsPosted = findEventsInStreams(parsedWalls);
+			log.info(jsonWalls.size() + " text/json walls total returned.");
+			partitionedSourcePages = null;
 
-		log.info(eventsPosted.size() + " events found on walls.");
-		
-		out.write(eventsPosted.size() + " events posted.\n");
+			Map<SourcePage, List<FqlStream>> parsedWalls = parseJsonWalls(jsonWalls);
 
-		List<DiscoveredEvent> eventsCreated = findCreatedEventsByPages(sourcePages);
+			log.info(parsedWalls.size() + " walls parsed (with posts).");
 
-		out.write(eventsCreated.size() + " events created.\n");
+			List<DiscoveredEvent> eventsPosted = findEventsInStreams(parsedWalls);
 
-		// Now we have many lists of events including some duplicates and many
-		// nulls. Merge them.
+			log.info(eventsPosted.size() + " events found on walls.");
 
-		List<DiscoveredEvent> mergedLists = new ArrayList<DiscoveredEvent>();
-		mergedLists.addAll(eventsPosted);
-		mergedLists.addAll(eventsCreated);
-		// mergedLists.removeAll(Collections.singleton(null));
+			out.write(eventsPosted.size() + " events posted.\n");
 
-		List<DiscoveredEvent> allEvents = mergeEvents(mergedLists);
+			List<DiscoveredEvent> eventsCreated = findCreatedEventsByPages(sourcePages);
 
-		out.write(allEvents.size() + " total events (duplicates merged).\n");
+			out.write(eventsCreated.size() + " events created.\n");
 
-		// Some of the events don't have info, i.e. from the event_member table
-		// Some will be in the past – the fql finding details will filter them
-		// out
+			// Now we have many lists of events including some duplicates and many
+			// nulls. Merge them.
 
-		List<DiscoveredEvent> eventsReady = findEventDetails(allEvents);
+			List<DiscoveredEvent> mergedLists = new ArrayList<DiscoveredEvent>();
+			mergedLists.addAll(eventsPosted);
+			mergedLists.addAll(eventsCreated);
+			// mergedLists.removeAll(Collections.singleton(null));
 
-		out.write(eventsReady.size() + " future events.\n");
+			List<DiscoveredEvent> allEvents = mergeEvents(mergedLists);
 
-		// Check if there are changes from the datastore's existing events
-		// Only save new/edited events
+			out.write(allEvents.size() + " total events (duplicates merged).\n");
 
-		List<DiscoveredEvent> datastoreEvents = ofy().load().type(DiscoveredEvent.class)
-				.filter("startTime >", getHoursAgoOrToday(12)).order("startTime").list();
+			// Some of the events don't have info, i.e. from the event_member table
+			// Some will be in the past – the fql finding details will filter them
+			// out
 
-		Map<String, DiscoveredEvent> datastoreEventsMap = buildSearchMapDatastoreIds(datastoreEvents);
+			List<DiscoveredEvent> eventsReady = findEventDetails(allEvents);
 
-		for (DiscoveredEvent readyEvent : eventsReady)
-			if (datastoreEventsMap.containsKey(readyEvent.getId())) {
-				DiscoveredEvent datastoreEvent = datastoreEventsMap.get(readyEvent.getId());
-				// Only save it if something has changed
-				if (!readyEvent.equals(datastoreEvent))
+			out.write(eventsReady.size() + " future events.\n");
+
+			// Check if there are changes from the datastore's existing events
+			// Only save new/edited events
+
+			List<DiscoveredEvent> datastoreEvents = ofy().load().type(DiscoveredEvent.class)
+					.filter("startTime >", getHoursAgoOrToday(12)).order("startTime").list();
+
+			Map<String, DiscoveredEvent> datastoreEventsMap = buildSearchMapDatastoreIds(datastoreEvents);
+
+			for (DiscoveredEvent readyEvent : eventsReady)
+				if (datastoreEventsMap.containsKey(readyEvent.getId())) {
+					DiscoveredEvent datastoreEvent = datastoreEventsMap.get(readyEvent.getId());
+					// Only save it if something has changed
+					if (!readyEvent.equals(datastoreEvent))
+						ofy().save().entity(readyEvent).now();
+				} else
+					// If it's not in the datastore already
 					ofy().save().entity(readyEvent).now();
-			} else
-				// If it's not in the datastore already
-				ofy().save().entity(readyEvent).now();
 
-		// Get wall posts
-		List<WallPost> wallPosts = findWallPostsToSave(parsedWalls);
+			// Get wall posts
+			List<WallPost> wallPosts = findWallPostsToSave(parsedWalls);
 
-		ofy().save().entities(wallPosts).now();
+			ofy().save().entities(wallPosts).now();
 
-		out.print(wallPosts.size() + " wall posts saved.\n");
+			out.print(wallPosts.size() + " wall posts saved.\n");
+		}
 	}
 
 	// put getFqlStreamCall method here
@@ -251,7 +250,7 @@ public class CollectorCron extends HttpServlet {
 			String jsonWall = entry.getValue();
 
 			List<FqlStream> wall = parseJsonWall(jsonWall);
-			if(wall.size()>0)
+			if (wall.size() > 0)
 				streams.put(sourcePage, wall);
 		}
 
@@ -506,14 +505,17 @@ public class CollectorCron extends HttpServlet {
 		return jsonList;
 	}
 
+	private String streamCallStub = "SELECT%20source_id%2C%20post_id%2C%20permalink%2C%20actor_id%2C%20target_id%2C%20message%2C%20attachment.media%2C%20created_time%2C%20type%20FROM%20stream%20WHERE%20source_id%20%3D%20"; // &access_token="+access_token;
+
 	/**
 	 * @param sourcePage
 	 * @return FQL to retrieve last ~month of wall posts
 	 */
 	String getFqlStreamCall(SourcePage sourcePage) {
-		String streamCallStub = "SELECT%20source_id%2C%20post_id%2C%20permalink%2C%20actor_id%2C%20target_id%2C%20message%2C%20attachment.media%2C%20created_time%2C%20type%20FROM%20stream%20WHERE%20source_id%20%3D%20"; // &access_token="+access_token;
-		return streamCallStub + sourcePage.getPageId() + "%20AND%20actor_id%20=%20" + sourcePage.getPageId()
-				+ "%20AND%20created_time%20%3E%20" + ((new DateTime().getMillis() / 1000) - 2592000);
+		String build = streamCallStub + sourcePage.getPageId() + "%20AND%20actor_id%20=%20" + sourcePage.getPageId()
+				+ "%20AND%20created_time%20%3E%20" + ((new DateTime().getMillis() / 1000) - (30*24*60*60));
+		//log.info(build);
+		return build;
 	}
 
 	private List<WallPost> findWallPostsToSave(Map<SourcePage, List<FqlStream>> walls) {
