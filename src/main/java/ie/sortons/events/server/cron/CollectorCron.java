@@ -1,20 +1,6 @@
 package ie.sortons.events.server.cron;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
-import ie.sortons.events.shared.Config;
-import ie.sortons.events.shared.DiscoveredEvent;
-import ie.sortons.events.shared.SourcePage;
-import ie.sortons.events.shared.WallPost;
-import ie.sortons.gwtfbplus.shared.domain.FbResponse;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventDatesAdapter;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenue;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenueAdapter;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlEventMember;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachment;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachmentAdapter;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachmentMediaItem;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -23,7 +9,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,11 +32,26 @@ import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.googlecode.objectify.ObjectifyService;
-import com.google.common.collect.Lists;
+
+import ie.sortons.events.shared.Config;
+import ie.sortons.events.shared.DiscoveredEvent;
+import ie.sortons.events.shared.SourcePage;
+import ie.sortons.events.shared.WallPost;
+import ie.sortons.gwtfbplus.shared.domain.FbResponse;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventDatesAdapter;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenue;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenueAdapter;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlEventMember;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachment;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachmentAdapter;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlStream.FqlStreamItemAttachmentMediaItem;
 
 /**
  * Servlet which polls Facebook for events created by a list of ids and events posted on their walls by them.
@@ -103,13 +103,18 @@ public class CollectorCron extends HttpServlet {
 		// Get the list of source pages from the datastore
 		List<SourcePage> sourcePages = ofy().load().type(SourcePage.class).list();
 
-		out.write(sourcePages.size() + " SourcePages in datastore.\n");
-
 		// Fix for out of memory error on App Engine!
 		List<List<SourcePage>> partitionedSourcePages = Lists.partition(sourcePages, 1000);
 
 		// terrible fix for execution time exceeded!
 		// Collections.shuffle(partitionedSourcePages);
+
+		int wallsWithPostsCount = 0;
+		int postedEventsCount = 0;
+		int createdEventsCount = 0;
+		int mergedEventsCount = 0;
+		int futureEventsCount = 0;
+		int wallPostsCount = 0;
 
 		for (List<SourcePage> sourcePagePartition : partitionedSourcePages) {
 
@@ -119,26 +124,21 @@ public class CollectorCron extends HttpServlet {
 			for (SourcePage sourcePage : sourcePagePartition)
 				fqlCalls.put(sourcePage, getFqlStreamCall(sourcePage));
 
-			log.info("About to make " + fqlCalls.size() + " calls for walls.");
-
 			Map<SourcePage, String> jsonWalls = asyncFqlCall(fqlCalls);
 
-			log.info(jsonWalls.size() + " text/json walls total returned.");
 			partitionedSourcePages = null;
 
 			Map<SourcePage, List<FqlStream>> parsedWalls = parseJsonWalls(jsonWalls);
 
-			log.info(parsedWalls.size() + " walls parsed (with posts).");
+			wallsWithPostsCount += parsedWalls.size();
 
 			List<DiscoveredEvent> eventsPosted = findEventsInStreams(parsedWalls);
 
-			log.info(eventsPosted.size() + " events found on walls.");
-
-			out.write(eventsPosted.size() + " events posted.\n");
+			postedEventsCount += eventsPosted.size();
 
 			List<DiscoveredEvent> eventsCreated = findCreatedEventsByPages(sourcePages);
 
-			out.write(eventsCreated.size() + " events created.\n");
+			createdEventsCount += eventsCreated.size();
 
 			// Now we have many lists of events including some duplicates and many
 			// nulls. Merge them.
@@ -150,7 +150,7 @@ public class CollectorCron extends HttpServlet {
 
 			List<DiscoveredEvent> allEvents = mergeEvents(mergedLists);
 
-			out.write(allEvents.size() + " total events (duplicates merged).\n");
+			mergedEventsCount += allEvents.size();
 
 			// Some of the events don't have info, i.e. from the event_member table
 			// Some will be in the past – the fql finding details will filter them
@@ -158,7 +158,7 @@ public class CollectorCron extends HttpServlet {
 
 			List<DiscoveredEvent> eventsReady = findEventDetails(allEvents);
 
-			out.write(eventsReady.size() + " future events.\n");
+			futureEventsCount += eventsReady.size();
 
 			// Check if there are changes from the datastore's existing events
 			// Only save new/edited events
@@ -183,8 +183,20 @@ public class CollectorCron extends HttpServlet {
 
 			ofy().save().entities(wallPosts).now();
 
-			out.print(wallPosts.size() + " wall posts saved.\n");
+			wallPostsCount += wallPosts.size();
+
 		}
+
+		log.info(sourcePages.size() + " SourcePages in datastore.\n" + wallsWithPostsCount + " pages with wall posts.\n"
+				+ postedEventsCount + " events posted on walls.\n" + createdEventsCount + " events created.\n"
+				+ mergedEventsCount + " total events (duplicates merged).\n" + futureEventsCount + " future events.\n"
+				+ wallPostsCount + " wall posts saved.\n");
+
+		out.write(sourcePages.size() + " SourcePages in datastore.\n" + wallsWithPostsCount
+				+ " pages with wall posts.\n" + postedEventsCount + " events posted on walls.\n" + createdEventsCount
+				+ " events created.\n" + mergedEventsCount + " total events (duplicates merged).\n" + futureEventsCount
+				+ " future events.\n" + wallPostsCount + " wall posts saved.\n");
+
 	}
 
 	// put getFqlStreamCall method here
@@ -513,8 +525,8 @@ public class CollectorCron extends HttpServlet {
 	 */
 	String getFqlStreamCall(SourcePage sourcePage) {
 		String build = streamCallStub + sourcePage.getPageId() + "%20AND%20actor_id%20=%20" + sourcePage.getPageId()
-				+ "%20AND%20created_time%20%3E%20" + ((new DateTime().getMillis() / 1000) - (30*24*60*60));
-		//log.info(build);
+				+ "%20AND%20created_time%20%3E%20" + ((new DateTime().getMillis() / 1000) - (30 * 24 * 60 * 60));
+		// log.info(build);
 		return build;
 	}
 

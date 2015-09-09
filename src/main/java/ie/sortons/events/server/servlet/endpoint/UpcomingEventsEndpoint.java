@@ -1,6 +1,8 @@
 package ie.sortons.events.server.servlet.endpoint;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
+
+import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.DiscoveredEvent;
 import ie.sortons.events.shared.dto.DiscoveredEventsResponse;
 
@@ -32,14 +34,15 @@ public class UpcomingEventsEndpoint {
 
 		DiscoveredEventsResponse dto = new DiscoveredEventsResponse();
 
-		log.info("Searching for events for " + clientPageId);
+		// time to move this into a db class
+		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientPageId).now();
 
 		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class).filter("clientId", clientPageId)
 				.filter("startTime >", getHoursAgoOrToday(12)).order("startTime").list();
 
-		for (DiscoveredEvent datastoreEvent : dsEvents) {
+		log.info("Returning " + dsEvents.size() + " events for " + clientPageId + " - " + clientPageData.getName());
 
-			log.info("EVENT: " + datastoreEvent.getName());
+		for (DiscoveredEvent datastoreEvent : dsEvents) {
 
 			if ((datastoreEvent.getEndTime() == null) || (datastoreEvent.getEndTime().after(now))) {
 
