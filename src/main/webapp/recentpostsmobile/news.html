@@ -122,7 +122,9 @@ body {
                 
                 var nextPost = document.createElement('div');
      
-                nextPost.innerHTML = '<div id="post'+j+'"><div class="fb-post" data-href="' + posts[j].url + '" data-width="500"></div></div>';
+                var httpsUrl =  posts[j].url.replace("http:", "https:");
+
+                nextPost.innerHTML = '<div id="post'+j+'"><div class="fb-post" data-href="' + httpsUrl + '" data-width="500"></div></div>';
                 
                 document.getElementById('theposts').appendChild(nextPost);
 
@@ -156,10 +158,14 @@ body {
             }
 
             // infinite scroll
+            // If we're at the bottom of the page, add five posts, otherwise add two
             window.onscroll = function(ev) {
                 if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
                     // you're at the bottom of the page
                     addPosts();
+                } else {
+                    addPost();
+                    addPost();
                 }
             };
 
