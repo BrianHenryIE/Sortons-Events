@@ -1,21 +1,10 @@
 package ie.sortons.events.client.presenter;
 
-import ie.sortons.events.client.RpcService;
-import ie.sortons.events.client.appevent.LoginAuthResponseEvent;
-import ie.sortons.events.client.appevent.PermissionsEvent;
-import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.SourcePage;
-import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSearchable;
-import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSingleSuggestbox;
-import ie.sortons.gwtfbplus.client.widgets.suggestbox.SelectedItemWidget;
-import ie.sortons.gwtfbplus.shared.domain.graph.GraphPage;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
@@ -33,6 +22,17 @@ import com.google.gwt.user.client.ui.Widget;
 import com.google.web.bindery.event.shared.binder.EventBinder;
 import com.google.web.bindery.event.shared.binder.EventHandler;
 import com.kfuntak.gwt.json.serialization.client.Serializer;
+
+import ie.sortons.events.client.RpcService;
+import ie.sortons.events.client.appevent.LoginAuthResponseEvent;
+import ie.sortons.events.client.appevent.PermissionsEvent;
+import ie.sortons.events.shared.ClientPageData;
+import ie.sortons.events.shared.SourcePage;
+import ie.sortons.gwtfbplus.client.overlay.FbResponse;
+import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSearchable;
+import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSingleSuggestbox;
+import ie.sortons.gwtfbplus.client.widgets.suggestbox.SelectedItemWidget;
+import ie.sortons.gwtfbplus.shared.domain.graph.GraphPage;
 
 public class PageAdminPresenter implements Presenter {
 
@@ -180,8 +180,8 @@ public class PageAdminPresenter implements Presenter {
 
 			graphPath += "?fields=name,id,link";
 
-			rpcService.graphCall(graphPath, new AsyncCallback<JavaScriptObject>() {
-				public void onSuccess(JavaScriptObject response) {
+			rpcService.graphCall(graphPath, new AsyncCallback<FbResponse>() {
+				public void onSuccess(FbResponse response) {
 
 					System.out.println(new JSONObject(response).toString());
 

@@ -1,19 +1,5 @@
 package ie.sortons.events.client;
 
-import ie.sortons.events.shared.ClientPageData;
-import ie.sortons.events.shared.Config;
-import ie.sortons.events.shared.DiscoveredEvent;
-import ie.sortons.events.shared.PageList;
-import ie.sortons.events.shared.SourcePage;
-import ie.sortons.events.shared.WallPost;
-import ie.sortons.events.shared.dto.ClientPageDataResponse;
-import ie.sortons.events.shared.dto.DiscoveredEventsResponse;
-import ie.sortons.events.shared.dto.PagesListResponse;
-import ie.sortons.events.shared.dto.RecentPostsResponse;
-import ie.sortons.gwtfbplus.client.api.FBCore;
-import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,12 +19,26 @@ import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
-import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.Random;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.kfuntak.gwt.json.serialization.client.HashMapSerializer;
 import com.kfuntak.gwt.json.serialization.client.Serializer;
+
+import ie.sortons.events.shared.ClientPageData;
+import ie.sortons.events.shared.Config;
+import ie.sortons.events.shared.DiscoveredEvent;
+import ie.sortons.events.shared.PageList;
+import ie.sortons.events.shared.SourcePage;
+import ie.sortons.events.shared.WallPost;
+import ie.sortons.events.shared.dto.ClientPageDataResponse;
+import ie.sortons.events.shared.dto.DiscoveredEventsResponse;
+import ie.sortons.events.shared.dto.PagesListResponse;
+import ie.sortons.events.shared.dto.RecentPostsResponse;
+import ie.sortons.gwtfbplus.client.api.FBCore;
+import ie.sortons.gwtfbplus.client.overlay.FbResponse;
+import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
+import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
 
 public class RpcService {
 
@@ -175,7 +175,7 @@ public class RpcService {
 				public void onResponseReceived(Request request, Response response) {
 					if (200 == response.getStatusCode()) {
 
-						clientPageData = serializer.deSerialize(response.getText(), ClientPageData.class);
+						clientPageData = (ClientPageData) serializer.deSerialize(response.getText(), ClientPageData.class.getName());
 
 						callback.onSuccess(clientPageData);
 
@@ -309,7 +309,7 @@ public class RpcService {
 	}
 
 	// TODO make private to keep powers separate
-	public void graphCall(String graphPath, AsyncCallback<JavaScriptObject> callback) {
+	public void graphCall(String graphPath, AsyncCallback<FbResponse> callback) {
 		fbCore.api(graphPath, callback);
 	}
 

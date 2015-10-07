@@ -1,16 +1,17 @@
 package ie.sortons.events.client;
 
-import ie.sortons.events.client.appevent.LoginEvent;
-import ie.sortons.events.client.appevent.NotLoggedInEvent;
-import ie.sortons.events.client.appevent.PermissionsEvent;
-import ie.sortons.gwtfbplus.client.api.FBCore;
-
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.web.bindery.event.shared.binder.EventBinder;
 import com.google.web.bindery.event.shared.binder.EventHandler;
+
+import ie.sortons.events.client.appevent.LoginEvent;
+import ie.sortons.events.client.appevent.NotLoggedInEvent;
+import ie.sortons.events.client.appevent.PermissionsEvent;
+import ie.sortons.gwtfbplus.client.api.FBCore;
+import ie.sortons.gwtfbplus.client.overlay.FbResponse;
 
 public class LoginController {
 
@@ -45,8 +46,8 @@ public class LoginController {
 			System.out.println("We are connected");
 
 			// check what permissions we've got
-			fbCore.api ( "/me/permissions", new AsyncCallback<JavaScriptObject>(){
-				public void onSuccess ( JavaScriptObject response ) {
+			fbCore.api ( "/me/permissions", new AsyncCallback<FbResponse>(){
+				public void onSuccess ( FbResponse response ) {
 					eventBus.fireEvent(new PermissionsEvent(response));
 				}
 				public void onFailure(Throwable caught) {
