@@ -4,12 +4,12 @@
 
 	<groupId>ie.sortons</groupId>
 	<artifactId>events</artifactId>
-	<version>0.1.5-SNAPSHOT</version>
+	<version>0.1.6</version>
 	<packaging>war</packaging>
 
 	<properties>
-		<appengine.app.version>1010</appengine.app.version>
-		<gae.version>1.9.25</gae.version>
+		<appengine.app.version>v0-1-8</appengine.app.version>
+		<gae.version>1.9.27</gae.version>
 		<gwt.version>2.8.0-SNAPSHOT</gwt.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<app.name>sortonsevents</app.name>
@@ -194,13 +194,19 @@
 					<webXml>${project.build.directory}/generated-sources/appengine-endpoints/WEB-INF/web.xml</webXml>
 					<webResources>
 						<resource>
-							<!-- this is relative to the pom.xml directory -->
 							<directory>${project.build.directory}/generated-sources/appengine-endpoints</directory>
 							<!-- the list has a default value of ** -->
 							<includes>
 								<include>WEB-INF/*.discovery</include>
 								<include>WEB-INF/*.api</include>
 							</includes>
+						</resource>
+						<!--  For setting version http://stackoverflow.com/questions/27475714/why-doesnt-maven-property-appengine-app-version-get-interpolated-in-multi-mo  -->
+						<!-- in order to interpolate version from pom into appengine-web.xml -->
+						<resource>
+							<directory>${basedir}/src/main/webapp/WEB-INF</directory>
+							<filtering>true</filtering>
+							<targetPath>WEB-INF</targetPath>
 						</resource>
 					</webResources>
 				</configuration>
