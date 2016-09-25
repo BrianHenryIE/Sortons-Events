@@ -1,10 +1,9 @@
 package ie.sortons.events.shared;
 
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.google.gwt.core.shared.GwtIncompatible;
@@ -15,6 +14,9 @@ import com.googlecode.objectify.annotation.Index;
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 import com.kfuntak.gwt.json.serialization.client.SkipNullSerialization;
 
+import ie.sortons.gwtfbplus.shared.domain.graph.GraphEvent;
+import ie.sortons.gwtfbplus.shared.domain.graph.GraphPlace;
+
 @Entity
 @Cache
 @SkipNullSerialization
@@ -24,51 +26,49 @@ public class DiscoveredEvent implements JsonSerializable {
 	@ApiResourceProperty(name = "class")
 	public final String classname = "ie.sortons.events.shared.DiscoveredEvent";
 
-	
 	@Id
 	private String id;
-	
-	private Long eventId;
+
+	private String eventId;
 
 	@Index
 	private Long clientId;
 
 	private List<SourcePage> sourcePages = new ArrayList<SourcePage>();
 
-	String name;
-	String location;
-	
+	private String name;
+	private String location;
+	private String locationId;
+
+	private Double latitude;
+	private Double longitude;
+
 	@Index
 	Date startTime;
 	Date endTime;
-	boolean dateOnly;
-	
+
 	/**
 	 * No args constructor for Objectify etc
 	 */
 	public DiscoveredEvent() {
 	}
 
-	public DiscoveredEvent(FqlEvent fbEvent, Long clientId, SourcePage sourcePage) {
+	public DiscoveredEvent(GraphEvent fbEvent, Long clientId, Set<SourcePage> eventSourcePages) {
 		setEvent(fbEvent);
-		this.clientId = clientId;
-		addSourcePage(sourcePage);
+		setClientId(clientId);
+		sourcePages.addAll(eventSourcePages);
 		updateDatastoreId();
 	}
 
-	// TODO: having clientId and sourcePage is redundant. Is it possible to have a 
+	// TODO: having clientId and sourcePage is redundant. Is it possible to have
+	// a
 	// sourcePage without a clientId in it? (parent)
-	public DiscoveredEvent(Long eventId,SourcePage sourcePage) {
+	public DiscoveredEvent(String eventId, SourcePage sourcePage) {
 		this.eventId = eventId;
 		this.clientId = sourcePage.getClientId();
 		addSourcePage(sourcePage);
 		updateDatastoreId();
 	}
-
-	public DiscoveredEvent(String eventId, Long clientId, SourcePage sourcePage) {
-		new DiscoveredEvent(Long.parseLong(eventId), sourcePage);
-	}
-
 
 	/**
 	 * Copy constructor
@@ -81,44 +81,94 @@ public class DiscoveredEvent implements JsonSerializable {
 		this.clientId = dEvent.getClientId();
 		this.name = dEvent.getName();
 		this.location = dEvent.getLocation();
+		this.locationId = dEvent.getLocationId();
 		this.startTime = dEvent.getStartTime();
 		this.endTime = dEvent.getEndTime();
-		this.dateOnly = dEvent.isDateOnly();
+		this.longitude = dEvent.getLongitude();
+		this.latitude = dEvent.getLatitude();
 		this.sourcePages = sourcePages;
 	}
-	
-	public void setEvent(FqlEvent fbEvent) {
-		this.eventId = fbEvent.getEid();
-		this.name = fbEvent.getName();
-		this.location = fbEvent.getLocation();
-		this.startTime = fbEvent.getStartTime();
-		this.endTime = fbEvent.getEndTime();
-		this.dateOnly = fbEvent.is_date_only;
+
+	public String getLocationId() {
+		return locationId;
 	}
-	
+
+	public void setLocationId(String locationId) {
+		this.locationId = locationId;
+	}
+
+	public Double getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(Double latitude) {
+		this.latitude = latitude;
+	}
+
+	public Double getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(Double longitude) {
+		this.longitude = longitude;
+	}
+
+	public DiscoveredEvent(GraphEvent graphEvent, Long clientId, List<SourcePage> sourcePages) {
+		this.clientId = clientId;
+		this.sourcePages = sourcePages;
+		setEvent(graphEvent);
+	}
+
+	public void setEvent(GraphEvent fbEvent) {
+		this.eventId = fbEvent.getId();
+		this.name = fbEvent.getName();
+		this.startTime = fbEvent.getStart_time();
+		this.endTime = fbEvent.getEnd_time();
+		if (fbEvent.getPlace() != null)
+			this.setLocationPlace(fbEvent.getPlace());
+	}
+
+	private void setLocationPlace(GraphPlace fbPlace) {
+
+		this.locationId = fbPlace.getId();
+		this.location = fbPlace.getName();
+
+		if (fbPlace.getLocation() != null) {
+			this.latitude = fbPlace.getLocation().getLatitude();
+			this.longitude = fbPlace.getLocation().getLongitude();
+
+			if (fbPlace.getLocation().getStreet() != null)
+				this.location += ", " + fbPlace.getLocation().getStreet();
+			if (fbPlace.getLocation().getCity() != null)
+				this.location += ", " + fbPlace.getLocation().getCity();
+			if (fbPlace.getLocation().getState() != null)
+				this.location += ", " + fbPlace.getLocation().getState();
+			if (fbPlace.getLocation().getZip() != null)
+				this.location += ", " + fbPlace.getLocation().getZip();
+		}
+	}
+
 	// Encapsulating in preparation for fql deprecation
 	public String getName() {
 		return name;
 	}
-	
+
 	public String getLocation() {
 		return location;
 	}
-	
+
 	public Date getStartTime() {
 		return startTime;
 	}
-	
+
 	public Date getEndTime() {
 		return endTime;
 	}
 
-	public Long getEventId() {
+	public String getEventId() {
 		return eventId;
 	}
 
-
-	
 	public List<SourcePage> getSourcePages() {
 		return sourcePages;
 	}
@@ -148,16 +198,11 @@ public class DiscoveredEvent implements JsonSerializable {
 		return clientId;
 	}
 
-	
 	public boolean isDateOnly() {
-		return dateOnly;
+		return false;
 	}
 
-	public void setDateOnly(boolean dateOnly) {
-		this.dateOnly = dateOnly;
-	}
-
-	public void setEventId(Long eventId) {
+	public void setEventId(String eventId) {
 		this.eventId = eventId;
 		updateDatastoreId();
 	}
@@ -191,7 +236,7 @@ public class DiscoveredEvent implements JsonSerializable {
 		this.endTime = endTime;
 	}
 
-	public void updateDatastoreId(){
+	public void updateDatastoreId() {
 		this.id = clientId + "" + eventId;
 	}
 
@@ -208,10 +253,12 @@ public class DiscoveredEvent implements JsonSerializable {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((clientId == null) ? 0 : clientId.hashCode());
-		result = prime * result + (dateOnly ? 1231 : 1237);
 		result = prime * result + ((endTime == null) ? 0 : endTime.hashCode());
 		result = prime * result + ((eventId == null) ? 0 : eventId.hashCode());
+		result = prime * result + ((latitude == null) ? 0 : latitude.hashCode());
 		result = prime * result + ((location == null) ? 0 : location.hashCode());
+		result = prime * result + ((locationId == null) ? 0 : locationId.hashCode());
+		result = prime * result + ((longitude == null) ? 0 : longitude.hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		result = prime * result + ((sourcePages == null) ? 0 : sourcePages.hashCode());
 		result = prime * result + ((startTime == null) ? 0 : startTime.hashCode());
@@ -232,8 +279,6 @@ public class DiscoveredEvent implements JsonSerializable {
 				return false;
 		} else if (!clientId.equals(other.clientId))
 			return false;
-		if (dateOnly != other.dateOnly)
-			return false;
 		if (endTime == null) {
 			if (other.endTime != null)
 				return false;
@@ -244,10 +289,25 @@ public class DiscoveredEvent implements JsonSerializable {
 				return false;
 		} else if (!eventId.equals(other.eventId))
 			return false;
+		if (latitude == null) {
+			if (other.latitude != null)
+				return false;
+		} else if (!latitude.equals(other.latitude))
+			return false;
 		if (location == null) {
 			if (other.location != null)
 				return false;
 		} else if (!location.equals(other.location))
+			return false;
+		if (locationId == null) {
+			if (other.locationId != null)
+				return false;
+		} else if (!locationId.equals(other.locationId))
+			return false;
+		if (longitude == null) {
+			if (other.longitude != null)
+				return false;
+		} else if (!longitude.equals(other.longitude))
 			return false;
 		if (name == null) {
 			if (other.name != null)
@@ -257,8 +317,13 @@ public class DiscoveredEvent implements JsonSerializable {
 		if (sourcePages == null) {
 			if (other.sourcePages != null)
 				return false;
-		} else if (!sourcePages.equals(other.sourcePages))
+		}
+		if (!(sourcePages.size() == other.sourcePages.size())) {
 			return false;
+		}
+		if (!sourcePages.containsAll(other.sourcePages)) {
+			return false;
+		}
 		if (startTime == null) {
 			if (other.startTime != null)
 				return false;
@@ -266,11 +331,5 @@ public class DiscoveredEvent implements JsonSerializable {
 			return false;
 		return true;
 	}
-	
-	
-	
-	
 
-	
-	
 }

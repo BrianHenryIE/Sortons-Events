@@ -46,12 +46,12 @@ public class RpcService {
 	// https://code.google.com/p/google-apis-client-generator/wiki/TableOfContents
 
 	private static final Logger log = Logger.getLogger(RpcService.class.getName());
-	
+
 	Serializer serializer = (Serializer) GWT.create(Serializer.class);
 
 	// Must be https for cloud endpoints
 	private String apiBase = Config.getApiBase();
-	
+
 	private Long currentPageId;
 
 	private FBCore fbCore;
@@ -73,15 +73,15 @@ public class RpcService {
 
 	{
 		if (SignedRequest.getSignedRequestFromHTML() != null)
-			currentPageId = Long.parseLong(((SignedRequest) serializer.deSerialize(
-					new JSONObject(SignedRequest.getSignedRequestFromHTML()), "ie.sortons.gwtfbplus.shared.domain.SignedRequest"))
-					.getPage().getId());
+			currentPageId = Long.parseLong(
+					((SignedRequest) serializer.deSerialize(new JSONObject(SignedRequest.getSignedRequestFromHTML()),
+							"ie.sortons.gwtfbplus.shared.domain.SignedRequest")).getPage().getId());
 	}
 
 	public void getEventsForPage(final AsyncCallback<List<DiscoveredEvent>> callback) {
 
 		log.info("\n\ngetEventsForPage()");
-		
+
 		// Must be https for cloud endpoints
 		String jsonUrl = apiBase + "upcomingEvents/v1/discoveredeventsresponse/";
 
@@ -100,18 +100,22 @@ public class RpcService {
 				public void onResponseReceived(Request request, Response response) {
 					if (200 == response.getStatusCode()) {
 
-						log.info("about to deserialize");;
-						
-						DiscoveredEventsResponse deResponse = (DiscoveredEventsResponse) serializer.deSerialize(response.getText(),
-								"ie.sortons.events.shared.DiscoveredEventsResponse");
+						log.info("about to deserialize");
+						;
+
+						DiscoveredEventsResponse deResponse = (DiscoveredEventsResponse) serializer
+								.deSerialize(response.getText(), "ie.sortons.events.shared.DiscoveredEventsResponse");
 
 						log.info("deserialized");
-						
+
 						callback.onSuccess(deResponse.getData());
 					} else {
-						System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") PageEventsPresenter.getEvents");
-						// System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
-						// System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
+						System.out.println("Couldn't retrieve JSON (" + response.getStatusText()
+								+ ") PageEventsPresenter.getEvents");
+						// System.out.println("Couldn't retrieve JSON (" +
+						// response.getStatusCode() + ")");
+						// System.out.println("Couldn't retrieve JSON (" +
+						// response.getText() + ")");
 					}
 				}
 			});
@@ -175,7 +179,8 @@ public class RpcService {
 				public void onResponseReceived(Request request, Response response) {
 					if (200 == response.getStatusCode()) {
 
-						clientPageData = (ClientPageData) serializer.deSerialize(response.getText(), ClientPageData.class.getName());
+						clientPageData = (ClientPageData) serializer.deSerialize(response.getText(),
+								ClientPageData.class.getName());
 
 						callback.onSuccess(clientPageData);
 
@@ -191,16 +196,16 @@ public class RpcService {
 				}
 			});
 		} catch (RequestException e) {
-			System.out.println("catch (RequestException e) Couldn't retrieve JSON : " + e.getMessage() + " getClientPageData()");
+			System.out.println(
+					"catch (RequestException e) Couldn't retrieve JSON : " + e.getMessage() + " getClientPageData()");
 		}
 
 	}
 
-	
 	public void addPage(SourcePage newPage, final AsyncCallback<SourcePage> callback) {
 
-		log.info("addPage");		
-		
+		log.info("addPage");
+
 		String addPageAPI = apiBase + "clientdata/v1/addPage/" + currentPageId;
 
 		RequestBuilder addPageBuilder = new RequestBuilder(RequestBuilder.POST, addPageAPI);
@@ -224,11 +229,11 @@ public class RpcService {
 								"ie.sortons.events.shared.FqlPageSearchable");
 
 						// TODO return a real error message
-						if (page.getPageId() != null) {
+						if (page.getFbPageId() != null) {
 							clientPageData.addPage(page);
 
 							callback.onSuccess(page);
-							
+
 						} else {
 							// TODO Fire error message
 							// was page already included?
@@ -236,17 +241,18 @@ public class RpcService {
 						}
 
 					} else {
-						System.out.println("Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.addPage()");
+						System.out.println(
+								"Couldn't retrieve JSON (" + response.getStatusText() + ") AdminPresenter.addPage()");
 						System.out.println("Couldn't retrieve JSON (" + response.getStatusCode() + ")");
 						System.out.println("Couldn't retrieve JSON (" + response.getText() + ")");
 
 						// TODO: How to know what type of error it is?
-//						eventBus.fireEvent(new ResponseErrorEvent(response));
+						// eventBus.fireEvent(new ResponseErrorEvent(response));
 
 					}
 				}
 			});
-			
+
 			log.info("post request cookie: " + addPageBuilder.getHeader("Cookie"));
 		} catch (RequestException e) {
 			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :addPage()");
@@ -265,26 +271,27 @@ public class RpcService {
 
 		try {
 			@SuppressWarnings("unused")
-			Request request = addPagesListBuilder.sendRequest(serializer.serialize(new PageList(pagesList)), new RequestCallback() {
-				@Override
-				public void onResponseReceived(Request request, Response response) {
-					System.out.println(response.getText());
-					PagesListResponse addedPages = (PagesListResponse) serializer.deSerialize(response.getText(),
-							"ie.sortons.events.shared.PagesListResponse");
-					System.out.println(addedPages.getData());
+			Request request = addPagesListBuilder.sendRequest(serializer.serialize(new PageList(pagesList)),
+					new RequestCallback() {
+						@Override
+						public void onResponseReceived(Request request, Response response) {
+							System.out.println(response.getText());
+							PagesListResponse addedPages = (PagesListResponse) serializer
+									.deSerialize(response.getText(), "ie.sortons.events.shared.PagesListResponse");
+							System.out.println(addedPages.getData());
 
-					asyncCallback.onSuccess(addedPages.getData());
+							asyncCallback.onSuccess(addedPages.getData());
 
-				}
+						}
 
-				@Override
-				public void onError(Request request, Throwable exception) {
-					// TODO Auto-generated method stub
+						@Override
+						public void onError(Request request, Throwable exception) {
+							// TODO Auto-generated method stub
 
-					asyncCallback.onFailure(null);
+							asyncCallback.onFailure(null);
 
-				}
-			});
+						}
+					});
 		} catch (RequestException e) {
 			System.out.println("Couldn't retrieve JSON : " + e.getMessage() + " :addPage()");
 		}
@@ -326,14 +333,15 @@ public class RpcService {
 
 		java.util.logging.Logger logger = Logger.getLogger(this.getClass().getSimpleName());
 		logger.log(Level.INFO, "getSuggestions()!");
-		
-		
-		// Uncaught com.google.gwt.event.shared.UmbrellaException: Exception caught: (TypeError) : Cannot read property 'ie_sortons_events_shared_ClientPageData_includedPages' of undefined
+
+		// Uncaught com.google.gwt.event.shared.UmbrellaException: Exception
+		// caught: (TypeError) : Cannot read property
+		// 'ie_sortons_events_shared_ClientPageData_includedPages' of undefined
 		// Have to wait for the clientpagedata here.
 		List<Long> searchPagesList = new ArrayList<Long>();
-		if(clientPageData==null)
+		if (clientPageData == null)
 			return;
-		
+
 		for (Long pageId : clientPageData.getIncludedPageIds())
 			searchPagesList.add(pageId);
 
@@ -361,9 +369,9 @@ public class RpcService {
 
 		System.out.println("fire fql");
 
-		fbCore.api(query.getJavaScriptObject(), new AsyncCallback<JavaScriptObject>() {
+		fbCore.api(query.getJavaScriptObject(), new AsyncCallback<FbResponse>() {
 			@SuppressWarnings("unchecked")
-			public void onSuccess(JavaScriptObject response) {
+			public void onSuccess(FbResponse response) {
 
 				HashMapSerializer hashMapSerializer = (HashMapSerializer) GWT.create(HashMapSerializer.class);
 
@@ -402,8 +410,10 @@ public class RpcService {
 				System.out.println("process");
 				ArrayList<SourcePage> pages = new ArrayList<SourcePage>();
 				for (FqlPage page : map.values()) {
-					if (!clientPageData.getIncludedPageIds().contains(page.getPageId()))
-						pages.add(new SourcePage(page));
+					if (!clientPageData.getIncludedPageIds().contains(page.getPageId())) {
+					}
+					// TODO!
+					// pages.add(new SourcePage(page));
 				}
 
 				clientPageData.setSuggestedPages(pages);

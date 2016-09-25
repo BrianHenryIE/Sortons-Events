@@ -10,7 +10,7 @@ import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 import com.kfuntak.gwt.json.serialization.client.SkipNullSerialization;
 
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSearchable;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+import ie.sortons.gwtfbplus.shared.domain.graph.GraphPage;
 
 /**
  * @see http://developers.facebook.com/docs/reference/fql/page/
@@ -38,6 +38,7 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 	private String name;
 
 	private Long pageId;
+	private String fbPageId;
 
 	// private String parent_page;
 
@@ -54,46 +55,67 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 
 	private String state;
 
-	// Needed on line 78, 245 ClientPageDataEndpoint
-	public SourcePage(FqlPage fqlPage) {
-		this.about = fqlPage.getAbout();
+	public SourcePage(GraphPage graphPage) {
+		this.about = graphPage.getAbout();
 
-		this.street = fqlPage.getLocation().getStreet();
-		this.city = fqlPage.getLocation().getCity();
-		this.zip = fqlPage.getLocation().getZip();
-		this.state = fqlPage.getLocation().getState();
-		this.country = fqlPage.getLocation().getCountry();
-		this.latitude = fqlPage.getLocation().getLatitude();
-		this.longitude = fqlPage.getLocation().getLongitude();
+		if (graphPage.getLocation() != null) {
+			this.street = graphPage.getLocation().getStreet();
+			this.city = graphPage.getLocation().getCity();
+			this.zip = graphPage.getLocation().getZip();
+			this.state = graphPage.getLocation().getState();
+			this.country = graphPage.getLocation().getCountry();
+			this.latitude = graphPage.getLocation().getLatitude();
+			this.longitude = graphPage.getLocation().getLongitude();
+		}
 
 		// this.parent_page = fqlPage.getParent_Page();
-		this.phone = fqlPage.getPhone() != null ? fqlPage.getPhone() : null;
-		this.pageUrl = fqlPage.getPageUrl() != null ? fqlPage.getPageUrl() : null;
+		this.phone = graphPage.getPhone();
+		this.pageUrl = graphPage.getLink();
 
-		this.name = fqlPage.getName();
-		this.pageId = fqlPage.getPageId();
-		this.pageUrl = fqlPage.getPageUrl();
+		this.name = graphPage.getName();
 
-		setId();
+		this.setFbPageId(graphPage.getId());
+	}
+
+	// Copy constructor / kindof
+	public SourcePage(SourcePage sourcePage, Long clientId) {		
+		this.about = sourcePage.getAbout();
+
+		this.street = sourcePage.getStreet();
+		this.city = sourcePage.getCity();
+		this.zip = sourcePage.getZip();
+		this.state = sourcePage.getState();
+		this.country = sourcePage.getCountry();
+		this.latitude = sourcePage.getLatitude();
+		this.longitude = sourcePage.getLongitude();
+
+		// this.parent_page = fqlPage.getParent_Page();
+		this.phone = sourcePage.getPhone();
+		this.pageUrl = sourcePage.getPageUrl();
+
+		this.name = sourcePage.getName();
+
+		this.setFbPageId(sourcePage.getFbPageId());
+		this.setClientId(clientId);
 	}
 
 	public SourcePage() {
 	}
 
-	public SourcePage(String name, Long id, String link) {
+	public SourcePage(String name, String fbPageId, String link) {
 		this.name = name;
-		this.pageId = id;
+		this.setFbPageId(fbPageId);
 		this.pageUrl = link;
-
-		setId();
 	}
 
 	public String getName() {
 		return name;
 	}
 
-	public Long getPageId() {
-		return pageId;
+	public String getFbPageId() {
+		if(fbPageId == null && pageId != null)
+			return pageId.toString();
+		return fbPageId;
 	}
 
 	public String getPageUrl() {
@@ -139,7 +161,7 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 
 	@Override
 	public int compareTo(SourcePage other) {
-		return this.pageId.compareTo(other.getPageId());
+		return this.getFbPageId().compareTo(other.getFbPageId());
 	}
 
 	// FbSearchable interface for suggestbox
@@ -155,7 +177,7 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 	}
 
 	public Long getUid() {
-		return pageId;
+		return Long.parseLong(getFbPageId());
 	}
 
 	public String getSearchableString() {
@@ -172,9 +194,19 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 		this.name = name;
 	}
 
+	public void setFbPageId(String fbPageId) {
+		this.fbPageId = fbPageId;
+		setId();
+	}
+
+	@Deprecated
+	public Long getPageId() {
+		return pageId;
+	}
+
+	@Deprecated
 	public void setPageId(Long pageId) {
 		this.pageId = pageId;
-		setId();
 	}
 
 	public void setPhone(String phone) {
@@ -273,7 +305,7 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 	}
 
 	public void setId() {
-		this.id = this.clientId + "" + this.pageId;
+		this.id = this.clientId + "" + this.getFbPageId();
 	}
 
 	@Override
@@ -288,7 +320,7 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 		result = prime * result + ((latitude == null) ? 0 : latitude.hashCode());
 		result = prime * result + ((longitude == null) ? 0 : longitude.hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + ((pageId == null) ? 0 : pageId.hashCode());
+		result = prime * result + ((getFbPageId() == null) ? 0 : getFbPageId().hashCode());
 		result = prime * result + ((pageUrl == null) ? 0 : pageUrl.hashCode());
 		result = prime * result + ((phone == null) ? 0 : phone.hashCode());
 		result = prime * result + ((state == null) ? 0 : state.hashCode());
@@ -346,10 +378,10 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 				return false;
 		} else if (!name.equals(other.name))
 			return false;
-		if (pageId == null) {
-			if (other.pageId != null)
+		if (getFbPageId() == null) {
+			if (other.getFbPageId() != null)
 				return false;
-		} else if (!pageId.equals(other.pageId))
+		} else if (!getFbPageId().equals(other.getFbPageId()))
 			return false;
 		if (pageUrl == null) {
 			if (other.pageUrl != null)
@@ -378,6 +410,5 @@ public class SourcePage implements JsonSerializable, Comparable<SourcePage>, FbS
 			return false;
 		return true;
 	}
-
 
 }

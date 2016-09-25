@@ -13,3 +13,4 @@ WEB-INF/*.api
 .externalToolBuilders
 /.apt_generated/
 *.api
+.DS_Store

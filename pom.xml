@@ -4,16 +4,16 @@
 
 	<groupId>ie.sortons</groupId>
 	<artifactId>events</artifactId>
-	<version>0.1.6</version>
+	<version>0.2.0</version>
 	<packaging>war</packaging>
 
 	<properties>
-		<appengine.app.version>v0-1-8</appengine.app.version>
-		<gae.version>1.9.27</gae.version>
-		<gwt.version>2.8.0-SNAPSHOT</gwt.version>
+		<appengine.app.version>v0-2-0</appengine.app.version>
+		<gae.version>1.9.42</gae.version>
+		<gwt.version>2.8.0-rc2</gwt.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<app.name>sortonsevents</app.name>
-		<gae.application.version>51</gae.application.version>
+		<gae.application.version>52</gae.application.version>
 	</properties>
 
 	<dependencies>
@@ -42,7 +42,7 @@
 		<dependency>
 			<groupId>com.googlecode.objectify</groupId>
 			<artifactId>objectify</artifactId>
-			<version>5.1.5</version>
+			<version>5.1.13</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
@@ -58,6 +58,11 @@
 			<groupId>joda-time</groupId>
 			<artifactId>joda-time</artifactId>
 			<version>2.8.1</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
+			<version>1.10</version>
 		</dependency>
 
 
@@ -90,7 +95,7 @@
 		<dependency>
 			<groupId>ie.sortons</groupId>
 			<artifactId>gwtfbplus</artifactId>
-			<version>0.0.2-SNAPSHOT</version>
+			<version>0.0.3-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -103,7 +108,7 @@
 			<!-- Like Jackson on the client side -->
 			<groupId>com.kfuntak.gwt.json</groupId>
 			<artifactId>gwtprojsonserializer</artifactId>
-			<version>1.0.7-SNAPSHOT</version>
+			<version>1.0.8-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
 
@@ -144,101 +149,111 @@
 	<build>
 		<!-- for hot reload of the web application -->
 		<outputDirectory>${project.build.directory}/${project.build.finalName}/WEB-INF/classes</outputDirectory>
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>gwt-maven-plugin</artifactId>
-				<version>${gwt.version}</version>
-				<configuration>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>gwt-maven-plugin</artifactId>
+					<version>${gwt.version}</version>
+					<configuration>
 
-					<port>8080</port>
-					<runTarget>/</runTarget>
-					<optimizationLevel>9</optimizationLevel>
-					<style>DETAILED</style>
-					<extraJvmArgs>-Xmx512M</extraJvmArgs>
-					<extraJvmArgs>-Xss1024k</extraJvmArgs>
-					<module>ie.sortons.events.Sortonsevents</module>
-					<server>com.google.appengine.tools.development.gwt.AppEngineLauncher</server>
-					<appEngineVersion>${gae.version}</appEngineVersion>
-				</configuration>
-				<executions>
-					<execution>
-						<configuration>
-							<module>ie.sortons.events.Sortonsevents</module>
-						</configuration>
-						<goals>
-							<goal>compile</goal>
-							<goal>test</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<!-- <plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>versions-maven-plugin</artifactId> 
-				<version>2.1</version> <executions> <execution> <phase>compile</phase> <goals> 
-				<goal>display-dependency-updates</goal> <goal>display-plugin-updates</goal> 
-				</goals> </execution> </executions> </plugin> -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<version>3.3</version>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-				<version>2.6</version>
-				<configuration>
-					<webXml>${project.build.directory}/generated-sources/appengine-endpoints/WEB-INF/web.xml</webXml>
-					<webResources>
-						<resource>
-							<directory>${project.build.directory}/generated-sources/appengine-endpoints</directory>
-							<!-- the list has a default value of ** -->
-							<includes>
-								<include>WEB-INF/*.discovery</include>
-								<include>WEB-INF/*.api</include>
-							</includes>
-						</resource>
-						<!--  For setting version http://stackoverflow.com/questions/27475714/why-doesnt-maven-property-appengine-app-version-get-interpolated-in-multi-mo  -->
-						<!-- in order to interpolate version from pom into appengine-web.xml -->
-						<resource>
-							<directory>${basedir}/src/main/webapp/WEB-INF</directory>
-							<filtering>true</filtering>
-							<targetPath>WEB-INF</targetPath>
-						</resource>
-					</webResources>
-				</configuration>
-			</plugin>
+						<port>8080</port>
+						<runTarget>/</runTarget>
+						<optimizationLevel>9</optimizationLevel>
+						<style>DETAILED</style>
+						<extraJvmArgs>-Xmx512M</extraJvmArgs>
+						<extraJvmArgs>-Xss1024k</extraJvmArgs>
+						<module>ie.sortons.events.Sortonsevents</module>
+						<server>com.google.appengine.tools.development.gwt.AppEngineLauncher</server>
+						<appEngineVersion>${gae.version}</appEngineVersion>
+					</configuration>
+					<executions>
+						<execution>
+							<configuration>
+								<module>ie.sortons.events.Sortonsevents</module>
+							</configuration>
+							<goals>
+								<goal>compile</goal>
+								<goal>test</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+				<!-- <plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>versions-maven-plugin</artifactId> 
+					<version>2.1</version> <executions> <execution> <phase>compile</phase> <goals> 
+					<goal>display-dependency-updates</goal> <goal>display-plugin-updates</goal> 
+					</goals> </execution> </executions> </plugin> -->
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<version>3.3</version>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<configuration>
+						<source>1.7</source>
+						<target>1.7</target>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-war-plugin</artifactId>
+					<version>2.6</version>
+					<configuration>
+						<webXml>${project.build.directory}/generated-sources/appengine-endpoints/WEB-INF/web.xml</webXml>
+						<webResources>
+							<resource>
+								<directory>${project.build.directory}/generated-sources/appengine-endpoints</directory>
+								<!-- the list has a default value of ** -->
+								<includes>
+									<include>WEB-INF/*.discovery</include>
+									<include>WEB-INF/*.api</include>
+								</includes>
+							</resource>
+							<!-- For setting version http://stackoverflow.com/questions/27475714/why-doesnt-maven-property-appengine-app-version-get-interpolated-in-multi-mo -->
+							<!-- in order to interpolate version from pom into appengine-web.xml -->
+							<resource>
+								<directory>${basedir}/src/main/webapp/WEB-INF</directory>
+								<filtering>true</filtering>
+								<targetPath>WEB-INF</targetPath>
+							</resource>
+						</webResources>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>com.google.appengine</groupId>
+					<artifactId>appengine-maven-plugin</artifactId>
+					<version>${gae.version}</version>
+
+					<configuration>
+
+						<enableJarClasses>false</enableJarClasses>
+						<!-- Comment in the below snippet to bind to all IPs instead of just 
+							localhost -->
+						<!-- address>0.0.0.0</address> <port>8080</port -->
+						<!-- Comment in the below snippet to enable local debugging with a 
+							remove debugger like those included with Eclipse or IntelliJ -->
+						<!-- jvmFlags> <jvmFlag>-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n</jvmFlag> 
+							</jvmFlags -->
+					</configuration>
+					
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<plugins>
 			<plugin>
 				<groupId>com.google.appengine</groupId>
 				<artifactId>appengine-maven-plugin</artifactId>
-				<version>${gae.version}</version>
-				<configuration>
-
-					<enableJarClasses>false</enableJarClasses>
-					<!-- Comment in the below snippet to bind to all IPs instead of just 
-						localhost -->
-					<!-- address>0.0.0.0</address> <port>8080</port -->
-					<!-- Comment in the below snippet to enable local debugging with a remove 
-						debugger like those included with Eclipse or IntelliJ -->
-					<!-- jvmFlags> <jvmFlag>-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n</jvmFlag> 
-						</jvmFlags -->
-				</configuration>
 				<executions>
-					<execution>
-						<goals>
-							<goal>endpoints_get_discovery_doc</goal>
-						</goals>
-					</execution>
-				</executions>
+						<execution>
+							<goals>
+								<goal>endpoints_get_discovery_doc</goal>
+							</goals>
+						</execution>
+					</executions>
 			</plugin>
 		</plugins>
 	</build>
 
 
-	<repositories>
+	<!-- <repositories>
 		<repository>
 			<id>gwt-oss-sonatype</id>
 			<name>oss-sonatype</name>
@@ -247,7 +262,7 @@
 				<enabled>true</enabled>
 			</snapshots>
 		</repository>
-	</repositories>
+	</repositories> -->
 	<pluginRepositories>
 		<pluginRepository>
 			<id>gwt-oss-sonatype</id>

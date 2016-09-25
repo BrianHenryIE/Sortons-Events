@@ -1,9 +1,5 @@
 package ie.sortons.events.server.cron;
 
-public class CollectorCronTest {
+public class DataStoreTest {
 
-	
-	
-	
-	
 }

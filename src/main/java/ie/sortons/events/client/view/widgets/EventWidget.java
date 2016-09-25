@@ -65,7 +65,7 @@ public class EventWidget extends Composite {
 	    
 	    for(SourcePage page : rowEvent.getSourcePages() ){
 	    	
-	    	Image pageImage = new Image("//graph.facebook.com/" + page.getPageId() + "/picture?type=square");
+	    	Image pageImage = new Image("//graph.facebook.com/" + page.getFbPageId() + "/picture?type=square");
 	    	pageImage.setHeight("25px");
 	    	pageImage.setWidth("25px");
 	    	

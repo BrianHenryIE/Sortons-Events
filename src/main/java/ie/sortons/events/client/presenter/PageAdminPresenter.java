@@ -34,6 +34,7 @@ import ie.sortons.gwtfbplus.client.widgets.suggestbox.FbSingleSuggestbox;
 import ie.sortons.gwtfbplus.client.widgets.suggestbox.SelectedItemWidget;
 import ie.sortons.gwtfbplus.shared.domain.graph.GraphPage;
 
+
 public class PageAdminPresenter implements Presenter {
 
 	private static final Logger log = Logger.getLogger(PageAdminPresenter.class.getName());
@@ -170,6 +171,7 @@ public class PageAdminPresenter implements Presenter {
 
 		// For lists from json
 		textEntered = textEntered.replaceAll("\"", "");
+		textEntered = textEntered.replaceAll("\n", "");
 		textEntered = textEntered.replaceAll(" ", "");
 		if (textEntered.endsWith(","))
 			textEntered.substring(0, textEntered.length() - 1);
@@ -191,7 +193,7 @@ public class PageAdminPresenter implements Presenter {
 
 						System.out.println("pageDetails.getName() " + pageDetails.getName());
 
-						SourcePage newPage = new SourcePage(pageDetails.getName(), pageDetails.getId(), pageDetails
+						SourcePage newPage = new SourcePage(pageDetails.getName(), pageDetails.getId().toString(), pageDetails
 								.getLink());
 
 						// TODO

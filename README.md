@@ -18,15 +18,11 @@ The notable tech used:
 
 You'll also have pull [GwtFB+](https://github.com/BrianHenryIE/GwtFBplus) and [GwtBingMaps](https://github.com/BrianHenryIE/GwtBingMaps) and add them to your local Maven repository. If you're actually going to do that, you should probably get in touch with me to make sure all the latest versions have been pushed to GitHub.
 
+"2016-09-21T14:00:00.000-07:00"
 
-
-Run with
-mvn gwt:run
+Run with `mvn clean appengine:endpoints_get_discovery_doc war:war gwt:run`
 This doesn't do hot code reloading, as mvn appengine:devserver does, so maybe there's a better way.
 
-Upload with
-mvn clean
-mvn appengine:update
+Upload with `mvn clean gwt:compile appengine:update`
 
-Local datastore at:
-localhost:8080/_ah/admin
+Local datastore at: `localhost:8080/_ah/admin`

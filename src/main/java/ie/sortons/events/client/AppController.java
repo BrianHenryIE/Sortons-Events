@@ -49,6 +49,7 @@ public class AppController {
 	private boolean status = true;
 	private boolean xfbml = true;
 	private boolean cookie = true;
+	private String version = "v2.7";
 
 	private RpcService rpcService;
 	private SimpleEventBus eventBus;
@@ -78,7 +79,7 @@ public class AppController {
 		res.css().ensureInjected();
 
 		// Initialize the Facebook API
-		fbCore.init(APPID, status, cookie, xfbml);
+		fbCore.init(APPID, status, xfbml, version);
 
 		// TODO Move to isadmin()
 		@SuppressWarnings("unused")

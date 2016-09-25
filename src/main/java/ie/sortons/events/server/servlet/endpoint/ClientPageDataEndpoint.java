@@ -5,10 +5,8 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -24,9 +22,10 @@ import com.google.api.server.spi.config.ApiAuth;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import com.googlecode.objectify.ObjectifyService;
 
+import ie.sortons.events.server.Facebook;
+import ie.sortons.events.server.SEUtil;
 import ie.sortons.events.server.servlet.SimpleStringCipher;
 import ie.sortons.events.shared.ClientPageData;
 import ie.sortons.events.shared.Config;
@@ -35,12 +34,11 @@ import ie.sortons.events.shared.PageList;
 import ie.sortons.events.shared.SourcePage;
 import ie.sortons.events.shared.WallPost;
 import ie.sortons.events.shared.dto.PagesListResponse;
-import ie.sortons.gwtfbplus.shared.domain.FbResponse;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventDatesAdapter;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenue;
 import ie.sortons.gwtfbplus.shared.domain.fql.FqlEvent.FqlEventVenueAdapter;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+import ie.sortons.gwtfbplus.shared.domain.graph.GraphPage;
 import ie.sortons.gwtfbplus.shared.domain.graph.GraphUser;
 
 /**
@@ -55,6 +53,10 @@ public class ClientPageDataEndpoint {
 
 	private static final Logger log = Logger.getLogger(ClientPageDataEndpoint.class.getName());
 
+	String serverAccessToken = Config.getAppAccessTokenServer();
+	String apiVersion = Config.getFbApiVersion();
+	Facebook facebook = new Facebook(serverAccessToken, apiVersion);
+	
 	static {
 		ObjectifyService.register(ClientPageData.class);
 		ObjectifyService.register(SourcePage.class);
@@ -74,6 +76,7 @@ public class ClientPageDataEndpoint {
 		return clientPageData;
 	}
 
+
 	private ClientPageData getClientPageData(Long clientId) {
 
 		ClientPageData clientPageData = ofy().load().type(ClientPageData.class).id(clientId).now();
@@ -82,9 +85,13 @@ public class ClientPageDataEndpoint {
 		// TODO check they're a page admin else return: no such client
 		if (clientPageData == null) {
 
-			log.info("clientPageData == null");
+			log.info("clientPageData not in DataStore");
 
-			SourcePage clientPageDetails = getPageDetailsFromFacebook(clientId);
+			GraphPage graphPage = facebook.getSinglePage(clientId.toString());
+			
+			log.info(clientId + " : " + graphPage.getName());
+			
+			SourcePage clientPageDetails = new SourcePage(graphPage);
 
 			log.info("Added to new page: " + clientPageDetails.getName() + " " + clientPageDetails.getPageUrl() + " "
 					+ clientId);
@@ -114,15 +121,17 @@ public class ClientPageDataEndpoint {
 	@ApiMethod(name = "clientdata.addPage", httpMethod = "post")
 	public SourcePage addPage(HttpServletRequest req, @Named("clientpageid") Long clientPageId, SourcePage jsonPage) {
 		log.info("addPage pre auth check");
-		ClientPageData clientPageData = getClientPageData(clientPageId);
-		if (req.getCookies() == null
-				|| !(isPageAdmin(req.getCookies(), clientPageData) || isAppAdmin(req.getCookies())))
-			return null;
+//		ClientPageData clientPageData = getClientPageData(clientPageId);
+//		if (req.getCookies() == null
+//				|| !(isPageAdmin(req.getCookies(), clientPageData) || isAppAdmin(req.getCookies()))){
+//			log.info("auth check failed");
+//			return null;			
+//		}
 		// TODO return an error: permission denied
 
-		log.info("addPage: " + jsonPage.getName() + " " + jsonPage.getPageId());
+		log.info("addPage: " + jsonPage.getName() + " " + jsonPage.getFbPageId());
 
-		SourcePage newPage = getSourcePageFromId(clientPageId, jsonPage.getPageId());
+		SourcePage newPage = getSourcePageFromId(clientPageId, jsonPage.getFbPageId().toString());
 
 		SourcePage fromDs = savePage(newPage);
 
@@ -170,7 +179,7 @@ public class ClientPageDataEndpoint {
 
 		// TODO... for lists, this will be slow (the many calls to fb)
 		for (String pageId : pagesList.getList()) {
-			SourcePage newPage = getSourcePageFromId(clientPageId, Long.parseLong(pageId));
+			SourcePage newPage = getSourcePageFromId(clientPageId, pageId);
 			if (newPage == null)
 				failed.add(pageId);
 			else {
@@ -199,7 +208,7 @@ public class ClientPageDataEndpoint {
 		// the SourcePage. If it was the only source page, delete the event
 		List<DiscoveredEvent> dsEvents = ofy().load().type(DiscoveredEvent.class)
 				.filter("clientId", jsonPage.getClientId())
-				.filter("startTime >", UpcomingEventsEndpoint.getHoursAgoOrToday(12)).order("startTime").list();
+				.filter("startTime >", SEUtil.getHoursAgoOrToday(12)).order("startTime").list();
 		for (DiscoveredEvent dse : dsEvents)
 			if (dse.getSourcePages().contains(jsonPage))
 				if (dse.getSourcePages().size() > 1) {
@@ -212,7 +221,7 @@ public class ClientPageDataEndpoint {
 		// TODO: not working properly!
 		List<WallPost> recentPosts = ofy().load().type(WallPost.class).filter("clientId", jsonPage.getClientId()).limit(5000).list();
 		for(WallPost post:recentPosts)
-			if(post.getPageId().equals(jsonPage.getPageId()))
+			if(post.getPageId().equals(jsonPage.getFbPageId()))
 				ofy().delete().type(WallPost.class).id(post.getUniqueId());
 		
 		// Finally delete the page itself
@@ -221,66 +230,14 @@ public class ClientPageDataEndpoint {
 		return jsonPage;
 	}
 
-	SourcePage getSourcePageFromId(Long clientPageId, Long pageId) {
+	SourcePage getSourcePageFromId(Long clientPageId, String pageId) {
 
-		SourcePage newPage = getPageDetailsFromFacebook(pageId);
+		GraphPage graphPage = facebook.getSinglePage(pageId);
+		SourcePage newPage = new SourcePage(graphPage);
 		if (newPage != null)
 			newPage.setClientId(clientPageId);
 
 		return newPage;
-	}
-
-	SourcePage getPageDetailsFromFacebook(Long pageId) {
-		// FQL call pieces
-		String fqlcallstub = "https://graph.facebook.com/fql?q=";
-		String fql = "SELECT page_id, name, page_url, location, about, phone FROM page WHERE page_id = " + pageId;
-		String access_token = Config.getAppAccessTokenServer();
-
-		String json = "";
-
-		try {
-
-			String call = fqlcallstub + URLEncoder.encode(fql, "UTF-8") + "&access_token=" + access_token;
-			log.info(call);
-
-			URL url = new URL(call);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-			String line;
-
-			while ((line = reader.readLine()) != null) {
-				json += line;
-			}
-			reader.close();
-
-			log.info(json);
-
-		} catch (MalformedURLException e) {
-			System.out.println("getPageFromId: catch (MalformedURLException e)");
-			// ...
-			return null;
-		} catch (IOException e) {
-			System.out.println("getPageFromId: catch (IOException e)");
-			// ...
-			return null;
-		}
-
-		log.info("Page details from fb: " + json);
-
-		Gson gson = new Gson();
-		// Convert the json string to java object
-		Type fooType = new TypeToken<FbResponse<FqlPage>>() {
-		}.getType();
-		FbResponse<FqlPage> pages = gson.fromJson(json, fooType);
-
-		if (pages.getError() == null && pages.getData() != null && pages.getData().size() > 0) {
-			log.info("returning page details");
-			return new SourcePage(pages.getData().get(0));
-		} else {
-			log.info("returning null");
-			return null;
-		}
-
-		// TODO: return an error.
 	}
 
 	boolean isAppAdmin(Cookie[] cookies) {

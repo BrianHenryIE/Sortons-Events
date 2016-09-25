@@ -1,6 +1,5 @@
 package ie.sortons.events.shared;
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,13 +17,15 @@ import com.googlecode.objectify.annotation.Index;
 import com.kfuntak.gwt.json.serialization.client.JsonSerializable;
 import com.kfuntak.gwt.json.serialization.client.SkipNullSerialization;
 
-@Cache @Entity @SkipNullSerialization
+@Cache
+@Entity
+@SkipNullSerialization
 public class ClientPageData implements JsonSerializable {
 
-	@GwtIncompatible @ApiResourceProperty(name = "class")
+	@GwtIncompatible
+	@ApiResourceProperty(name = "class")
 	public final String classname = "ie.sortons.events.shared.ClientPageData";
 
-	
 	// this will be either a page id or an app id or an interest list??
 	@Id
 	@Index
@@ -34,38 +35,34 @@ public class ClientPageData implements JsonSerializable {
 
 	@GwtIncompatible // @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
 	private Set<Long> pageAdmins = new HashSet<Long>();
-	
+
 	@Ignore
 	private List<SourcePage> includedPages = new ArrayList<SourcePage>();
 
 	@Ignore
 	private List<SourcePage> suggestedPages = new ArrayList<SourcePage>();
 
-	
 	public ClientPageData() {
 	}
 
 	public ClientPageData(SourcePage clientPageDetails) {
 		this.clientPage = clientPageDetails;
-		this.clientPageId = clientPageDetails.getPageId();
+		this.clientPageId = Long.parseLong(clientPageDetails.getFbPageId());
 		addPage(clientPageDetails);
 	}
-
-
 
 	// TODO Are these next three needed?
 	public Long getClientPageId() {
 		return this.clientPageId;
 	}
 
-	public String getName(){
+	public String getName() {
 		return clientPage.getName();
 	}
-	
+
 	public String getPageUrl() {
 		return clientPage.getPageUrl();
 	}
-	
 
 	public void setSuggestedPages(List<SourcePage> suggestedPages) {
 		this.suggestedPages = suggestedPages;
@@ -92,49 +89,49 @@ public class ClientPageData implements JsonSerializable {
 			includedPages.remove(page);
 			excluded = true;
 		}
-	
+
 		return excluded;
 	}
 
 	public SourcePage getPageById(Long pageId) {
 		SourcePage thePage = null;
 		for (SourcePage page : includedPages)
-			if (page.getPageId().equals(pageId))
+			if (page.getFbPageId().equals(pageId))
 				thePage = page;
 		return thePage;
 	}
 
-	// Ignored because ClientEndpoints doesn't need to generate the data, if a client needs it, it can
+	// Ignored because ClientEndpoints doesn't need to generate the data, if a
+	// client needs it, it can
 	// but fock, there's no source so we can't compile this if we try this
-	//@ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+	// @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
 	public List<Long> getIncludedPageIds() {
 		List<Long> pageIds = new ArrayList<Long>();
 		for (SourcePage page : includedPages)
 			if (page != null)
-				pageIds.add(page.getPageId());
+				pageIds.add(Long.parseLong(page.getFbPageId()));
 		return pageIds;
 	}
-	
-	//@ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+
+	// @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
 	public List<SourcePage> getIncludedPages() {
 		// TODO why is this a new ArrayList?
 		return new ArrayList<SourcePage>(includedPages);
 	}
 
-	//@ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+	// @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
 	public Map<Long, SourcePage> getIncludedIdsPagesMap() {
 
 		Map<Long, SourcePage> sourceClientPages = new HashMap<Long, SourcePage>();
 
-		for (SourcePage page :includedPages)
-			sourceClientPages.put(page.getPageId(), page);
+		for (SourcePage page : includedPages)
+			sourceClientPages.put(Long.parseLong(page.getFbPageId()), page);
 
 		return sourceClientPages;
 	}
 
-	
 	// public getters and setters for serialization
-	
+
 	public SourcePage getClientPage() {
 		return clientPage;
 	}
@@ -146,12 +143,11 @@ public class ClientPageData implements JsonSerializable {
 	public void setClientPageId(Long clientPageId) {
 		this.clientPageId = clientPageId;
 	}
-	
+
 	public void setIncludedPages(List<SourcePage> includedPages) {
 		this.includedPages = includedPages;
 	}
 
-	
 	/**
 	 * @return the pageAdmins
 	 */
@@ -164,15 +160,14 @@ public class ClientPageData implements JsonSerializable {
 	public void setPageAdmins(Set<Long> pageAdmins) {
 		this.pageAdmins = pageAdmins;
 	}
-	
+
 	/**
-	 * @param pageAdmins the pageAdmins to set
+	 * @param pageAdmins
+	 *            the pageAdmins to set
 	 */
 	@GwtIncompatible
 	public boolean addPageAdmin(Long admin) {
 		return pageAdmins.add(admin);
 	}
 
-
-	
 }

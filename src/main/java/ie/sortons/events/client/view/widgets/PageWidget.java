@@ -37,7 +37,7 @@ public class PageWidget extends Composite {
 	public PageWidget(SourcePage page) {
 		initWidget(uiBinder.createAndBindUi(this));
 
-		picture.setUrl("//graph.facebook.com/" + page.getPageId() + "/picture?type=square");
+		picture.setUrl("//graph.facebook.com/" + page.getFbPageId() + "/picture?type=square");
 
 		about.setText(page.getAbout());
 
@@ -77,7 +77,7 @@ public class PageWidget extends Composite {
 		}
 		
 		title.setText(page.getName());
-		title.setHref("//www.facebook.com/" + page.getPageId());
+		title.setHref("//www.facebook.com/" + page.getFbPageId());
 		title.setTarget("_blank");
 
 	}
