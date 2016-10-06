@@ -34,5 +34,17 @@ public class SEUtil {
 
 		return ago;
 	}
+	
+	public static Date getHoursAgo(int hours) {
+
+		Calendar calvar = Calendar.getInstance();
+
+		// Subtract the specified number of hours
+		calvar.add(Calendar.HOUR_OF_DAY, -hours);
+
+		Date ago = calvar.getTime();
+
+		return ago;
+	}
 
 }

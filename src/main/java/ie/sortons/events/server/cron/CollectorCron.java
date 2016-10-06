@@ -25,10 +25,9 @@ import ie.sortons.events.server.SEUtil;
 import ie.sortons.events.shared.Config;
 import ie.sortons.events.shared.DiscoveredEvent;
 import ie.sortons.events.shared.SourcePage;
+import ie.sortons.events.shared.WallPost;
 import ie.sortons.gwtfbplus.shared.domain.graph.GraphEvent;
-
-// (old) terrible fix for execution time exceeded!
-// Collections.shuffle(partitionedSourcePages);
+import ie.sortons.gwtfbplus.shared.domain.graph.GraphFeedItem;
 
 /**
  * Servlet which polls Facebook for events created by a list of ids and events
@@ -51,7 +50,7 @@ public class CollectorCron extends HttpServlet {
 	String apiVersion = Config.getFbApiVersion();
 	Facebook facebook = new Facebook(serverAccessToken, apiVersion);
 
-	// TODO: Filter to events in the future when saving
+	// TODO: Move all variables to fields with Java doc
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 		PrintWriter out = response.getWriter();
@@ -64,6 +63,11 @@ public class CollectorCron extends HttpServlet {
 		out.write("\n<br/>" + sourcePages.size() + " SourcePages in DataStore");
 
 		Map<Long, List<SourcePage>> clientPages = new HashMap<Long, List<SourcePage>>();
+
+		/**
+		 * <fbPageId, <clientId>>
+		 */
+		Map<String, Set<Long>> pagesAndClients = new HashMap<String, Set<Long>>();
 
 		// Set<String> sourcePageFbIds = new HashSet<String>();
 		List<String> sourcePageFbIds = new ArrayList<String>();
@@ -79,10 +83,16 @@ public class CollectorCron extends HttpServlet {
 
 			sourcePageMap.put(sp.getFbPageId(), sp);
 			sourcePageFbIds.add(sp.getFbPageId());
+
+			if (!pagesAndClients.containsKey(sp.getFbPageId()))
+				pagesAndClients.put(sp.getFbPageId(), new HashSet<Long>());
+			pagesAndClients.get(sp.getFbPageId()).add(sp.getClientId());
+
 		}
 
 		LOG.info(clientPages.size() + " client pages (groups) in DataStore");
 		out.write("\n<br/>" + clientPages.size() + " client pages (groups) in DataStore");
+		clientPages = null;
 
 		LOG.info(sourcePageFbIds.size() + " unique Facebook Pages");
 		out.write("\n<br/>" + sourcePageFbIds.size() + " unique Facebook Pages");
@@ -91,6 +101,7 @@ public class CollectorCron extends HttpServlet {
 		// ArrayList<String> sourcePageFbIdsList = new
 		// ArrayList<String>(sourcePageFbIds);
 		List<List<String>> partitionedSourcePages = Lists.partition(sourcePageFbIds, 50);
+		sourcePageFbIds = null;
 
 		out.write("<br/>\npartitionedSourcePages.size()" + partitionedSourcePages.size());
 		out.write("<br/>\npartitionedSourcePages.get(0).size() " + partitionedSourcePages.get(0).size());
@@ -98,6 +109,7 @@ public class CollectorCron extends HttpServlet {
 		// Get all the events id for all the pages! whoop!
 		// <FbPageId, <EventID>>
 		Map<String, Set<String>> pagesAndEvents = facebook.getEventIdsPerPage(partitionedSourcePages);
+		partitionedSourcePages = null;
 
 		Set<String> allEventIds = new HashSet<String>();
 		for (Set<String> eventIds : pagesAndEvents.values())
@@ -119,7 +131,7 @@ public class CollectorCron extends HttpServlet {
 		Map<String, DiscoveredEvent> dataStoreEventsMap = new HashMap<String, DiscoveredEvent>();
 		for (DiscoveredEvent de : existingDataStoreEvents) {
 			dataStoreEventsMap.put(de.getEventId(), de);
-			
+
 			Long clientId = de.getClientId();
 			if (!discoveredEventsMap.containsKey(clientId))
 				discoveredEventsMap.put(clientId, new HashMap<String, Set<String>>());
@@ -140,6 +152,7 @@ public class CollectorCron extends HttpServlet {
 			else
 				discoveredEventsMap.get(clientId).get(fbEventId).addAll(fbPageIds);
 		}
+		existingDataStoreEvents = null;
 
 		// Look through the SourcePages to see if we found anything new and add
 		// it
@@ -160,12 +173,14 @@ public class CollectorCron extends HttpServlet {
 				discoveredEventsMap.get(clientId).get(fbEventId).add(fbPageId);
 			}
 		}
+		pagesAndEvents = null;
 
 		// Get up to date data // TODO What happens when we graph call on a
 		// deleted event?
 		// <EventId, GraphEvent>
 
 		Map<String, GraphEvent> graphEvents = facebook.getGraphEventsFromEventIds(allEventIds);
+		allEventIds = null;
 
 		LOG.info(graphEvents.size() + " events w/details retrieved from Facebook");
 		out.write("\n<br/>" + graphEvents.size() + " events w/details retrieved from Facebook");
@@ -173,7 +188,7 @@ public class CollectorCron extends HttpServlet {
 		List<DiscoveredEvent> finalEvents = new ArrayList<DiscoveredEvent>();
 
 		Date upcomingTime = SEUtil.getHoursAgoOrToday(12);
-		
+
 		// Transcribe from id numbers to objects
 		// <ClientId, <EventId, <FbPageId>>>
 		for (Entry<Long, Map<String, Set<String>>> clientEntry : discoveredEventsMap.entrySet()) {
@@ -206,111 +221,55 @@ public class CollectorCron extends HttpServlet {
 
 			}
 		}
+		discoveredEventsMap = null;
+		graphEvents = null;
 
 		LOG.info(finalEvents.size() + " upcoming events built");
 		out.write("\n<br/>" + finalEvents.size() + " upcoming events built");
-		
+
 		List<DiscoveredEvent> saveEvents = new ArrayList<DiscoveredEvent>();
 
-		System.out.println("dataStoreEventsMap.size() " + dataStoreEventsMap.size());
-		System.out.println(dataStoreEventsMap);
-		
 		// Only save new/updated event
-		for (DiscoveredEvent de : finalEvents) {
-			
-			System.out.println("searching " + de.getEventId());
-			
+		for (DiscoveredEvent de : finalEvents)
 			if (dataStoreEventsMap.get(de.getEventId()) == null) {
 				saveEvents.add(de);
-				System.out.println("not in ds de map");
-			} else if (!dataStoreEventsMap.get(de.getEventId()).equals(de)) {
+			} else if (!dataStoreEventsMap.get(de.getEventId()).equals(de))
 				saveEvents.add(de);
-				System.out.println("unequal");
-			}
-		}
-		
+		dataStoreEventsMap = null;
+		finalEvents = null;
+
 		LOG.info(saveEvents.size() + " new/updated events to save");
 		out.write("\n<br/>" + saveEvents.size() + " new/updated events to save");
 
-		dataStore.saveDiscoveredEvents(finalEvents);
+		dataStore.saveDiscoveredEvents(saveEvents);
+		saveEvents = null;
 
-		// Get the calls for reading their walls
-		// Map<SourcePage, String> fqlCalls = new HashMap<SourcePage, String>();
-		//
-		// for (SourcePage sourcePage : sourcePagePartition)
-		// fqlCalls.put(sourcePage, getFqlStreamCall(sourcePage));
-		//
-		// Map<SourcePage, String> jsonWalls = asyncFqlCall(fqlCalls);
-		//
-		// partitionedSourcePages = null;
-		//
-		// Map<SourcePage, List<FqlStream>> parsedWalls =
-		// parseJsonWalls(jsonWalls);
-		//
-		// wallsWithPostsCount += parsedWalls.size();
-		//
-		// List<DiscoveredEvent> eventsPosted =
-		// findEventsInStreams(parsedWalls);
-		//
-		// postedEventsCount += eventsPosted.size();
-		//
-		// List<DiscoveredEvent> eventsCreated =
-		// findCreatedEventsByPages(sourcePages);
-		//
-		// createdEventsCount += eventsCreated.size();
+		List<GraphFeedItem> posts = facebook.getPosts();
+		facebook.nullPosts();
 
-		// Now we have many lists of events including some duplicates and many
-		// nulls. Merge them.
+		Date anHourAgo = SEUtil.getHoursAgo(1);
 
-		// List<DiscoveredEvent> mergedLists = new ArrayList<DiscoveredEvent>();
-		// mergedLists.addAll(eventsPosted);
-		// mergedLists.addAll(eventsCreated);
-		// mergedLists.removeAll(Collections.singleton(null));
+		// TODO: pull out the recent posts and don't save duplicates
+		
+		List<WallPost> wallPosts = new ArrayList<WallPost>();
+		for (GraphFeedItem post : posts) {
+			String fbPageId = post.getId().split("_")[0];
+			String fbPostId = post.getId().split("_")[1];
+			long date = post.getCreated_time().getTime();
+			String url = "https://www.facebook.com/" + fbPageId + "/posts/" + fbPostId;
 
-		// List<DiscoveredEvent> allEvents = mergeEvents(mergedLists);
+			if (post.getCreated_time().after(anHourAgo))
+				for (Long clientId : pagesAndClients.get(fbPageId)) {
+					WallPost wallPost = new WallPost(clientId, post.getId(), date, url);
+					wallPosts.add(wallPost);
+				}
+		}
 
-		// Some of the events don't have info, i.e. from the event_member table
-		// Some will be in the past – the fql finding details will filter them
-		// out
+		LOG.info(wallPosts.size() + " wall posts to save");
+		out.write("\n<br/>" + wallPosts.size() + " wall posts to save");
 
-		// futureEventsCount += eventsReady.size();
-
-		// Check if there are changes from the datastore's existing events
-		// Only save new/edited events
-
-		// Get upcoming datastore DiscoveredEvents
-
-		// Get a list of them by id
-
-		// Check the events we've just found
-		// if it's new, save it
-		// if it's existing, make sure the source pages are all there
-
-		// Get wall posts
-
-		// Save wall posts
-
-		// Record number of wall posts for info logging
-
-		// }
-		//
-		// LOG.info(sourcePages.size() + " SourcePages in datastore.\n" +
-		// wallsWithPostsCount + " pages with wall posts.\n"
-		// + postedEventsCount + " events posted on walls.\n" +
-		// createdEventsCount + " events created.\n"
-		// + mergedEventsCount + " total events (duplicates merged).\n" +
-		// futureEventsCount + " future events.\n"
-		// + wallPostsCount + " wall posts saved.\n");
-
-		// out.write("\n<br/> sourcePages.size() + " SourcePages in
-		// datastore.\n" +
-		// wallsWithPostsCount
-		// + " pages with wall posts.\n" + postedEventsCount + " events posted
-		// on walls.\n" + createdEventsCount
-		// + " events created.\n" + mergedEventsCount + " total events
-		// (duplicates merged).\n" + futureEventsCount
-		// + " future events.\n" + wallPostsCount + " wall posts saved.\n");
-
+		dataStore.saveWallPosts(wallPosts);
+		wallPosts = null;
 	}
 
 }

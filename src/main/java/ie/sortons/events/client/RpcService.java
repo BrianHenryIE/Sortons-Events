@@ -8,7 +8,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.common.base.Joiner;
-import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.shared.GWT;
 import com.google.gwt.event.shared.SimpleEventBus;
 import com.google.gwt.http.client.Request;
@@ -18,7 +17,6 @@ import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.json.client.JSONObject;
-import com.google.gwt.json.client.JSONString;
 import com.google.gwt.user.client.Random;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -38,7 +36,8 @@ import ie.sortons.events.shared.dto.RecentPostsResponse;
 import ie.sortons.gwtfbplus.client.api.FBCore;
 import ie.sortons.gwtfbplus.client.overlay.FbResponse;
 import ie.sortons.gwtfbplus.shared.domain.SignedRequest;
-import ie.sortons.gwtfbplus.shared.domain.fql.FqlPage;
+import ie.sortons.gwtfbplus.shared.domain.graph.GraphFields;
+import ie.sortons.gwtfbplus.shared.domain.graph.GraphPage;
 
 public class RpcService {
 
@@ -329,9 +328,9 @@ public class RpcService {
 	 */
 	public void getSuggestions(final AsyncCallback<List<SourcePage>> callback) {
 
-		// TODO shouldn't included existing included pages
+		// TODO shouldn't include existing included pages
 
-		java.util.logging.Logger logger = Logger.getLogger(this.getClass().getSimpleName());
+		final java.util.logging.Logger logger = Logger.getLogger(this.getClass().getSimpleName());
 		logger.log(Level.INFO, "getSuggestions()!");
 
 		// Uncaught com.google.gwt.event.shared.UmbrellaException: Exception
@@ -345,31 +344,20 @@ public class RpcService {
 		for (Long pageId : clientPageData.getIncludedPageIds())
 			searchPagesList.add(pageId);
 
-		System.out.println("searchPagesList " + searchPagesList.size());
+		logger.log(Level.INFO, "searchPagesList " + searchPagesList.size());
 
 		// http://blog.jonleonard.com/2012/10/gwt-collectionsshuffle-implementation.html
-		for (int index = 0; index < searchPagesList.size(); index += 1) {
+		// for (int index = 0; index < searchPagesList.size(); index += 1) {
+		for (int index = 0; index < 99 && index < searchPagesList.size(); index += 1) {
 			Collections.swap(searchPagesList, index, Random.nextInt(searchPagesList.size()));
 		}
+
 		String searchPages = currentPageId + "," + Joiner.on(",").join(searchPagesList);
 
-		System.out.println("searchPagesList shuffled");
+		String graphPath = "?ids=" + searchPages + "&fields=likes";
 
-		// TODO... someday (soon) this will get too big
-		String fql = "SELECT page_id, name, page_url, location FROM page WHERE page_id IN (SELECT page_id FROM page_fan WHERE uid IN ("
-				+ searchPages + ") ) AND NOT is_community_page = 'true'";
-		// TODO Remove LIMIT 250 before deploying!
+		fbCore.api(graphPath, new AsyncCallback<FbResponse>() {
 
-		System.out.println(fql);
-
-		String method = "fql.query";
-		JSONObject query = new JSONObject();
-		query.put("method", new JSONString(method));
-		query.put("query", new JSONString(fql));
-
-		System.out.println("fire fql");
-
-		fbCore.api(query.getJavaScriptObject(), new AsyncCallback<FbResponse>() {
 			@SuppressWarnings("unchecked")
 			public void onSuccess(FbResponse response) {
 
@@ -380,11 +368,11 @@ public class RpcService {
 				JSONObject responseJson = new JSONObject(response);
 
 				// TODO check how slow this is compared to overlays
-				HashMap<String, FqlPage> map = new HashMap<String, FqlPage>();
+				HashMap<String, GraphFields> map = new HashMap<String, GraphFields>();
 				try {
 					// TODO stop using a string here
-					map = (HashMap<String, FqlPage>) hashMapSerializer.deSerialize(responseJson,
-							"ie.sortons.gwtfbplus.shared.domain.fql.FqlPage");
+					map = (HashMap<String, GraphFields>) hashMapSerializer.deSerialize(responseJson,
+							"ie.sortons.gwtfbplus.shared.domain.graph.GraphPage");
 				} catch (Exception e) {
 
 					System.out.println(responseJson);
@@ -409,24 +397,25 @@ public class RpcService {
 				}
 				System.out.println("process");
 				ArrayList<SourcePage> pages = new ArrayList<SourcePage>();
-				for (FqlPage page : map.values()) {
-					if (!clientPageData.getIncludedPageIds().contains(page.getPageId())) {
-					}
-					// TODO!
-					// pages.add(new SourcePage(page));
-				}
+				for (GraphFields graphFields : map.values())
+					if (graphFields.getLikes() != null)
+						for (GraphPage fbPage : graphFields.getLikes())
+							if (!clientPageData.getIncludedPageIds().contains(fbPage.getId()))
+								pages.add(new SourcePage(fbPage));
 
 				clientPageData.setSuggestedPages(pages);
 
-				System.out.println("pages.size() " + pages.size());
+				logger.log(Level.INFO, "pages.size() " + pages.size());
 
-				// Shuffle the list so it's not a bunch of similar suggestions
+				// TODO: move this to the display so it changes
+				// each search rather than each load
+				// Shuffle the list so it's not a bunch of
+				// similar suggestions
 				// consecutively
 				// http://blog.jonleonard.com/2012/10/gwt-collectionsshuffle-implementation.html
-				for (int index = 0; index < clientPageData.getSuggestedPages().size(); index += 1) {
+				for (int index = 0; index < clientPageData.getSuggestedPages().size(); index += 1)
 					Collections.swap(clientPageData.getSuggestedPages(), index,
 							Random.nextInt(clientPageData.getSuggestedPages().size()));
-				}
 
 				callback.onSuccess(clientPageData.getSuggestedPages());
 
@@ -436,6 +425,7 @@ public class RpcService {
 			public void onFailure(Throwable caught) {
 				// TODO Auto-generated method stub
 			}
+
 		});
 
 	}

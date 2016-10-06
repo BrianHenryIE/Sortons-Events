@@ -44,10 +44,14 @@ public class DataStore {
 	public void saveDiscoveredEvents(List<DiscoveredEvent> finalEvents) {
 
 		// Why is this a loop?
-		
+
 		for (DiscoveredEvent readyEvent : finalEvents)
 			ofy().save().entity(readyEvent).now();
 
+	}
+
+	public void saveWallPosts(List<WallPost> wallPosts) {
+		ofy().save().entities(wallPosts).now();
 	}
 
 }

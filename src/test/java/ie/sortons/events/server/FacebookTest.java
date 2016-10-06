@@ -115,7 +115,7 @@ public class FacebookTest {
 		String[] idsArray = { "131737309490", "139957459378369" };
 		List<String> ids = Arrays.asList(idsArray);
 
-		String correctCall = "?ids=131737309490,139957459378369&fields=posts%7Bmessage%2Clink%7D%2Cevents%7Bid%7D";
+		String correctCall = "?ids=131737309490,139957459378369&fields=posts%7Bmessage%2Clink%2Ccreated_time%7D%2Cevents%7Bid%7D";
 
 		String buildCall = facebook.buildGraphQueryStringForFeedAndEventsForMultiplePages(ids);
 

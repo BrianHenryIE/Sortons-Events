@@ -24,7 +24,7 @@ public class WallPost implements JsonSerializable {
 	public String postId;
 
 	@Index
-	public int date;
+	public Long date;
 
 	public String url;
 
@@ -37,7 +37,7 @@ public class WallPost implements JsonSerializable {
 	public WallPost() {
 	}
 
-	public WallPost(Long clientId, String postId, int date, String url) {
+	public WallPost(Long clientId, String postId, Long date, String url) {
 		this.clientId = clientId;
 		this.postId = postId;
 		this.date = date;

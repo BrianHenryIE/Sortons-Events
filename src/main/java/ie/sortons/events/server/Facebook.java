@@ -61,6 +61,16 @@ public class Facebook {
 		this.fbApiVersion = fbApiVersion;
 	}
 
+	List<GraphFeedItem> posts = new ArrayList<GraphFeedItem>();
+
+	public List<GraphFeedItem> getPosts() {
+		return posts;
+	}
+
+	public void nullPosts() {
+		posts = new ArrayList<GraphFeedItem>();
+	}
+
 	// Shorter dates seem to be a thing of the past - is there a standard parser
 	// that could be used instead?
 	private Gson gson = new GsonBuilder().registerTypeAdapter(Date.class, new JsonDeserializer<Date>() {
@@ -120,16 +130,11 @@ public class Facebook {
 
 	/**
 	 * 
-	 * {"error":{"message":"(#100) Too many IDs. Maximum: 50. Provided:
-	 * 149.","type":"OAuthException","code":100,"fbtrace_id":"EPa8hhbYImG"}}
-	 * 
 	 * @param list
 	 *            of event Ids
 	 * @return list of GraphEvent objects
 	 */
 	public Map<String, GraphEvent> getGraphEventsFromEventIds(Set<String> eventIds) {
-
-		LOG.info(eventIds.size() + " eventIds to find details for");
 
 		// TODO: how many can we query at once before it starts failing? There's
 		// a GET length limit
@@ -143,7 +148,6 @@ public class Facebook {
 		// default fields: description,end_time,name,place,start_time
 		for (List<String> eventIdsPartition : partitionedEventIds) {
 			String query = "?ids=" + joiner.join(eventIdsPartition);
-			LOG.info(query);
 			queries.add(query);
 		}
 
@@ -157,8 +161,6 @@ public class Facebook {
 			Map<String, GraphEvent> batch = gson.fromJson(jsonResponse, stringGraphEventMap);
 			events.putAll(batch);
 		}
-		LOG.info(events.size() + " events returned");
-
 		return events;
 	}
 
@@ -222,6 +224,10 @@ public class Facebook {
 
 			if (gfr != null && gfr.getValue() != null && gfr.getValue().getPosts() != null
 					&& gfr.getValue().getPosts().getData() != null) {
+				// Posts
+				posts.addAll(gfr.getValue().getPosts().getData());
+
+				// Events
 				Set<String> eventsPostedByPage = findEventsInFeed(gfr.getValue().getPosts().getData());
 				allEventsForPage.addAll(eventsPostedByPage);
 			}
@@ -306,24 +312,11 @@ public class Facebook {
 		String query = null;
 		try {
 			query = "?ids=" + joiner.join(ids) + "&fields="
-					+ URLEncoder.encode("posts{message,link},events{id}", "UTF-8");
+					+ URLEncoder.encode("posts{message,link,created_time},events{id}", "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		// String query = "?ids=";
-		// for (String id : ids) {
-		// query += id + ",";
-		// }
-		// query = query.substring(0, query.length()-1);
-		// try {
-		// query += "&fields=" +
-		// URLEncoder.encode("posts{message,link},events{id}", "UTF-8");
-		// } catch (UnsupportedEncodingException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
 
 		return query;
 	}
@@ -341,8 +334,9 @@ public class Facebook {
 	 * @return
 	 */
 	List<String> batchAsyncUrlFetch(List<String> queries) {
-		
-		// TODO: https://developers.facebook.com/docs/graph-api/making-multiple-requests/
+
+		// TODO:
+		// https://developers.facebook.com/docs/graph-api/making-multiple-requests/
 
 		// GAE has a max_concurrent_requests option in appengine-web.xml
 		// https://cloud.google.com/appengine/docs/java/config/appref
@@ -351,7 +345,7 @@ public class Facebook {
 		List<String> jsonList = new ArrayList<String>();
 
 		URLFetchService fetcher = URLFetchServiceFactory.getURLFetchService();
-		
+
 		for (List<String> batch : batches) {
 
 			List<Future<HTTPResponse>> asyncResponses = new ArrayList<Future<HTTPResponse>>();
@@ -388,7 +382,7 @@ public class Facebook {
 				}
 			}
 		}
-		
+
 		return jsonList;
 	}
 
